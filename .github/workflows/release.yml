@@ -20,7 +20,7 @@ jobs:
           - os: macos-14
             target: aarch64-apple-darwin
             artifact_name: vlang-darwin-arm64.tar.gz
-          - os: macos-13
+          - os: macos-14
             target: x86_64-apple-darwin
             artifact_name: vlang-darwin-x86_64.tar.gz
           - os: ubuntu-latest
@@ -40,13 +40,13 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Build release binary
-        run: cargo build --release --bin vlang
+        run: cargo build --release --target ${{ matrix.target }} --bin vlang
 
       - name: Package binary (Unix)
         if: runner.os != 'Windows'
         run: |
           mkdir -p staging
-          cp target/release/vlang staging/
+          cp target/${{ matrix.target }}/release/vlang staging/
           cp README.md staging/
           cd staging
           tar -czvf "../${{ matrix.artifact_name }}" vlang README.md
@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p staging
-          cp target/release/vlang.exe staging/
+          cp target/${{ matrix.target }}/release/vlang.exe staging/
           cp README.md staging/
           cd staging
           7z a "../${{ matrix.artifact_name }}" vlang.exe README.md
