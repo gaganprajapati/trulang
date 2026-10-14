@@ -1,0 +1,13 @@
+fn main() {
+    println("--- Memory Region Demo ---");
+
+    // Temporary request allocations in Region A
+    let session_token = "sess_temp_9876543210";
+    println("Created temporary request session token in Region A");
+
+    // Long-lived data promoted to Region B persistent storage
+    let persistent_user_id = persist("user_account_permanent_12345");
+    println("Promoted permanent user ID to Region B persistent memory");
+
+    println("Request processing completed successfully.");
+}

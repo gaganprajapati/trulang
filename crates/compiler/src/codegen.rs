@@ -1,0 +1,356 @@
+use crate::bytecode::{Chunk, Opcode, Value};
+use crate::error::CompileError;
+use std::collections::HashMap;
+use std::sync::Arc;
+use vlang_syntax::ast::*;
+use vlang_syntax::span::Spanned;
+
+#[derive(Default)]
+struct ScopeContext {
+    locals: HashMap<String, usize>,
+    next_slot: usize,
+}
+
+pub struct CodeGenerator {
+    pub chunk: Chunk,
+    scopes: Vec<ScopeContext>,
+}
+
+impl CodeGenerator {
+    pub fn new() -> Self {
+        Self {
+            chunk: Chunk::new(),
+            scopes: vec![ScopeContext::default()],
+        }
+    }
+
+    fn enter_scope(&mut self) {
+        let next_slot = self.scopes.last().map(|s| s.next_slot).unwrap_or(0);
+        self.scopes.push(ScopeContext {
+            locals: HashMap::new(),
+            next_slot,
+        });
+    }
+
+    fn exit_scope(&mut self) {
+        self.scopes.pop();
+    }
+
+    fn define_local(&mut self, name: &str) -> usize {
+        let scope = self.scopes.last_mut().expect("No active scope");
+        let slot = scope.next_slot;
+        scope.locals.insert(name.to_string(), slot);
+        scope.next_slot += 1;
+        slot
+    }
+
+    fn resolve_local(&self, name: &str) -> Option<usize> {
+        for scope in self.scopes.iter().rev() {
+            if let Some(&slot) = scope.locals.get(name) {
+                return Some(slot);
+            }
+        }
+        None
+    }
+
+    pub fn compile_program(&mut self, program: &Program) -> Result<(), CompileError> {
+        for decl in &program.declarations {
+            match &decl.node {
+                Declaration::Service(svc) => self.compile_service(svc)?,
+                Declaration::Function(func) => self.compile_function(func)?,
+                Declaration::Struct(_) => {}
+            }
+        }
+        Ok(())
+    }
+
+    pub fn compile_service(&mut self, svc: &ServiceDecl) -> Result<(), CompileError> {
+        // Find budgets if declared
+        for budget in &svc.budgets {
+            if budget.node.region == BudgetRegion::Request {
+                self.chunk.emit(Opcode::AllocRegionA(budget.node.size_bytes), budget.span.line);
+            }
+        }
+
+        // Initialize service fields (e.g. let mut cache = Map::new())
+        for field in &svc.fields {
+            if let Some(ref init) = field.node.init {
+                self.compile_expr(init)?;
+                let slot = self.define_local(&field.node.name);
+                self.chunk.emit(Opcode::SetLocal(slot), field.span.line);
+            }
+        }
+
+        for method in &svc.methods {
+            self.compile_function(&method.node)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn compile_function(&mut self, func: &FunctionDecl) -> Result<(), CompileError> {
+        self.enter_scope();
+
+        for param in &func.params {
+            self.define_local(&param.name);
+        }
+
+        for stmt in &func.body.statements {
+            self.compile_statement(stmt)?;
+        }
+
+        // Implicit return null if not ending with return
+        self.chunk.emit(Opcode::LoadNull, func.body.statements.last().map(|s| s.span.line).unwrap_or(1));
+        self.chunk.emit(Opcode::Return, func.body.statements.last().map(|s| s.span.line).unwrap_or(1));
+
+        self.exit_scope();
+        Ok(())
+    }
+
+    pub fn compile_statement(&mut self, stmt: &Spanned<Statement>) -> Result<(), CompileError> {
+        let line = stmt.span.line;
+
+        match &stmt.node {
+            Statement::Let { name, init, .. } => {
+                self.compile_expr(init)?;
+                let slot = self.define_local(name);
+                self.chunk.emit(Opcode::SetLocal(slot), line);
+            }
+            Statement::Assign { target, value } => {
+                match &target.node {
+                    Expr::Ident(name) => {
+                        self.compile_expr(value)?;
+                        if let Some(slot) = self.resolve_local(name) {
+                            self.chunk.emit(Opcode::SetLocal(slot), line);
+                        }
+                    }
+                    Expr::MemberAccess { target: obj, field, .. } => {
+                        self.compile_expr(value)?;
+                        self.compile_expr(obj)?;
+                        self.chunk.emit(Opcode::SetFieldNamed(field.clone()), line);
+                    }
+                    _ => {}
+                }
+            }
+            Statement::Return(opt_expr) => {
+                if let Some(expr) = opt_expr {
+                    self.compile_expr(expr)?;
+                } else {
+                    self.chunk.emit(Opcode::LoadNull, line);
+                }
+                // Run defers before returning
+                self.chunk.emit(Opcode::RunDefers, line);
+                self.chunk.emit(Opcode::Return, line);
+            }
+            Statement::Defer(expr) => {
+                let jump_over = self.chunk.emit(Opcode::Jump(0), line);
+                let defer_start = self.chunk.code.len();
+
+                self.compile_expr(expr)?;
+                self.chunk.emit(Opcode::Pop, line);
+                self.chunk.emit(Opcode::Return, line);
+
+                let after_defer = self.chunk.code.len();
+                self.chunk.patch_jump(jump_over, after_defer);
+
+                self.chunk.emit(Opcode::PushDefer(defer_start), line);
+            }
+            Statement::If { condition, then_branch, else_branch } => {
+                self.compile_expr(condition)?;
+                let jump_false = self.chunk.emit(Opcode::JumpIfFalse(0), line);
+
+                self.enter_scope();
+                for s in &then_branch.statements {
+                    self.compile_statement(s)?;
+                }
+                self.exit_scope();
+
+                if let Some(else_b) = else_branch {
+                    let jump_end = self.chunk.emit(Opcode::Jump(0), line);
+                    let else_start = self.chunk.code.len();
+                    self.chunk.patch_jump(jump_false, else_start);
+
+                    self.enter_scope();
+                    for s in &else_b.statements {
+                        self.compile_statement(s)?;
+                    }
+                    self.exit_scope();
+
+                    let end_pos = self.chunk.code.len();
+                    self.chunk.patch_jump(jump_end, end_pos);
+                } else {
+                    let end_pos = self.chunk.code.len();
+                    self.chunk.patch_jump(jump_false, end_pos);
+                }
+            }
+            Statement::While { condition, body } => {
+                let loop_start = self.chunk.code.len();
+                self.compile_expr(condition)?;
+                let jump_exit = self.chunk.emit(Opcode::JumpIfFalse(0), line);
+
+                self.enter_scope();
+                for s in &body.statements {
+                    self.compile_statement(s)?;
+                }
+                self.exit_scope();
+
+                self.chunk.emit(Opcode::Jump(loop_start), line);
+                let exit_pos = self.chunk.code.len();
+                self.chunk.patch_jump(jump_exit, exit_pos);
+            }
+            Statement::TryCatch { try_block, error_name, catch_block, .. } => {
+                let push_try = self.chunk.emit(Opcode::PushTry(0), line);
+
+                self.enter_scope();
+                for s in &try_block.statements {
+                    self.compile_statement(s)?;
+                }
+                self.exit_scope();
+
+                self.chunk.emit(Opcode::PopTry, line);
+                let jump_end = self.chunk.emit(Opcode::Jump(0), line);
+
+                let catch_start = self.chunk.code.len();
+                self.chunk.patch_jump(push_try, catch_start);
+
+                self.enter_scope();
+                let err_slot = self.define_local(error_name);
+                self.chunk.emit(Opcode::SetLocal(err_slot), line);
+
+                for s in &catch_block.statements {
+                    self.compile_statement(s)?;
+                }
+                self.exit_scope();
+
+                let end_pos = self.chunk.code.len();
+                self.chunk.patch_jump(jump_end, end_pos);
+            }
+            Statement::Expr(expr) => {
+                self.compile_expr(expr)?;
+                self.chunk.emit(Opcode::Pop, line);
+            }
+            Statement::Block(b) => {
+                self.enter_scope();
+                for s in &b.statements {
+                    self.compile_statement(s)?;
+                }
+                self.exit_scope();
+            }
+        }
+        Ok(())
+    }
+
+    pub fn compile_expr(&mut self, expr: &Spanned<Expr>) -> Result<(), CompileError> {
+        let line = expr.span.line;
+
+        match &expr.node {
+            Expr::Literal(lit) => match lit {
+                Literal::Int(n) => {
+                    self.chunk.emit(Opcode::LoadInt(*n), line);
+                }
+                Literal::Float(fl) => {
+                    self.chunk.emit(Opcode::LoadFloat(*fl), line);
+                }
+                Literal::Bool(b) => {
+                    self.chunk.emit(Opcode::LoadBool(*b), line);
+                }
+                Literal::Null => {
+                    self.chunk.emit(Opcode::LoadNull, line);
+                }
+                Literal::String(s) => {
+                    let const_idx = self.chunk.add_constant(Value::String(Arc::new(s.clone())));
+                    self.chunk.emit(Opcode::LoadConst(const_idx), line);
+                }
+            },
+            Expr::Ident(name) => {
+                if let Some(slot) = self.resolve_local(name) {
+                    self.chunk.emit(Opcode::GetLocal(slot), line);
+                } else {
+                    let const_idx = self.chunk.add_constant(Value::String(Arc::new(name.clone())));
+                    self.chunk.emit(Opcode::LoadConst(const_idx), line);
+                }
+            }
+            Expr::Binary { op, left, right } => {
+                self.compile_expr(left)?;
+                self.compile_expr(right)?;
+                match op {
+                    BinOp::Add => self.chunk.emit(Opcode::Add, line),
+                    BinOp::Sub => self.chunk.emit(Opcode::Sub, line),
+                    BinOp::Mul => self.chunk.emit(Opcode::Mul, line),
+                    BinOp::Div => self.chunk.emit(Opcode::Div, line),
+                    BinOp::Mod => self.chunk.emit(Opcode::Mod, line),
+                    BinOp::Eq => self.chunk.emit(Opcode::Eq, line),
+                    BinOp::NotEq => self.chunk.emit(Opcode::NotEq, line),
+                    BinOp::Lt => self.chunk.emit(Opcode::Lt, line),
+                    BinOp::LtEq => self.chunk.emit(Opcode::LtEq, line),
+                    BinOp::Gt => self.chunk.emit(Opcode::Gt, line),
+                    BinOp::GtEq => self.chunk.emit(Opcode::GtEq, line),
+                    BinOp::And => self.chunk.emit(Opcode::Mul, line),
+                    BinOp::Or => self.chunk.emit(Opcode::Add, line),
+                };
+            }
+            Expr::Unary { op, expr: inner } => {
+                self.compile_expr(inner)?;
+                match op {
+                    UnaryOp::Neg => self.chunk.emit(Opcode::Neg, line),
+                    UnaryOp::Not => self.chunk.emit(Opcode::Not, line),
+                };
+            }
+            Expr::Call { callee, args } => {
+                // If Map::new()
+                if let Expr::Path(segments) = &callee.node {
+                    if segments.len() == 2 && segments[0] == "Map" && segments[1] == "new" {
+                        self.chunk.emit(Opcode::NewMap, line);
+                        return Ok(());
+                    }
+                }
+
+                // If builtin print/println
+                if let Expr::Ident(name) = &callee.node {
+                    if name == "println" {
+                        for arg in args {
+                            self.compile_expr(arg)?;
+                            self.chunk.emit(Opcode::Println, line);
+                        }
+                        self.chunk.emit(Opcode::LoadNull, line);
+                        return Ok(());
+                    } else if name == "print" {
+                        for arg in args {
+                            self.compile_expr(arg)?;
+                            self.chunk.emit(Opcode::Print, line);
+                        }
+                        self.chunk.emit(Opcode::LoadNull, line);
+                        return Ok(());
+                    }
+                }
+
+                for arg in args {
+                    self.compile_expr(arg)?;
+                }
+                self.compile_expr(callee)?;
+                self.chunk.emit(Opcode::Call(args.len()), line);
+            }
+            Expr::MethodCall { receiver, method, args } => {
+                for arg in args {
+                    self.compile_expr(arg)?;
+                }
+                self.compile_expr(receiver)?;
+                self.chunk.emit(Opcode::CallMethod(method.clone(), args.len()), line);
+            }
+            Expr::MemberAccess { target, field, is_optional: _ } => {
+                self.compile_expr(target)?;
+                self.chunk.emit(Opcode::GetFieldNamed(field.clone()), line);
+            }
+            Expr::Persist(inner) => {
+                self.compile_expr(inner)?;
+                self.chunk.emit(Opcode::Persist, line);
+            }
+            Expr::Path(segments) => {
+                let joined = segments.join("::");
+                let const_idx = self.chunk.add_constant(Value::String(Arc::new(joined)));
+                self.chunk.emit(Opcode::LoadConst(const_idx), line);
+            }
+        }
+        Ok(())
+    }
+}

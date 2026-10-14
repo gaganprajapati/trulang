@@ -1,0 +1,18 @@
+fn main() -> i64 {
+    let n = 10;
+    let mut a = 0;
+    let mut b = 1;
+    let mut i = 0;
+
+    println("Calculating Fibonacci sequence up to N = 10:");
+
+    while i < n {
+        println(a);
+        let temp = a + b;
+        a = b;
+        b = temp;
+        i = i + 1;
+    }
+
+    return a;
+}

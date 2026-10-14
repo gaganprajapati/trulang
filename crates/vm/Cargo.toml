@@ -1,0 +1,15 @@
+[package]
+name = "vlang_vm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+vlang_syntax = { path = "../syntax" }
+vlang_compiler = { path = "../compiler" }
+vlang_supervisor = { path = "../supervisor" }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+libc = { workspace = true }
+
+[dev-dependencies]

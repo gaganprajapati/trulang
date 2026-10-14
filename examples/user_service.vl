@@ -1,0 +1,21 @@
+service UserService {
+    memory_budget request = 16 MB;
+    memory_budget persistent = 512 MB;
+
+    let mut cache: Map<String, User> = Map::new();
+
+    fn handle(request: Request) -> Response {
+        defer log_request_completed(request.id);
+
+        try {
+            let user = database.find_user(request.user_id);
+            if user != null {
+                // Promote user data to persistent service cache
+                cache.insert(request.user_id, persist(user));
+            }
+            return Response.json(user);
+        } catch (err: DatabaseError) {
+            return Response.error(500, err.message);
+        }
+    }
+}

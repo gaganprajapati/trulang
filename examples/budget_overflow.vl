@@ -1,0 +1,8 @@
+service TestService {
+    memory_budget request = 64 B;
+    memory_budget persistent = 1024 B;
+
+    fn handle() {
+        let a = "This string exceeds the 64 byte request memory budget allocation threshold easily";
+    }
+}

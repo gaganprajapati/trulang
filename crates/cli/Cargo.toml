@@ -1,0 +1,20 @@
+[package]
+name = "vlang_cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "vlang"
+path = "src/main.rs"
+
+[dependencies]
+vlang_syntax = { path = "../syntax" }
+vlang_compiler = { path = "../compiler" }
+vlang_vm = { path = "../vm" }
+vlang_supervisor = { path = "../supervisor" }
+clap = { workspace = true }
+anyhow = { workspace = true }
+libc = { workspace = true }
+
+[dev-dependencies]
