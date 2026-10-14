@@ -59,63 +59,56 @@ Empirical benchmarks run across identical microservice API lifecycle workloads (
 
 ## 🚀 Installation & Setup
 
-VLang is written in Rust and can be installed via Cargo, our automated installer script, or built directly from source.
-
-### Prerequisites
-- **Rust 1.75+ toolchain** (`cargo` and `rustc`). If you don't have Rust installed, run:
-  ```bash
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-  ```
-
----
-
-### Option 1: Build & Install from Source (Recommended)
-```bash
-# 1. Clone repository
-git clone https://github.com/gaganprajapati/vlang.git
-cd vlang
-
-# 2. Run unit and integration tests (25 test suites)
-cargo test
-
-# 3. Install the vlang CLI to ~/.cargo/bin
-cargo install --path crates/cli
-
-# 4. Verify installation
-vlang --version
-# Output: vlang 0.1.0
-```
-
-### Option 1: 1-Line Prebuilt Binary Install (macOS & Linux)
-The fastest way to install VLang. Automatically detects your OS and architecture, downloads the latest pre-compiled binary, and installs it to `/usr/local/bin` in seconds (**no Rust toolchain required**):
+### Option 1: 1-Line Prebuilt Binary Install (Recommended — No Rust Required)
+The fastest way to install VLang on macOS or Linux. The script automatically detects your operating system and architecture, downloads the pre-compiled standalone binary from GitHub Releases, and installs it to `/usr/local/bin` in seconds:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash
 ```
+> **Note:** **No Rust or Cargo toolchain is needed.** The binary is completely self-contained.
 
 ---
 
-### Option 2: Build & Install from Source (via Cargo)
-For developers contributing to the compiler or building on unsupported architectures:
+### Option 2: Direct Binary Download (No Rust Required)
+Download the standalone executable directly from [GitHub Releases](https://github.com/gaganprajapati/vlang/releases):
+- **macOS ARM64** (Apple Silicon M1/M2/M3/M4): [`vlang-darwin-arm64.tar.gz`](https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-darwin-arm64.tar.gz)
+- **macOS x86_64** (Intel): [`vlang-darwin-x86_64.tar.gz`](https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-darwin-x86_64.tar.gz)
+- **Linux x86_64**: [`vlang-linux-x86_64.tar.gz`](https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-linux-x86_64.tar.gz)
+- **Windows x64**: [`vlang-windows-x64.zip`](https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-windows-x64.zip)
+
+Unpack and run:
+```bash
+tar -xzf vlang-darwin-arm64.tar.gz
+sudo mv vlang /usr/local/bin/
+vlang --version
+```
+
+---
+
+### Option 3: Build & Install from Source (For Developers & Contributors)
+If you want to contribute to VLang, run the test suites, or compile from source, you will need the **Rust 1.75+ toolchain**:
 
 ```bash
-# 1. Clone repository
+# Install Rust (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Clone repository
 git clone https://github.com/gaganprajapati/vlang.git
 cd vlang
 
-# 2. Run unit and integration tests (25 test suites)
+# Run all 25 unit and integration tests
 cargo test
 
-# 3. Install the vlang CLI to ~/.cargo/bin
+# Install the vlang CLI to ~/.cargo/bin
 cargo install --path crates/cli
 
-# 4. Verify installation
+# Verify installation
 vlang --version
 # Output: vlang 0.1.0
 ```
 
-### Option 3: Install via Cargo Git
-Install directly without manually cloning the repository:
+### Option 4: Install via Cargo Git
+For Rust developers who prefer `cargo install` directly from git:
 ```bash
 cargo install --git https://github.com/gaganprajapati/vlang.git vlang_cli
 ```
