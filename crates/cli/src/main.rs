@@ -7,6 +7,7 @@ use vlang_supervisor::{MemorySupervisor, SharedTelemetryRegion};
 
 #[derive(Parser)]
 #[command(name = "vlang")]
+#[command(version = "0.1.0")]
 #[command(about = "Memory-Safe Language Compiler and Runtime", long_about = None)]
 struct Cli {
     #[command(subcommand)]

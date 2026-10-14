@@ -59,44 +59,63 @@ Empirical benchmarks run across identical microservice API lifecycle workloads (
 
 ## 🚀 Installation & Setup
 
-### Option 1: Quick Install (macOS & Linux)
-```bash
-curl -fsSL https://get.vlang.dev | sh
-```
+VLang is written in Rust and can be installed via Cargo, our automated installer script, or built directly from source.
 
-### Option 2: Build & Install from Source (via Cargo)
-Prerequisites: Rust 1.75+ toolchain (`rustup default stable`).
+### Prerequisites
+- **Rust 1.75+ toolchain** (`cargo` and `rustc`). If you don't have Rust installed, run:
+  ```bash
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  ```
 
+---
+
+### Option 1: Build & Install from Source (Recommended)
 ```bash
 # 1. Clone repository
 git clone https://github.com/gaganprajapati/vlang.git
 cd vlang
 
-# 2. Run unit and integration tests (25 passing suites)
+# 2. Run unit and integration tests (25 test suites)
 cargo test
 
-# 3. Build optimized release binary
-cargo build --release
-
-# 4. Install the CLI directly to ~/.cargo/bin
+# 3. Install the vlang CLI to ~/.cargo/bin
 cargo install --path crates/cli
 
-# 5. Verify installation
+# 4. Verify installation
 vlang --version
-# Output: vlang 0.1.0 (Bytecode VM & Dual-Region Supervisor)
+# Output: vlang 0.1.0
 ```
 
-### Option 3: Homebrew (macOS / Linux)
+### Option 2: 1-Line Install via Cargo Git
+Install directly without manually cloning the repository:
 ```bash
-brew tap vlang-core/tap
-brew install vlang
+cargo install --git https://github.com/gaganprajapati/vlang.git vlang_cli
 ```
 
-### Option 4: Docker
+### Option 3: Automated Install Script (macOS & Linux)
+Runs a self-contained installation script that builds and installs `vlang` to `~/.cargo/bin`:
 ```bash
-docker pull ghcr.io/vlang-core/vlang:latest
-docker run --rm -v $(pwd):/workspace -w /workspace ghcr.io/vlang-core/vlang vlang run examples/user_service.vl
+curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash
 ```
+*(Or run `./scripts/install.sh` from inside a cloned repository).*
+
+### Option 4: Build Standalone Release Binary
+If you prefer not to install globally to `~/.cargo/bin`:
+```bash
+git clone https://github.com/gaganprajapati/vlang.git
+cd vlang
+cargo build --release
+
+# The compiled binary is located at:
+./target/release/vlang --help
+```
+
+---
+
+### 📦 Distribution Roadmap
+- [ ] Homebrew tap (`brew install vlang`) — in progress
+- [ ] Pre-compiled standalone GitHub Release tarballs for macOS (ARM64/x86_64) and Linux
+- [ ] Official Docker image on GitHub Container Registry (`ghcr.io/gaganprajapati/vlang`)
 
 ---
 

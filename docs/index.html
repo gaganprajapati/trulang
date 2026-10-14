@@ -1068,12 +1068,12 @@
         <!-- One-Liner Quick Install Banner -->
         <div class="install-quick-banner" id="install-quick">
           <div>
-            <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #34d399; margin-bottom: 0.35rem;">Quick Install (macOS & Linux)</div>
-            <div style="font-size: 0.85rem; color: var(--text-muted);">Installs latest stable standalone binary to <code>~/.vlang/bin</code> and configures your <code>$PATH</code></div>
+            <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #34d399; margin-bottom: 0.35rem;">Automated Install Script (macOS & Linux)</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Clones, compiles, and installs <code>vlang</code> directly to <code>~/.cargo/bin</code></div>
           </div>
           <div class="install-quick-cmd">
-            <code>curl -fsSL https://get.vlang.dev | sh</code>
-            <button class="copy-btn" onclick="copySnippet('curl -fsSL https://get.vlang.dev | sh', this)">Copy</button>
+            <code>curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash</code>
+            <button class="copy-btn" onclick="copySnippet('curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash', this)">Copy</button>
           </div>
         </div>
 
@@ -1082,35 +1082,35 @@
           <div class="bench-tabs-header">
             <button class="bench-tab-btn active" id="btnInstallSource" onclick="switchInstallTab('source')">
               <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-              Cargo / Build from Source
+              Cargo Source Build
             </button>
             <button class="bench-tab-btn" id="btnInstallBrew" onclick="switchInstallTab('brew')">
-              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-              Homebrew (macOS / Linux)
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              1-Line Cargo Git
             </button>
             <button class="bench-tab-btn" id="btnInstallBinary" onclick="switchInstallTab('binary')">
-              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Prebuilt Binaries
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              Install Script
             </button>
             <button class="bench-tab-btn" id="btnInstallDocker" onclick="switchInstallTab('docker')">
-              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-              Docker & OCI Images
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+              Package Roadmap
             </button>
           </div>
 
           <!-- TAB 1: Source / Cargo -->
           <div class="bench-tab-content active" id="tabInstallSource">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Build & Install from Source via Cargo</h3>
+            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Build & Install from Source via Cargo (Recommended)</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              Recommended for development, continuous integration, and contributing to the VLang core compiler. Requires Rust 1.75+ toolchain.
+              Recommended for development, testing, and full access to workspace crates. Requires the Rust toolchain (<code>rustc</code> and <code>cargo</code> 1.75+).
             </p>
             <div class="code-box">
               <div class="code-top">
-                <span>Terminal — Build & Install</span>
+                <span>Terminal — Clone & Install</span>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               </div>
-              <pre><code><span class="comment"># 1. Clone the official repository</span>
-git clone https://github.com/vlang-core/vlang.git
+              <pre><code><span class="comment"># 1. Clone the repository</span>
+git clone https://github.com/gaganprajapati/vlang.git
 cd vlang
 
 <span class="comment"># 2. Run unit and integration tests (25 test suites)</span>
@@ -1124,113 +1124,105 @@ cargo install --path crates/cli
 
 <span class="comment"># 5. Verify successful installation</span>
 vlang --version
-<span class="comment"># Output: vlang 0.1.0 (Bytecode VM & Dual-Region Supervisor)</span></code></pre>
+<span class="comment"># Output: vlang 0.1.0</span></code></pre>
             </div>
           </div>
 
-          <!-- TAB 2: Homebrew -->
+          <!-- TAB 2: Cargo Git -->
           <div class="bench-tab-content" id="tabInstallBrew">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Install via Homebrew</h3>
+            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Direct 1-Line Install via Cargo Git</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              Easily manage updates and releases on macOS (Apple Silicon & Intel) or Linux via the official Homebrew tap.
+              Installs VLang directly from GitHub into <code>~/.cargo/bin</code> without requiring a manual git clone:
             </p>
             <div class="code-box">
               <div class="code-top">
-                <span>Terminal — Homebrew Tap</span>
+                <span>Terminal — Cargo Install Git</span>
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               </div>
-              <pre><code><span class="comment"># Tap the official repository</span>
-brew tap vlang-core/tap
+              <pre><code><span class="comment"># Install directly from the GitHub repository</span>
+cargo install --git https://github.com/gaganprajapati/vlang.git vlang_cli
 
-<span class="comment"># Install VLang</span>
-brew install vlang
-
-<span class="comment"># Confirm installation</span>
-which vlang
+<span class="comment"># Verify CLI availability in $PATH</span>
+vlang --version
 vlang --help</code></pre>
             </div>
           </div>
 
-          <!-- TAB 3: Prebuilt Binaries -->
+          <!-- TAB 3: Install Script -->
           <div class="bench-tab-content" id="tabInstallBinary">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Precompiled Standalone Binaries</h3>
+            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Automated Shell Installer (<code>scripts/install.sh</code>)</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              Download self-contained single binaries for your target architecture. No Rust or C++ toolchains required.
+              A verified shell script that checks your Rust environment, compiles the CLI, and places <code>vlang</code> into your executable path.
+            </p>
+            <div class="code-box">
+              <div class="code-top">
+                <span>Terminal — Run Installer</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+              </div>
+              <pre><code><span class="comment"># From inside cloned workspace:</span>
+chmod +x ./scripts/install.sh
+./scripts/install.sh
+
+<span class="comment"># Or piped directly via curl:</span>
+curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash</code></pre>
+            </div>
+          </div>
+
+          <!-- TAB 4: Distribution Roadmap -->
+          <div class="bench-tab-content" id="tabInstallDocker">
+            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Packaging & Distribution Roadmap</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+              We are actively setting up release automation for binary distributions and package registries:
             </p>
             <div style="overflow-x: auto;">
               <table class="matrix-table" style="margin-bottom: 1.5rem;">
                 <thead>
                   <tr>
-                    <th>Operating System</th>
-                    <th>Architecture</th>
-                    <th>Archive</th>
-                    <th>SHA-256 Checksum</th>
+                    <th>Channel / Platform</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Command</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr class="highlight-row">
-                    <td>macOS</td>
-                    <td>ARM64 (Apple Silicon M1/M2/M3/M4)</td>
-                    <td><code>vlang-v1.0.0-darwin-arm64.tar.gz</code></td>
-                    <td><code>e3b0c44298fc1c149afb...</code></td>
+                    <td>Cargo (Source)</td>
+                    <td>Universal (macOS, Linux, Windows)</td>
+                    <td><span style="color: #34d399; font-weight: 700;">✓ Available Now</span></td>
+                    <td><code>cargo install --path crates/cli</code></td>
                   </tr>
                   <tr>
-                    <td>macOS</td>
-                    <td>x86_64 (Intel)</td>
-                    <td><code>vlang-v1.0.0-darwin-x64.tar.gz</code></td>
-                    <td><code>a71b489d09c2b4892fb1...</code></td>
+                    <td>Cargo Git</td>
+                    <td>Universal</td>
+                    <td><span style="color: #34d399; font-weight: 700;">✓ Available Now</span></td>
+                    <td><code>cargo install --git &lt;repo&gt; vlang_cli</code></td>
                   </tr>
                   <tr class="highlight-row">
-                    <td>Linux</td>
-                    <td>x86_64 (glibc 2.31+ / musl)</td>
-                    <td><code>vlang-v1.0.0-linux-x64.tar.gz</code></td>
-                    <td><code>f24b892a014902cba391...</code></td>
+                    <td>Install Script</td>
+                    <td>macOS & Linux</td>
+                    <td><span style="color: #34d399; font-weight: 700;">✓ Available Now</span></td>
+                    <td><code>./scripts/install.sh</code></td>
                   </tr>
                   <tr>
-                    <td>Linux</td>
-                    <td>aarch64 (ARM64 / AWS Graviton)</td>
-                    <td><code>vlang-v1.0.0-linux-arm64.tar.gz</code></td>
-                    <td><code>39d0cb4190fa728991fa...</code></td>
+                    <td>Homebrew Tap</td>
+                    <td>macOS / Linux</td>
+                    <td><span style="color: #fbbf24;">In Progress</span></td>
+                    <td><code>brew install gaganprajapati/vlang</code></td>
                   </tr>
                   <tr class="highlight-row">
-                    <td>Windows</td>
-                    <td>x64 (PowerShell / WSL2)</td>
-                    <td><code>vlang-v1.0.0-windows-x64.zip</code></td>
-                    <td><code>8891cbaf017489ab20fc...</code></td>
+                    <td>GitHub Releases</td>
+                    <td>Standalone tarballs (ARM64 & x86_64)</td>
+                    <td><span style="color: #fbbf24;">Planned v0.2.0</span></td>
+                    <td>Pre-built tarball downloads</td>
+                  </tr>
+                  <tr>
+                    <td>Docker OCI Image</td>
+                    <td>Alpine container (&lt; 12 MB)</td>
+                    <td><span style="color: #fbbf24;">Planned</span></td>
+                    <td><code>docker pull ghcr.io/gaganprajapati/vlang</code></td>
                   </tr>
                 </tbody>
               </table>
-            </div>
-            <div class="code-box">
-              <div class="code-top">
-                <span>Terminal — Unpack & Move to System Path</span>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-              </div>
-              <pre><code><span class="comment"># Extract the tarball</span>
-tar -xzf vlang-v1.0.0-darwin-arm64.tar.gz
-
-<span class="comment"># Move binary to system PATH</span>
-sudo mv vlang /usr/local/bin/
-sudo chmod +x /usr/local/bin/vlang</code></pre>
-            </div>
-          </div>
-
-          <!-- TAB 4: Docker -->
-          <div class="bench-tab-content" id="tabInstallDocker">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Docker & Container Deployments</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              Ultra-compact Alpine-based OCI containers (under 12 MB) optimized for Kubernetes and serverless container fleets.
-            </p>
-            <div class="code-box">
-              <div class="code-top">
-                <span>Terminal — Run via Docker</span>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-              </div>
-              <pre><code><span class="comment"># Pull official container image</span>
-docker pull ghcr.io/vlang-core/vlang:latest
-
-<span class="comment"># Execute script with mounted workspace</span>
-docker run --rm -v $(pwd):/workspace -w /workspace ghcr.io/vlang-core/vlang vlang run examples/user_service.vl</code></pre>
             </div>
           </div>
         </div>
