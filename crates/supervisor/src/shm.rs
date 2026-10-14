@@ -182,11 +182,11 @@ impl ShmHeader {
 pub struct SharedTelemetryRegion {
     pub path: PathBuf,
     pub file: File,
-    raw_ptr: *mut u8,
+    mmap: memmap2::MmapMut,
     size: usize,
 }
 
-// Safety: raw_ptr points to an OS-managed shared file mapping containing atomic types
+// Safety: mmap points to an OS-managed shared file mapping containing atomic types
 unsafe impl Send for SharedTelemetryRegion {}
 unsafe impl Sync for SharedTelemetryRegion {}
 
@@ -234,26 +234,13 @@ impl SharedTelemetryRegion {
             file.flush()?;
         }
 
-        // Map memory via mmap
-        let raw_ptr = unsafe {
-            libc::mmap(
-                std::ptr::null_mut(),
-                size,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_SHARED,
-                std::os::fd::AsRawFd::as_raw_fd(&file),
-                0,
-            )
-        };
-
-        if raw_ptr == libc::MAP_FAILED {
-            return Err(io::Error::last_os_error());
-        }
+        // Map memory cross-platform via memmap2 (handles Windows handles & Unix FDs seamlessly)
+        let mmap = unsafe { memmap2::MmapMut::map_mut(&file)? };
 
         Ok(Self {
             path,
             file,
-            raw_ptr: raw_ptr as *mut u8,
+            mmap,
             size,
         })
     }
@@ -267,25 +254,12 @@ impl SharedTelemetryRegion {
             .write(true)
             .open(&path)?;
 
-        let raw_ptr = unsafe {
-            libc::mmap(
-                std::ptr::null_mut(),
-                size,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_SHARED,
-                std::os::fd::AsRawFd::as_raw_fd(&file),
-                0,
-            )
-        };
-
-        if raw_ptr == libc::MAP_FAILED {
-            return Err(io::Error::last_os_error());
-        }
+        let mmap = unsafe { memmap2::MmapMut::map_mut(&file)? };
 
         let region = Self {
             path,
             file,
-            raw_ptr: raw_ptr as *mut u8,
+            mmap,
             size,
         };
 
@@ -301,15 +275,19 @@ impl SharedTelemetryRegion {
     }
 
     pub fn header(&self) -> &ShmHeader {
-        unsafe { &*(self.raw_ptr as *const ShmHeader) }
+        unsafe { &*(self.mmap.as_ptr() as *const ShmHeader) }
     }
 
     pub fn header_mut(&self) -> &mut ShmHeader {
-        unsafe { &mut *(self.raw_ptr as *mut ShmHeader) }
+        unsafe { &mut *(self.mmap.as_ptr() as *mut u8 as *mut ShmHeader) }
+    }
+
+    pub fn size(&self) -> usize {
+        self.size
     }
 
     pub fn records_ptr(&self) -> *mut TelemetryRecord {
-        unsafe { self.raw_ptr.add(std::mem::size_of::<ShmHeader>()) as *mut TelemetryRecord }
+        unsafe { (self.mmap.as_ptr() as *mut u8).add(std::mem::size_of::<ShmHeader>()) as *mut TelemetryRecord }
     }
 
     pub fn push_event(
@@ -407,15 +385,5 @@ impl SharedTelemetryRegion {
             }
         }
         results
-    }
-}
-
-impl Drop for SharedTelemetryRegion {
-    fn drop(&mut self) {
-        if !self.raw_ptr.is_null() && self.raw_ptr != libc::MAP_FAILED as *mut u8 {
-            unsafe {
-                libc::munmap(self.raw_ptr as *mut libc::c_void, self.size);
-            }
-        }
     }
 }

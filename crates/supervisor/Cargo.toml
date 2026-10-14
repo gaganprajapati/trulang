@@ -11,5 +11,6 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }
+memmap2 = { workspace = true }
 
 [dev-dependencies]
