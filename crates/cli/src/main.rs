@@ -10,12 +10,18 @@ use vlang_supervisor::{MemorySupervisor, SharedTelemetryRegion};
 #[command(version = "0.1.0")]
 #[command(about = "Memory-Safe Language Compiler and Runtime", long_about = None)]
 struct Cli {
+    /// Print version information
+    #[arg(short = 'v', short_alias = 'V', long = "version", action = clap::ArgAction::Version)]
+    version: Option<bool>,
+
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Print version information
+    Version,
     /// Check source files for syntax, typing, and ownership errors
     Check {
         /// Source file to check
@@ -60,7 +66,21 @@ enum Commands {
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    match cli.command {
+    let command = match cli.command {
+        Some(cmd) => cmd,
+        None => {
+            use clap::CommandFactory;
+            let mut cmd = Cli::command();
+            cmd.print_help()?;
+            return Ok(());
+        }
+    };
+
+    match command {
+        Commands::Version => {
+            println!("vlang 0.1.0");
+            return Ok(());
+        }
         Commands::Check { file } => {
             let content = fs::read_to_string(&file)?;
             let file_str = file.to_str().unwrap_or("unknown");
