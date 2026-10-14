@@ -86,21 +86,41 @@ vlang --version
 # Output: vlang 0.1.0
 ```
 
-### Option 2: 1-Line Install via Cargo Git
+### Option 1: 1-Line Prebuilt Binary Install (macOS & Linux)
+The fastest way to install VLang. Automatically detects your OS and architecture, downloads the latest pre-compiled binary, and installs it to `/usr/local/bin` in seconds (**no Rust toolchain required**):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash
+```
+
+---
+
+### Option 2: Build & Install from Source (via Cargo)
+For developers contributing to the compiler or building on unsupported architectures:
+
+```bash
+# 1. Clone repository
+git clone https://github.com/gaganprajapati/vlang.git
+cd vlang
+
+# 2. Run unit and integration tests (25 test suites)
+cargo test
+
+# 3. Install the vlang CLI to ~/.cargo/bin
+cargo install --path crates/cli
+
+# 4. Verify installation
+vlang --version
+# Output: vlang 0.1.0
+```
+
+### Option 3: Install via Cargo Git
 Install directly without manually cloning the repository:
 ```bash
 cargo install --git https://github.com/gaganprajapati/vlang.git vlang_cli
 ```
 
-### Option 3: Automated Install Script (macOS & Linux)
-Runs a self-contained installation script that builds and installs `vlang` to `~/.cargo/bin`:
-```bash
-curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash
-```
-*(Or run `./scripts/install.sh` from inside a cloned repository).*
-
-### Option 4: Build Standalone Release Binary
-If you prefer not to install globally to `~/.cargo/bin`:
+### Option 4: Local Release Build (No Global Install)
 ```bash
 git clone https://github.com/gaganprajapati/vlang.git
 cd vlang
@@ -112,10 +132,28 @@ cargo build --release
 
 ---
 
-### 📦 Distribution Roadmap
-- [ ] Homebrew tap (`brew install vlang`) — in progress
-- [ ] Pre-compiled standalone GitHub Release tarballs for macOS (ARM64/x86_64) and Linux
-- [ ] Official Docker image on GitHub Container Registry (`ghcr.io/gaganprajapati/vlang`)
+## 🚢 How to Release a New Version
+
+We have set up an automated GitHub Actions CI/CD pipeline (`.github/workflows/release.yml`) for cross-platform binary releases.
+
+To release a new version of VLang:
+
+1. **Commit your changes and create a version tag**:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+
+2. **Automated Cross-Compilation**:
+   GitHub Actions will automatically trigger and compile release binaries for:
+   - **macOS ARM64** (Apple Silicon M1/M2/M3/M4) -> `vlang-darwin-arm64.tar.gz`
+   - **macOS x86_64** (Intel) -> `vlang-darwin-x86_64.tar.gz`
+   - **Linux x86_64** (Ubuntu / Debian / CentOS / Alpine) -> `vlang-linux-x86_64.tar.gz`
+   - **Windows x64** -> `vlang-windows-x64.zip`
+
+3. **Automatic GitHub Release**:
+   All binaries and SHA-256 checksums are automatically published to [GitHub Releases](https://github.com/gaganprajapati/vlang/releases).
+   Once published, any user running `curl ... | bash` will instantly download the prebuilt binary in 2 seconds!
 
 ---
 
