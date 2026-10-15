@@ -57,6 +57,20 @@ enum Commands {
         #[arg(long)]
         no_open: bool,
     },
+    /// Launch the integrated Language Server Protocol (LSP) daemon for IDE integration
+    Lsp {
+        /// Run LSP server over standard input and output (default mode)
+        #[arg(long, default_value_t = true)]
+        stdio: bool,
+    },
+    /// Format VLang source files according to language conventions
+    Fmt {
+        /// Source file to format
+        file: PathBuf,
+        /// Overwrite file in-place with formatted output
+        #[arg(short, long)]
+        write: bool,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -224,6 +238,22 @@ fn main() -> anyhow::Result<()> {
                 let _ = std::process::Command::new("open").arg(&docs_path).spawn();
                 #[cfg(target_os = "linux")]
                 let _ = std::process::Command::new("xdg-open").arg(&docs_path).spawn();
+            }
+        }
+        Commands::Lsp { stdio: _ } => {
+            let stdin = std::io::stdin();
+            let stdout = std::io::stdout();
+            let mut server = vlang_lsp::LanguageServer::new();
+            server.run(stdin.lock(), stdout.lock())?;
+        }
+        Commands::Fmt { file, write } => {
+            let content = fs::read_to_string(&file)?;
+            let formatted = vlang_lsp::Formatter::format(&content);
+            if write {
+                fs::write(&file, formatted)?;
+                println!("Formatted {}", file.display());
+            } else {
+                print!("{}", formatted);
             }
         }
         Commands::Bench { file, requests, concurrency, leak_check } => {

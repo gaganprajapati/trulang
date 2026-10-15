@@ -490,6 +490,7 @@ dependencies = [
  "clap",
  "libc",
  "vlang_compiler",
+ "vlang_lsp",
  "vlang_supervisor",
  "vlang_syntax",
  "vlang_vm",
@@ -501,6 +502,17 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "thiserror 2.0.21",
+ "vlang_syntax",
+]
+
+[[package]]
+name = "vlang_lsp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "vlang_compiler",
  "vlang_syntax",
 ]
 

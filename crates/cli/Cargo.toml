@@ -13,6 +13,7 @@ vlang_syntax = { path = "../syntax" }
 vlang_compiler = { path = "../compiler" }
 vlang_vm = { path = "../vm" }
 vlang_supervisor = { path = "../supervisor" }
+vlang_lsp = { path = "../lsp" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }
