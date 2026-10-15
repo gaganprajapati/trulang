@@ -263,6 +263,22 @@ cargo test --test load_and_leak_test -- --nocapture
 
 ---
 
+## 🤝 Contributing
+
+We welcome contributions to VLang! Whether you're fixing a bug, adding new standard library functions, or improving documentation, check out our contributor guide:
+
+👉 [**CONTRIBUTING.md**](CONTRIBUTING.md) — Setup your local toolchain, architecture deep-dive, clean code standards, and PR guidelines.
+
+---
+
+## 📜 Changelog
+
+All notable changes, releases, and version upgrade notes are documented in:
+
+👉 [**CHANGELOG.md**](CHANGELOG.md)
+
+---
+
 ## 📄 License
 
 Dual-licensed under either of:
