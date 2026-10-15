@@ -14,6 +14,7 @@ vlang_compiler = { path = "../compiler" }
 vlang_vm = { path = "../vm" }
 vlang_supervisor = { path = "../supervisor" }
 vlang_lsp = { path = "../lsp" }
+vlang_ffi = { path = "../ffi" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }

@@ -115,11 +115,42 @@ impl Parser {
                 let span = start_span.merge(self.previous_span());
                 Ok(Spanned::new(Declaration::Function(func), span))
             }
+            TokenKind::Import => {
+                let import_decl = self.parse_import_decl()?;
+                let span = start_span.merge(self.previous_span());
+                Ok(Spanned::new(Declaration::Import(import_decl), span))
+            }
             _ => Err(SyntaxError::new(
-                format!("Expected declaration (service, fn), found '{}'", self.peek()),
+                format!("Expected declaration (service, fn, import), found '{}'", self.peek()),
                 start_span,
             )),
         }
+    }
+
+    fn parse_import_decl(&mut self) -> Result<ImportDecl, SyntaxError> {
+        self.expect(TokenKind::Import)?;
+        let path = match self.peek().clone() {
+            TokenKind::StringLit(s) => {
+                self.advance();
+                s
+            }
+            TokenKind::Ident(s) => {
+                self.advance();
+                s
+            }
+            found => {
+                return Err(SyntaxError::new(
+                    format!("Expected import path string or identifier, found '{}'", found),
+                    self.current_span(),
+                ));
+            }
+        };
+
+        self.expect(TokenKind::As)?;
+        let (alias, _) = self.expect_ident()?;
+        self.expect(TokenKind::Semicolon)?;
+
+        Ok(ImportDecl { path, alias })
     }
 
     fn parse_service_decl(&mut self) -> Result<ServiceDecl, SyntaxError> {

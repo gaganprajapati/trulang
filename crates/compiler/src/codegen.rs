@@ -80,6 +80,9 @@ impl CodeGenerator {
                 Declaration::Service(svc) => self.compile_service(svc)?,
                 Declaration::Function(func) => self.compile_function(func)?,
                 Declaration::Struct(_) => {}
+                Declaration::Import(imp) => {
+                    self.chunk.imports.insert(imp.alias.clone(), imp.path.clone());
+                }
             }
         }
         Ok(())

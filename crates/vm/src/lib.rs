@@ -323,4 +323,32 @@ service AutoPromoteService {
         // Check that Region B received the persistent cache allocation
         assert!(vm.region_b.live_objects.load(std::sync::atomic::Ordering::Relaxed) > 0);
     }
+
+    #[test]
+    fn test_end_to_end_ffi_import_and_handle_execution() {
+        let source = r#"
+import "rust:vlang_std_pg" as db;
+import "std::json" as json;
+
+fn main() -> string {
+    let pool = db.create_pool("postgres://localhost/testdb");
+    let user = pool.query_user(42);
+    let serialized = json.stringify(user);
+    return serialized;
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compile failed");
+
+        let mut vm = VirtualMachine::new();
+        let res = vm.execute(&chunk).expect("Execution failed");
+        match res {
+            Value::String(s) => {
+                assert!(s.contains("\"id\":42"));
+                assert!(s.contains("\"name\":\"Alice Smith\""));
+                assert!(s.contains("\"email\":\"alice@example.com\""));
+            }
+            other => panic!("Expected String result from json.stringify, got {:?}", other),
+        }
+    }
 }

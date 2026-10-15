@@ -1016,6 +1016,14 @@
         <a href="#cli-check" class="sidebar-link">vlang check <span class="tag tag-cli">CLI</span></a>
         <a href="#cli-run" class="sidebar-link">vlang run <span class="tag tag-cli">CLI</span></a>
         <a href="#cli-monitor" class="sidebar-link">vlang monitor <span class="tag tag-cli">CLI</span></a>
+        <a href="#cli-lsp" class="sidebar-link">vlang lsp <span class="tag tag-cli">LSP</span></a>
+        <a href="#cli-fmt" class="sidebar-link">vlang fmt <span class="tag tag-cli">FMT</span></a>
+      </div>
+
+      <div class="sidebar-group">
+        <div class="sidebar-title">Ecosystem & FFI Interop</div>
+        <a href="#spec-ffi" class="sidebar-link">Safe FFI Bridge <span class="tag tag-decl">FFI</span></a>
+        <a href="#spec-stdlib" class="sidebar-link">Standard Library <span class="tag tag-type">STD</span></a>
       </div>
 
       <div class="sidebar-group">
@@ -2089,6 +2097,33 @@ Attaching Memory Supervisor to telemetry segment: "/tmp/vlang_shm_7305.dat"
 ╚══════════════════════════════════════════════════════════════════════════╝</code></pre>
           </div>
         </div>
+
+        <div class="spec-card expanded" id="cli-lsp">
+          <div class="spec-header" onclick="toggleCard('cli-lsp')">
+            <span class="method-badge badge-cli">LSP</span>
+            <span class="spec-name">vlang lsp [--stdio]</span>
+            <span class="spec-desc">Starts the integrated Language Server Protocol JSON-RPC daemon</span>
+          </div>
+          <div class="spec-body">
+            <pre><code>$ vlang lsp --stdio
+Starting VLang Language Server daemon (JSON-RPC 2.0 over stdio)...</code></pre>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+              Compiled directly into the core binary. Eliminates toolchain divergence and provides live syntax checking, type diagnostics with compiler actionable hints (e.g. suggesting <code>let mut</code>), hover tooltips, and jump-to-definition for VS Code, Cursor, Neovim, and Zed.
+            </p>
+          </div>
+        </div>
+
+        <div class="spec-card expanded" id="cli-fmt">
+          <div class="spec-header" onclick="toggleCard('cli-fmt')">
+            <span class="method-badge badge-cli">FMT</span>
+            <span class="spec-name">vlang fmt &lt;file.vl&gt; [--write]</span>
+            <span class="spec-desc">Automated code formatting engine enforcing 4-space indentation and clean structure</span>
+          </div>
+          <div class="spec-body">
+            <pre><code>$ vlang fmt examples/user_service.vl --write
+✓ Formatted examples/user_service.vl</code></pre>
+          </div>
+        </div>
       </section>
 
       <!-- 7. Production Hardening & Reliability Guarantees -->
@@ -2202,10 +2237,98 @@ for _ in 0..16 {
         </div>
       </section>
 
-      <!-- 8. Multi-Language Performance Benchmarks -->
+      <!-- 8. Phase 2: Ecosystem Interop & Safe FFI Bridge -->
+      <section id="ecosystem" style="margin-top: 3.5rem;">
+        <div class="section-header">
+          <h2>8. Ecosystem Interop & Standard Library (Phase 2)</h2>
+          <span class="pill pill-blue">Zero-Mailbox Starvation FFI</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
+          Phase 2 bridges VLang to the broader ecosystem through a high-performance, memory-safe FFI bridge and standard library modules. Foreign blocking calls are offloaded to an asynchronous background worker pool, preventing database and network queries from starving the single-threaded actor mailbox, while Region A arena marshaling ensures foreign data strictly respects execution memory budgets.
+        </p>
+
+        <!-- Safe FFI Bridge Card -->
+        <div class="spec-card expanded" id="spec-ffi">
+          <div class="spec-header" onclick="toggleCard(this)">
+            <span class="method-badge badge-decl">FFI_BRIDGE</span>
+            <span class="spec-endpoint">Safe Rust/C Foreign Function Interface (`crates/ffi`)</span>
+            <span class="spec-desc">Hybrid worker pool offloading, opaque external handles, and deterministic RAII</span>
+            <span class="chevron">▼</span>
+          </div>
+          <div class="spec-body">
+            <h4 style="color: #38bdf8; margin-top: 0;">1. Hybrid Worker Thread Pool Architecture</h4>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">
+              In high-throughput actor systems, executing blocking I/O (e.g. PostgreSQL network socket reads or heavy cryptographic hashing) directly inside the actor thread starves incoming requests. VLang's <code>WorkerPool</code> offloads blocking native calls to a thread pool with zero thread leakage, keeping the actor mailbox responsive:
+            </p>
+            <pre><code class="language-vlang">import "rust:vlang_std_pg" as db;
+
+service UserService {
+    memory_budget request = 64 KB;
+    // Database connection pool held as an opaque ExternalHandle in actor state
+    let pool = db.create_pool("postgres://localhost/users");
+
+    fn handle(user_id: i64) -> Response {
+        // Query is offloaded to WorkerPool; actor mailbox never blocks
+        let user = pool.query_user(user_id);
+        return Response.json(user);
+    }
+}</code></pre>
+            <h4 style="color: #34d399; margin-top: 1.5rem;">2. Deterministic RAII Destructors (`ExternalHandle&lt;T&gt;`)</h4>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">
+              Opaque native handles (sockets, thread pools, file descriptors, database connections) are wrapped in <code>ExternalHandle&lt;T&gt;</code>. When the enclosing actor terminates or local variable drops, the Rust/C destructor runs deterministically, eliminating resource leaks.
+            </p>
+            <h4 style="color: #fbbf24; margin-top: 1.5rem;">3. Region A Arena Marshaling</h4>
+            <p style="font-size: 0.9rem; color: var(--text-muted);">
+              Foreign DTOs, JSON payloads, and primitive types returned by native code are marshaled directly into the request's Region A bump arena. If a foreign query returns a payload exceeding the actor's memory budget, VLang halts the request with <code>VmError::MemoryExceeded</code>, guaranteeing that foreign code cannot bypass memory limits.
+            </p>
+          </div>
+        </div>
+
+        <!-- Standard Library Modules Card -->
+        <div class="spec-card expanded" id="spec-stdlib">
+          <div class="spec-header" onclick="toggleCard(this)">
+            <span class="method-badge badge-type">STDLIB</span>
+            <span class="spec-endpoint">Standard Library Modules (`std::json`, `std::http`, `std::sql`)</span>
+            <span class="spec-desc">Zero-copy, arena-aware standard drivers and serializers</span>
+            <span class="chevron">▼</span>
+          </div>
+          <div class="spec-body">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+              <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
+                <h4 style="color: #38bdf8; margin: 0 0 0.5rem 0;">std::json</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Fast JSON parser and serializer streaming directly into Region A.</p>
+                <pre><code class="language-vlang">import "std::json" as json;
+
+let obj = json.parse("{\"status\": \"ok\"}");
+let raw = json.stringify(obj);</code></pre>
+              </div>
+
+              <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
+                <h4 style="color: #34d399; margin: 0 0 0.5rem 0;">std::http</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Non-blocking HTTP client offloaded to background workers.</p>
+                <pre><code class="language-vlang">import "std::http" as http;
+
+let resp = http.get("https://api.vlang.org/v1/ping");
+let data = http.post("https://api.vlang.org/login", payload);</code></pre>
+              </div>
+
+              <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
+                <h4 style="color: #fbbf24; margin: 0 0 0.5rem 0;">std::sql / rust:vlang_std_pg</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Thread-safe connection pooling for relational databases.</p>
+                <pre><code class="language-vlang">import "rust:vlang_std_pg" as db;
+
+let pool = db.create_pool("postgres://localhost/app");
+let row = pool.query_user(1001);</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 9. Multi-Language Performance Benchmarks -->
       <section id="benchmarks" style="margin-top: 3.5rem;">
         <div class="section-header">
-          <h2>8. Multi-Language Performance Benchmarks</h2>
+          <h2>9. Multi-Language Performance Benchmarks</h2>
           <span class="pill pill-green">Empirical Head-to-Head Testing</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
@@ -2628,10 +2751,10 @@ for _ in 0..16 {
         </div>
       </section>
 
-      <!-- 9. Live Interactive Playground -->
+      <!-- 10. Live Interactive Playground -->
       <section id="playground" style="margin-top: 3.5rem;">
         <div class="section-header">
-          <h2>9. Interactive Language Playground</h2>
+          <h2>10. Interactive Language Playground</h2>
           <span class="pill pill-blue">Simulated VM in Browser</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.95rem;">

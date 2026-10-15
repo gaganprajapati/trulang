@@ -2,6 +2,31 @@ use std::collections::HashMap;
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
+pub trait ExternalResource: Send + Sync + fmt::Debug + 'static {
+    fn type_name(&self) -> &'static str;
+    fn call_method(&self, method: &str, _args: &[Value]) -> Result<Value, String> {
+        Err(format!("Method '{}' not found on opaque handle '{}'", method, self.type_name()))
+    }
+}
+
+pub struct ExternalHandle {
+    pub id: u64,
+    pub type_name: String,
+    pub resource: Arc<dyn ExternalResource>,
+}
+
+impl fmt::Debug for ExternalHandle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ExternalHandle {{ id: {}, type_name: {:?}, resource: {:?} }}", self.id, self.type_name, self.resource)
+    }
+}
+
+impl PartialEq for ExternalHandle {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id || Arc::ptr_eq(&self.resource, &other.resource)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Value {
     Null,
@@ -12,6 +37,7 @@ pub enum Value {
     Array(Vec<Value>),
     Map(Arc<Mutex<HashMap<String, Value>>>),
     Object(Arc<Mutex<HashMap<String, Value>>>),
+    Handle(Arc<ExternalHandle>),
 }
 
 impl PartialEq for Value {
@@ -25,6 +51,7 @@ impl PartialEq for Value {
             (Value::Array(a), Value::Array(b)) => a == b,
             (Value::Map(a), Value::Map(b)) => Arc::ptr_eq(a, b),
             (Value::Object(a), Value::Object(b)) => Arc::ptr_eq(a, b),
+            (Value::Handle(a), Value::Handle(b)) => a == b,
             _ => false,
         }
     }
@@ -41,6 +68,7 @@ impl Value {
             Value::Array(a) => !a.is_empty(),
             Value::Map(m) => !m.lock().unwrap().is_empty(),
             Value::Object(_) => true,
+            Value::Handle(_) => true,
         }
     }
 
@@ -50,6 +78,14 @@ impl Value {
 
     pub fn new_object() -> Self {
         Value::Object(Arc::new(Mutex::new(HashMap::new())))
+    }
+
+    pub fn new_handle<R: ExternalResource>(id: u64, type_name: impl Into<String>, resource: R) -> Self {
+        Value::Handle(Arc::new(ExternalHandle {
+            id,
+            type_name: type_name.into(),
+            resource: Arc::new(resource),
+        }))
     }
 }
 
@@ -97,6 +133,7 @@ impl fmt::Display for Value {
                 }
                 write!(f, "}}")
             }
+            Value::Handle(h) => write!(f, "<Handle: {} #{}>", h.type_name, h.id),
         }
     }
 }
@@ -160,6 +197,7 @@ pub struct Chunk {
     pub code: Vec<Opcode>,
     pub constants: Vec<Value>,
     pub lines: Vec<usize>,
+    pub imports: HashMap<String, String>,
 }
 
 impl Chunk {

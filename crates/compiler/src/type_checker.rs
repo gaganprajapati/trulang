@@ -25,6 +25,9 @@ impl TypeChecker {
                 Declaration::Service(svc) => self.check_service(svc, decl.span)?,
                 Declaration::Function(func) => self.check_function(func, decl.span)?,
                 Declaration::Struct(_) => {}
+                Declaration::Import(imp) => {
+                    self.symbols.define(&imp.alias, SemType::Any, false, false, decl.span)?;
+                }
             }
         }
         Ok(())

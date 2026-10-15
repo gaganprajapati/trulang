@@ -76,6 +76,7 @@ pub fn detect_value_cycles(val: &Value, visited: &mut std::collections::HashSet<
             }
             false
         }
+        Value::Handle(_) => false,
         _ => false,
     }
 }
@@ -85,6 +86,8 @@ pub struct VirtualMachine {
     pub frames: Vec<CallFrame>,
     pub region_a: RegionAAllocator,
     pub region_b: Arc<RegionBAllocator>,
+    pub ffi_registry: Arc<vlang_ffi::FfiRegistry>,
+    pub worker_pool: Arc<vlang_ffi::WorkerPool>,
     pub output_log: Vec<String>,
     pub telemetry: Option<Arc<vlang_supervisor::SharedTelemetryRegion>>,
     pub instruction_count: u64,
@@ -102,6 +105,8 @@ impl VirtualMachine {
             frames: Vec::with_capacity(64),
             region_a: RegionAAllocator::new(16 * 1024 * 1024), // default 16MB Region A
             region_b: Arc::new(RegionBAllocator::new(512 * 1024 * 1024)), // default 512MB Region B
+            ffi_registry: Arc::new(vlang_ffi::FfiRegistry::new()),
+            worker_pool: Arc::new(vlang_ffi::WorkerPool::default()),
             output_log: Vec::new(),
             telemetry: None,
             instruction_count: 0,
@@ -116,6 +121,8 @@ impl VirtualMachine {
             frames: Vec::with_capacity(64),
             region_a: RegionAAllocator::new(request_budget),
             region_b: Arc::new(RegionBAllocator::new(persistent_budget)),
+            ffi_registry: Arc::new(vlang_ffi::FfiRegistry::new()),
+            worker_pool: Arc::new(vlang_ffi::WorkerPool::default()),
             output_log: Vec::new(),
             telemetry: None,
             instruction_count: 0,
@@ -134,6 +141,8 @@ impl VirtualMachine {
             frames: Vec::with_capacity(64),
             region_a: RegionAAllocator::with_ceiling(request_budget, max_request_budget),
             region_b: Arc::new(RegionBAllocator::new(persistent_budget)),
+            ffi_registry: Arc::new(vlang_ffi::FfiRegistry::new()),
+            worker_pool: Arc::new(vlang_ffi::WorkerPool::default()),
             output_log: Vec::new(),
             telemetry: None,
             instruction_count: 0,
@@ -186,6 +195,8 @@ impl VirtualMachine {
             frames: Vec::with_capacity(64),
             region_a: RegionAAllocator::new(request_budget),
             region_b,
+            ffi_registry: Arc::new(vlang_ffi::FfiRegistry::new()),
+            worker_pool: Arc::new(vlang_ffi::WorkerPool::default()),
             output_log: Vec::new(),
             telemetry: None,
             instruction_count: 0,
@@ -211,6 +222,10 @@ impl VirtualMachine {
     }
 
     pub fn execute(&mut self, chunk: &Chunk) -> Result<Value, VmError> {
+        for (alias, path) in &chunk.imports {
+            self.ffi_registry.register_alias(alias, path);
+        }
+
         self.frames.push(CallFrame::new(0, 0));
 
         while let Some(frame) = self.frames.last_mut() {
@@ -333,6 +348,15 @@ impl VirtualMachine {
                     args.reverse();
 
                     match target {
+                        Value::Handle(handle) => {
+                            let res = handle
+                                .resource
+                                .call_method(method, &args)
+                                .map_err(VmError::InvalidOperand)?;
+                            let bytes = vlang_ffi::estimate_value_size(&res);
+                            self.allocate_region_a(bytes)?;
+                            self.stack.push(res);
+                        }
                         Value::Map(m) => {
                             match method.as_str() {
                                 "insert" => {
@@ -362,6 +386,15 @@ impl VirtualMachine {
                                 }
                                 _ => self.stack.push(Value::Null),
                             }
+                        }
+                        Value::String(ref s) if self.ffi_registry.has_module(s) => {
+                            let res = self
+                                .ffi_registry
+                                .invoke(s, method, &args, Some(&self.worker_pool))
+                                .map_err(|e| VmError::InvalidOperand(e.to_string()))?;
+                            let bytes = vlang_ffi::estimate_value_size(&res);
+                            self.allocate_region_a(bytes)?;
+                            self.stack.push(res);
                         }
                         _ => {
                             // Mock services / builtins: database.find_user, Response.json, Response.error
@@ -631,6 +664,7 @@ impl VirtualMachine {
                         Value::Array(a) => a.len() * 16 + 24,
                         Value::Map(m) => m.lock().unwrap().len() * 32 + 32,
                         Value::Object(o) => o.lock().unwrap().len() * 32 + 32,
+                        Value::Handle(_) => 32,
                         _ => 16,
                     };
                     self.region_b.allocate(size).map_err(|e| {

@@ -490,6 +490,7 @@ dependencies = [
  "clap",
  "libc",
  "vlang_compiler",
+ "vlang_ffi",
  "vlang_lsp",
  "vlang_supervisor",
  "vlang_syntax",
@@ -502,6 +503,17 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "thiserror 2.0.21",
+ "vlang_syntax",
+]
+
+[[package]]
+name = "vlang_ffi"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "vlang_compiler",
  "vlang_syntax",
 ]
 
@@ -546,6 +558,7 @@ dependencies = [
  "libc",
  "thiserror 2.0.21",
  "vlang_compiler",
+ "vlang_ffi",
  "vlang_supervisor",
  "vlang_syntax",
 ]

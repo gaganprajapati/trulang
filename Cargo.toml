@@ -6,6 +6,7 @@ members = [
     "crates/vm",
     "crates/supervisor",
     "crates/lsp",
+    "crates/ffi",
     "crates/cli",
 ]
 

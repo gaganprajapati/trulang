@@ -10,15 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Language Server Protocol (`crates/lsp`)**:
+  - Integrated `vlang lsp --stdio` subcommand in core CLI binary for seamless IDE connectivity (VS Code, Cursor, Neovim, Zed) with zero extra toolchain downloads.
+  - Live syntax and typecheck diagnostics with actionable compiler hints (e.g. suggesting `let mut` on illegal mutations).
+  - Rich hover tooltips for services, actor fields, memory budgets, functions, and imported modules.
+  - Document jump-to-definition across service declarations, fields, methods, functions, and imports.
+  - Automated code formatter (`vlang fmt <file> [--write]`) enforcing consistent 4-space indentation and clean brace structure.
+- **Safe Rust/C FFI Bridge Layer (`crates/ffi`)**:
+  - `import "rust:pkg" as mod;` syntax for integrating native libraries and standard drivers.
+  - **Hybrid Background Worker Pool (`WorkerPool`)**: Offloads blocking foreign I/O (database queries, network sockets, heavy crypto) to a dedicated worker thread pool, guaranteeing the single-threaded actor mailbox is never starved.
+  - **Deterministic RAII Destructors (`ExternalHandle<T>`)**: Opaque handles (e.g. PostgreSQL connection pools, sockets) with automatic cleanup when actor state or variables go out of scope.
+  - **Region A Arena Marshaling**: Marshals foreign return values directly into Region A bump memory, strictly enforcing memory budgets so foreign payloads cannot bypass memory quotas.
+  - **Standard Library Modules**:
+    - `std::json`: Fast JSON parser (`json.parse`) and serializer (`json.stringify`) streaming into VLang values.
+    - `std::http`: High-performance HTTP client (`http.get`, `http.post`) offloaded to worker pool.
+    - `std::sql` & `rust:vlang_std_pg`: Universal connection pooling abstractions (`db.create_pool`, `pool.query_user`).
 - **Elastic Burst Arenas**: Support tiered memory budgets (`memory_budget request = 16 MB max 64 MB;`) with burst headroom and `ArenaBurst = 5` Seqlock telemetry warnings, while retaining strict backward-compatible caps when `max` is omitted.
 - **Compiler Auto-Promotion (`persist` Inference)**: Transparent compiler pass that automatically injects `Opcode::Persist` when writing transient data into persistent actor fields or mutating persistent maps (`cache.insert(k, v)`), eliminating manual `persist()` boilerplate while keeping explicit calls valid.
 - **Enhanced CLI Diagnostics**: `vlang run` reports base budget, max ceiling, and runtime elastic burst count.
 - **Primitive Type Aliases**: Added parser support for `String`, `Int`, `Float`, `Bool` capitalized type names alongside standard lowercase tokens.
 - **New Example**: Added `examples/elastic_burst.vl` demonstrating elastic burst allocation and auto-promotion.
 
-### Planned (Phase 2: Tooling & Ecosystem)
-- **Language Server Protocol (`vlang-lsp`)**: Real-time syntax and type diagnostics, hover definitions, jump-to-definition, and auto-complete for modern IDEs (VS Code, Cursor, Neovim).
-- **Rust/C FFI Bridge**: Zero-cost FFI module bridge (`import "rust:pkg" as mod`) to leverage mature database and messaging drivers.
+### Planned (Phase 3: Production & JIT Engine)
+- **Native AOT & JIT Engine**: Cranelift-powered dual-mode compilation translating VLang bytecode to standalone Mach-O, ELF, and PE native binaries closing throughput gap to within 90-95% of C++/Rust.
 
 ---
 

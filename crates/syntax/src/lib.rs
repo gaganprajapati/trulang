@@ -143,4 +143,34 @@ service InvalidCeilingService {
         let err = result.unwrap_err();
         assert!(err.message.contains("Ceiling budget") && err.message.contains("cannot be less than base budget"));
     }
+
+    #[test]
+    fn test_parse_import_declaration() {
+        let source = r#"
+import "rust:vlang_std_pg" as db;
+import "std::json" as json;
+
+service AccountService {
+    fn handle() -> i64 {
+        return 0;
+    }
+}
+"#;
+        let program = parse(source).expect("Failed to parse imports");
+        assert_eq!(program.declarations.len(), 3);
+        match &program.declarations[0].node {
+            Declaration::Import(imp) => {
+                assert_eq!(imp.path, "rust:vlang_std_pg");
+                assert_eq!(imp.alias, "db");
+            }
+            _ => panic!("Expected Import declaration"),
+        }
+        match &program.declarations[1].node {
+            Declaration::Import(imp) => {
+                assert_eq!(imp.path, "std::json");
+                assert_eq!(imp.alias, "json");
+            }
+            _ => panic!("Expected Import declaration"),
+        }
+    }
 }

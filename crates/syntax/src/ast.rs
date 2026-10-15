@@ -10,6 +10,13 @@ pub enum Declaration {
     Service(ServiceDecl),
     Function(FunctionDecl),
     Struct(StructDecl),
+    Import(ImportDecl),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ImportDecl {
+    pub path: String,
+    pub alias: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]

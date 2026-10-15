@@ -274,6 +274,8 @@ impl<'a> Lexer<'a> {
             "request" => TokenKind::Request,
             "persistent" => TokenKind::Persistent,
             "max" => TokenKind::Max,
+            "import" => TokenKind::Import,
+            "as" => TokenKind::As,
             "true" => TokenKind::True,
             "false" => TokenKind::False,
             "null" => TokenKind::Null,

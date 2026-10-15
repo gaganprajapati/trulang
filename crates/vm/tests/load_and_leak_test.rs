@@ -247,3 +247,61 @@ fn handle(req: i64) -> i64 {
     assert!(rejected > 0, "Expected backpressure shedding when 500 requests flood capacity 10 mailbox");
     assert_eq!(accepted + rejected, num_threads * reqs_per_thread);
 }
+
+#[test]
+fn test_concurrent_ffi_offloaded_database_queries_zero_mailbox_starvation() {
+    let source = r#"
+import "rust:vlang_std_pg" as db;
+
+fn handle(user_id: i64) -> i64 {
+    let pool = db.create_pool("postgres://localhost/users");
+    let user = pool.query_user(user_id);
+    return user_id * 2;
+}
+"#;
+    let prog = parse(source).expect("Parse failed");
+    let chunk = compile(&prog).expect("Compile failed");
+
+    let actor = ServiceActor::new("UserService", 64 * 1024, 1024 * 1024, chunk)
+        .with_mailbox_capacity(500);
+
+    let (mailbox, _worker) = actor.spawn_mailbox();
+    let num_threads = 4;
+    let reqs_per_thread = 25;
+    let success_count = Arc::new(AtomicUsize::new(0));
+
+    let start = Instant::now();
+    let handles: Vec<_> = (0..num_threads)
+        .map(|t| {
+            let mailbox_clone = mailbox.clone();
+            let success = Arc::clone(&success_count);
+
+            std::thread::spawn(move || {
+                let mut receivers = Vec::new();
+                for i in 0..reqs_per_thread {
+                    let user_id = (t * 100 + i + 1) as i64;
+                    if let Ok(rx) = mailbox_clone.try_send(Value::Int(user_id)) {
+                        receivers.push((user_id, rx));
+                    }
+                }
+                for (user_id, rx) in receivers {
+                    if let Ok(Ok(res)) = rx.recv() {
+                        if res == Value::Int(user_id * 2) {
+                            success.fetch_add(1, Ordering::Relaxed);
+                        }
+                    }
+                }
+            })
+        })
+        .collect();
+
+    for h in handles {
+        h.join().unwrap();
+    }
+
+    let elapsed = start.elapsed();
+    let total_success = success_count.load(Ordering::Relaxed);
+    println!("\n=== Concurrent FFI Database Query Actor Mailbox Test ===");
+    println!("Processed {} concurrent offloaded FFI queries in {:?}", total_success, elapsed);
+    assert_eq!(total_success, num_threads * reqs_per_thread);
+}

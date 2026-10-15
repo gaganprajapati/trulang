@@ -153,6 +153,19 @@ impl Analyzer {
                         range: None,
                     });
                 }
+                Declaration::Import(imp) if imp.alias == target_word => {
+                    let doc = format!(
+                        "### Module `{}`\n\nForeign import from `{}` via Safe Rust/C FFI Bridge.",
+                        imp.alias, imp.path
+                    );
+                    return Some(Hover {
+                        contents: MarkupContent {
+                            kind: "markdown".into(),
+                            value: doc,
+                        },
+                        range: None,
+                    });
+                }
                 _ => {}
             }
         }
@@ -216,6 +229,12 @@ impl Analyzer {
                     }
                 }
                 Declaration::Function(func) if func.name == target_word => {
+                    return Some(Location {
+                        uri: uri.to_string(),
+                        range: span_to_range(&decl.span, content),
+                    });
+                }
+                Declaration::Import(imp) if imp.alias == target_word => {
                     return Some(Location {
                         uri: uri.to_string(),
                         range: span_to_range(&decl.span, content),
