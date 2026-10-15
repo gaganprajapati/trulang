@@ -10,9 +10,9 @@ pub use vm::{VirtualMachine, VmError};
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vlang_compiler::compile;
-    use vlang_compiler::bytecode::{Opcode, Value};
-    use vlang_syntax::parse;
+    use trulang_compiler::compile;
+    use trulang_compiler::bytecode::{Opcode, Value};
+    use trulang_syntax::parse;
 
     #[test]
     fn test_vm_execute_arithmetic() {
@@ -144,8 +144,8 @@ fn handle(req: i64) -> i64 {
 
     #[test]
     fn test_vm_arithmetic_overflow_min_div_neg_one() {
-        use vlang_compiler::bytecode::Opcode;
-        let mut chunk = vlang_compiler::bytecode::Chunk::new();
+        use trulang_compiler::bytecode::Opcode;
+        let mut chunk = trulang_compiler::bytecode::Chunk::new();
         // i64::MIN / -1 would cause CPU hardware exception without checked arithmetic
         chunk.code.push(Opcode::LoadInt(i64::MIN));
         chunk.code.push(Opcode::LoadInt(-1));
@@ -163,8 +163,8 @@ fn handle(req: i64) -> i64 {
 
     #[test]
     fn test_vm_arithmetic_overflow_addition() {
-        use vlang_compiler::bytecode::Opcode;
-        let mut chunk = vlang_compiler::bytecode::Chunk::new();
+        use trulang_compiler::bytecode::Opcode;
+        let mut chunk = trulang_compiler::bytecode::Chunk::new();
         chunk.code.push(Opcode::LoadInt(i64::MAX));
         chunk.code.push(Opcode::LoadInt(1));
         chunk.code.push(Opcode::Add);
@@ -203,7 +203,7 @@ fn main() -> i64 {
     fn test_vm_persist_detects_and_rejects_cycles() {
         use std::collections::HashMap;
         use std::sync::{Arc, Mutex};
-        use vlang_compiler::bytecode::Opcode;
+        use trulang_compiler::bytecode::Opcode;
 
         // Construct cyclic data structure: map_a contains map_b, map_b contains map_a
         let map_a = Arc::new(Mutex::new(HashMap::new()));
@@ -212,7 +212,7 @@ fn main() -> i64 {
         map_a.lock().unwrap().insert("b".to_string(), Value::Map(Arc::clone(&map_b)));
         map_b.lock().unwrap().insert("a".to_string(), Value::Map(Arc::clone(&map_a)));
 
-        let mut chunk = vlang_compiler::bytecode::Chunk::new();
+        let mut chunk = trulang_compiler::bytecode::Chunk::new();
         chunk.constants.push(Value::Map(map_a));
         chunk.code.push(Opcode::LoadConst(0));
         chunk.code.push(Opcode::Persist);
@@ -227,7 +227,7 @@ fn main() -> i64 {
 
     #[test]
     fn test_service_actor_mailbox_backpressure_rejection() {
-        let mut chunk = vlang_compiler::bytecode::Chunk::new();
+        let mut chunk = trulang_compiler::bytecode::Chunk::new();
         chunk.code.push(Opcode::LoadInt(42));
         chunk.code.push(Opcode::Return);
 
@@ -244,10 +244,10 @@ fn main() -> i64 {
     #[test]
     fn test_vm_elastic_budget_burst_and_telemetry() {
         use std::sync::Arc;
-        use vlang_supervisor::{SharedTelemetryRegion, TelemetryEventType};
+        use trulang_supervisor::{SharedTelemetryRegion, TelemetryEventType};
 
         let temp_dir = std::env::temp_dir();
-        let shm_path = temp_dir.join(format!("vlang_vm_burst_test_{}.dat", std::process::id()));
+        let shm_path = temp_dir.join(format!("trulang_vm_burst_test_{}.dat", std::process::id()));
         let _ = std::fs::remove_file(&shm_path);
 
         let shm = Arc::new(
@@ -327,7 +327,7 @@ service AutoPromoteService {
     #[test]
     fn test_end_to_end_ffi_import_and_handle_execution() {
         let source = r#"
-import "rust:vlang_std_pg" as db;
+import "rust:trulang_std_pg" as db;
 import "std::json" as json;
 
 fn main() -> string {

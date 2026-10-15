@@ -1,5 +1,5 @@
 use std::fmt;
-use vlang_syntax::span::Span;
+use trulang_syntax::span::Span;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompileError {

@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>How VLang Works: Under the Hood Architecture & Execution Mechanism</title>
-  <meta name="description" content="A comprehensive deep-dive into VLang's internal architecture: Dual-Region memory model, zero-lock service actors, hybrid FFI worker pool, and dual-mode execution pipeline.">
+  <title>How TruLang Works: Under the Hood Architecture & Execution Mechanism</title>
+  <meta name="description" content="A comprehensive deep-dive into TruLang's internal architecture: Dual-Region memory model, zero-lock service actors, hybrid FFI worker pool, and dual-mode execution pipeline.">
   <meta name="color-scheme" content="light dark">
   <script>
     (function() {
-      const saved = localStorage.getItem('vlang_theme');
+      const saved = localStorage.getItem('trulang_theme');
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.setAttribute('data-theme', saved || (systemDark ? 'dark' : 'light'));
     })();
@@ -24,7 +24,7 @@
   <header>
     <a href="index.html" class="brand">
       <div class="brand-logo">V</div>
-      <div class="brand-name">VLang</div>
+      <div class="brand-name">TruLang</div>
       <span class="brand-badge">v1.0.0</span>
     </a>
 
@@ -38,7 +38,7 @@
 
     <div class="nav-actions">
       <a href="index.html#playground" class="btn btn-secondary">Playground</a>
-      <a href="https://github.com/gaganprajapati/vlang" target="_blank" class="btn btn-secondary">GitHub</a>
+      <a href="https://github.com/gaganprajapati/trulang" target="_blank" class="btn btn-secondary">GitHub</a>
       <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light and dark theme" title="Toggle theme">
         <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
@@ -63,7 +63,7 @@
     <aside>
       <div class="sidebar-group">
         <div class="sidebar-title">Architecture Overview</div>
-        <a href="#paradigm-shift" class="sidebar-link">1. Node.js vs VLang <span class="tag tag-decl">MODEL</span></a>
+        <a href="#paradigm-shift" class="sidebar-link">1. Node.js vs TruLang <span class="tag tag-decl">MODEL</span></a>
         <a href="#dual-region" class="sidebar-link">2. Dual-Region Memory <span class="tag tag-mem">MEM</span></a>
         <a href="#request-lifecycle" class="sidebar-link">3. Request Lifecycle <span class="tag tag-ctrl">FLOW</span></a>
         <a href="#service-actors" class="sidebar-link">4. Zero-Lock Actors <span class="tag tag-type">ACTOR</span></a>
@@ -88,9 +88,9 @@
         <div style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--accent-cyan); font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.08em;">
           Architectural Whitepaper & Deep Dive
         </div>
-        <h1>How VLang Works Under the Hood</h1>
+        <h1>How TruLang Works Under the Hood</h1>
         <p class="lead">
-          Just as building production apps in <strong>Node.js</strong> requires understanding the <em>Event Loop</em>, mastering <strong>VLang</strong> requires understanding its <em>Dual-Region Memory Engine</em>, <em>Zero-Lock Service Actors</em>, and <em>Hybrid FFI Worker Pool</em>.
+          Just as building production apps in <strong>Node.js</strong> requires understanding the <em>Event Loop</em>, mastering <strong>TruLang</strong> requires understanding its <em>Dual-Region Memory Engine</em>, <em>Zero-Lock Service Actors</em>, and <em>Hybrid FFI Worker Pool</em>.
         </p>
         <div class="badge-row">
           <span class="pill pill-green">✓ 0.0 ms GC Pauses (O(1) Bump Arena)</span>
@@ -99,10 +99,10 @@
         </div>
       </div>
 
-      <!-- 1. Node.js vs VLang: The Core Paradigm Shift -->
+      <!-- 1. Node.js vs TruLang: The Core Paradigm Shift -->
       <section id="paradigm-shift">
         <div class="section-header">
-          <h2>1. The Core Paradigm Shift: Node.js vs VLang</h2>
+          <h2>1. The Core Paradigm Shift: Node.js vs TruLang</h2>
         </div>
         <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.5rem;">
           In Node.js, developers learn early on that <em>"Never block the Event Loop"</em> is the cardinal rule. In Node.js, all JavaScript runs on a single main thread, while a generational Garbage Collector (V8) periodically pauses execution (Stop-the-World) to scan heaps and compact live references.
@@ -120,8 +120,8 @@
               <li><strong>Blocking Risk:</strong> Heavy JSON serialization or crypto starves incoming socket events.</li>
             </ul>
           </div>
-          <div class="comparison-col vlang-col">
-            <h4><span style="color: #38bdf8;">🔷</span> VLang Architecture</h4>
+          <div class="comparison-col trulang-col">
+            <h4><span style="color: #38bdf8;">🔷</span> TruLang Architecture</h4>
             <ul>
               <li><strong>Concurrency:</strong> Zero-Lock Service Actors with lock-free bounded mailboxes.</li>
               <li><strong>Memory Model:</strong> Dual-Region (Region A bump arena + Region B acyclic heap).</li>
@@ -135,7 +135,7 @@
 
         <div class="architecture-diagram">
 +---------------------------------------------------------------------------------------------------+
-|                                     VLang Architecture at a Glance                                 |
+|                                     TruLang Architecture at a Glance                                 |
 +---------------------------------------------------------------------------------------------------+
 |                                                                                                   |
 |  [ Ingress TCP / HTTP ]                                                                           |
@@ -155,7 +155,7 @@
 |  └────────────────────────────────────────────────────────┘   └────────────────────────────────┘  |
 |           │                                                                                       |
 |           ▼ Lockless Seqlock Atomic Shm (0 overhead)                                              |
-|  [ Independent Memory Supervisor (/tmp/vlang_shm_*.dat) ]                                         |
+|  [ Independent Memory Supervisor (/tmp/trulang_shm_*.dat) ]                                         |
 +---------------------------------------------------------------------------------------------------+
         </div>
       </section>
@@ -166,7 +166,7 @@
           <h2>2. The Dual-Region Memory Model in Depth</h2>
         </div>
         <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.5rem;">
-          Traditional languages force an agonizing trade-off: either accept <strong>unpredictable GC pauses</strong> (Java, Go, Node.js) or endure <strong>complex borrow checker rules and manual memory lifetimes</strong> (Rust, C++). VLang eliminates this trade-off by categorizing memory into two distinct operational regions:
+          Traditional languages force an agonizing trade-off: either accept <strong>unpredictable GC pauses</strong> (Java, Go, Node.js) or endure <strong>complex borrow checker rules and manual memory lifetimes</strong> (Rust, C++). TruLang eliminates this trade-off by categorizing memory into two distinct operational regions:
         </p>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
@@ -206,7 +206,7 @@ return ptr;</code></pre>
               <div class="code-box">
                 <pre><code><span class="comment">// Explicit or Automatic Promotion</span>
 cache.insert(user_id, persist(user_dto));
-<span class="comment">// VLang deep-clones user_dto into Region B,</span>
+<span class="comment">// TruLang deep-clones user_dto into Region B,</span>
 <span class="comment">// decoupling it from Region A bulk reset.</span></code></pre>
               </div>
               <ul style="list-style: none; font-size: 0.82rem; color: var(--text-muted); margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;">
@@ -222,10 +222,10 @@ cache.insert(user_id, persist(user_dto));
       <!-- 3. Step-by-Step Lifecycle of a Request -->
       <section id="request-lifecycle" style="margin-top: 3.5rem;">
         <div class="section-header">
-          <h2>3. Step-by-Step Lifecycle of a VLang Request</h2>
+          <h2>3. Step-by-Step Lifecycle of a TruLang Request</h2>
         </div>
         <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.5rem;">
-          Here is exactly what happens under the hood when a client invokes an endpoint on a VLang Service:
+          Here is exactly what happens under the hood when a client invokes an endpoint on a TruLang Service:
         </p>
 
         <div class="steps-flow">
@@ -235,7 +235,7 @@ cache.insert(user_id, persist(user_dto));
               <div class="step-title">Ingress & Mailbox Backpressure Check</div>
             </div>
             <p style="font-size: 0.85rem; color: var(--text-muted);">
-              Incoming requests land in the Service Actor's bounded mailbox queue. If the queue is at capacity (e.g. during a sudden downstream outage), VLang rejects the request immediately with <code>ActorError::MailboxFull</code> (HTTP 429), protecting the process from runaway queue bloat and out-of-memory crashes.
+              Incoming requests land in the Service Actor's bounded mailbox queue. If the queue is at capacity (e.g. during a sudden downstream outage), TruLang rejects the request immediately with <code>ActorError::MailboxFull</code> (HTTP 429), protecting the process from runaway queue bloat and out-of-memory crashes.
             </p>
           </div>
 
@@ -291,9 +291,9 @@ cache.insert(user_id, persist(user_dto));
         </p>
 
         <div class="architecture-callout">
-          <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem;">Why VLang Uses the Zero-Lock Actor Model</h3>
+          <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem;">Why TruLang Uses the Zero-Lock Actor Model</h3>
           <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-            In VLang, every <code>service</code> declaration defines an independent Actor with its own private memory domain and mailbox queue:
+            In TruLang, every <code>service</code> declaration defines an independent Actor with its own private memory domain and mailbox queue:
           </p>
           <div class="code-box">
             <pre><code><span class="kw">service</span> AccountService {
@@ -328,9 +328,9 @@ cache.insert(user_id, persist(user_dto));
         </p>
 
         <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; box-shadow: var(--shadow-sm);">
-          <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">How VLang Solves Mailbox Starvation</h3>
+          <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">How TruLang Solves Mailbox Starvation</h3>
           <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
-            VLang's <code>crates/ffi</code> introduces a <strong>Hybrid Thread Pool</strong>:
+            TruLang's <code>crates/ffi</code> introduces a <strong>Hybrid Thread Pool</strong>:
           </p>
           <ul style="list-style: disc; padding-left: 1.5rem; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem;">
             <li><strong>Worker Pool Offloading:</strong> Foreign blocking functions (<code>db.query</code>, <code>http.get</code>) are automatically dispatched to dedicated OS background worker threads.</li>
@@ -346,7 +346,7 @@ cache.insert(user_id, persist(user_dto));
           <h2>6. Dual-Mode Execution: Dev VM vs Production Native AOT</h2>
         </div>
         <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.5rem;">
-          To maximize both developer productivity and production throughput, VLang provides a seamless <strong>Dual-Mode Execution Strategy</strong>:
+          To maximize both developer productivity and production throughput, TruLang provides a seamless <strong>Dual-Mode Execution Strategy</strong>:
         </p>
 
         <div style="overflow-x: auto;">
@@ -363,21 +363,21 @@ cache.insert(user_id, persist(user_dto));
             <tbody>
               <tr class="highlight-row">
                 <td><strong>Development Mode</strong></td>
-                <td><code>vlang run file.vl</code></td>
+                <td><code>trulang run file.tr</code></td>
                 <td><strong>&lt; 3 ms</strong></td>
                 <td>~780,000 req/s</td>
                 <td>Local development, testing, live debugging, CLI scripting.</td>
               </tr>
               <tr>
                 <td><strong>Native JIT Mode</strong></td>
-                <td><code>vlang run --jit file.vl</code></td>
+                <td><code>trulang run --jit file.tr</code></td>
                 <td>~300 ms (JIT compile)</td>
                 <td>1,150,000+ req/s</td>
                 <td>On-the-fly native benchmark evaluation and test validation.</td>
               </tr>
               <tr class="highlight-row">
                 <td><strong>Production AOT Mode</strong></td>
-                <td><code>vlang build --release file.vl</code></td>
+                <td><code>trulang build --release file.tr</code></td>
                 <td><strong>Instant (0 ms)</strong></td>
                 <td><strong>1,200,000+ req/s</strong></td>
                 <td>Production container images, Kubernetes pods, standalone binaries.</td>
@@ -393,7 +393,7 @@ cache.insert(user_id, persist(user_dto));
           <h2>7. Out-of-Process Atomic Seqlock Telemetry (`crates/supervisor`)</h2>
         </div>
         <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.5rem;">
-          In high-performance services, monitoring metrics (Prometheus scraping, memory sampling) often introduces <strong>latency jitter and CPU overhead</strong> on worker threads. VLang decouples monitoring completely into an <strong>independent out-of-process supervisor</strong>:
+          In high-performance services, monitoring metrics (Prometheus scraping, memory sampling) often introduces <strong>latency jitter and CPU overhead</strong> on worker threads. TruLang decouples monitoring completely into an <strong>independent out-of-process supervisor</strong>:
         </p>
 
         <div class="code-box">
@@ -418,7 +418,7 @@ do {
       <!-- 8. Developer Mental Model & Best Practices Guide -->
       <section id="mental-model" style="margin-top: 3.5rem; margin-bottom: 4rem;">
         <div class="section-header">
-          <h2>8. Developer Mental Model: Best Practices for Building VLang Apps</h2>
+          <h2>8. Developer Mental Model: Best Practices for Building TruLang Apps</h2>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -449,10 +449,10 @@ do {
 
   <footer>
     <div style="max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-      <div>VLang Complete Architectural Specification & Runtime Internals. Released under MIT / Apache 2.0.</div>
+      <div>TruLang Complete Architectural Specification & Runtime Internals. Released under MIT / Apache 2.0.</div>
       <div style="display: flex; gap: 1.5rem;">
         <a href="index.html" style="color: var(--text-muted); text-decoration: none;">Main Portal</a>
-        <a href="https://github.com/gaganprajapati/vlang" style="color: var(--text-muted); text-decoration: none;">GitHub</a>
+        <a href="https://github.com/gaganprajapati/trulang" style="color: var(--text-muted); text-decoration: none;">GitHub</a>
       </div>
     </div>
   </footer>

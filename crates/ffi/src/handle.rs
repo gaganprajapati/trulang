@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
-use vlang_compiler::bytecode::{ExternalHandle, ExternalResource, Value};
+use trulang_compiler::bytecode::{ExternalHandle, ExternalResource, Value};
 
 static HANDLE_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
 pub static GLOBAL_DROPPED_HANDLES_COUNT: AtomicUsize = AtomicUsize::new(0);

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use vlang_compiler::bytecode::Value;
+use trulang_compiler::bytecode::Value;
 
-/// Computes the approximate memory footprint of a VLang Value.
+/// Computes the approximate memory footprint of a TruLang Value.
 /// Used to enforce Region A memory budgets when importing foreign data.
 pub fn estimate_value_size(val: &Value) -> usize {
     match val {
@@ -38,8 +38,8 @@ pub fn estimate_value_size(val: &Value) -> usize {
     }
 }
 
-/// Converts a `serde_json::Value` directly into VLang's internal `Value` representation.
-pub fn json_to_vlang_value(json: &serde_json::Value) -> Value {
+/// Converts a `serde_json::Value` directly into TruLang's internal `Value` representation.
+pub fn json_to_trulang_value(json: &serde_json::Value) -> Value {
     match json {
         serde_json::Value::Null => Value::Null,
         serde_json::Value::Bool(b) => Value::Bool(*b),
@@ -54,21 +54,21 @@ pub fn json_to_vlang_value(json: &serde_json::Value) -> Value {
         }
         serde_json::Value::String(s) => Value::String(Arc::new(s.clone())),
         serde_json::Value::Array(arr) => {
-            let items = arr.iter().map(json_to_vlang_value).collect();
+            let items = arr.iter().map(json_to_trulang_value).collect();
             Value::Array(items)
         }
         serde_json::Value::Object(obj) => {
             let mut map = HashMap::with_capacity(obj.len());
             for (k, v) in obj {
-                map.insert(k.clone(), json_to_vlang_value(v));
+                map.insert(k.clone(), json_to_trulang_value(v));
             }
             Value::Object(Arc::new(Mutex::new(map)))
         }
     }
 }
 
-/// Serializes a VLang `Value` to a `serde_json::Value`.
-pub fn vlang_value_to_json(val: &Value) -> serde_json::Value {
+/// Serializes a TruLang `Value` to a `serde_json::Value`.
+pub fn trulang_value_to_json(val: &Value) -> serde_json::Value {
     match val {
         Value::Null => serde_json::Value::Null,
         Value::Bool(b) => serde_json::Value::Bool(*b),
@@ -76,14 +76,14 @@ pub fn vlang_value_to_json(val: &Value) -> serde_json::Value {
         Value::Float(f) => serde_json::json!(f),
         Value::String(s) => serde_json::Value::String((**s).clone()),
         Value::Array(arr) => {
-            let json_arr: Vec<serde_json::Value> = arr.iter().map(vlang_value_to_json).collect();
+            let json_arr: Vec<serde_json::Value> = arr.iter().map(trulang_value_to_json).collect();
             serde_json::Value::Array(json_arr)
         }
         Value::Map(m) => {
             let mut json_obj = serde_json::Map::new();
             if let Ok(guard) = m.lock() {
                 for (k, v) in guard.iter() {
-                    json_obj.insert(k.clone(), vlang_value_to_json(v));
+                    json_obj.insert(k.clone(), trulang_value_to_json(v));
                 }
             }
             serde_json::Value::Object(json_obj)
@@ -92,7 +92,7 @@ pub fn vlang_value_to_json(val: &Value) -> serde_json::Value {
             let mut json_obj = serde_json::Map::new();
             if let Ok(guard) = o.lock() {
                 for (k, v) in guard.iter() {
-                    json_obj.insert(k.clone(), vlang_value_to_json(v));
+                    json_obj.insert(k.clone(), trulang_value_to_json(v));
                 }
             }
             serde_json::Value::Object(json_obj)

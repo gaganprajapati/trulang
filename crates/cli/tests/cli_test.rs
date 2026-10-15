@@ -9,27 +9,27 @@ fn get_example_fibonacci_path() -> PathBuf {
         .parent()
         .unwrap()
         .join("examples")
-        .join("fibonacci.vl")
+        .join("fibonacci.tr")
 }
 
 #[test]
 fn test_cli_version() {
-    let out = Command::new(env!("CARGO_BIN_EXE_vlang"))
+    let out = Command::new(env!("CARGO_BIN_EXE_trulang"))
         .arg("version")
         .output()
-        .expect("Failed to run vlang version");
+        .expect("Failed to run trulang version");
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("vlang 0.1.0"));
+    assert!(stdout.contains("trulang 0.1.0"));
 }
 
 #[test]
 fn test_cli_check_valid_file() {
     let fib_path = get_example_fibonacci_path();
-    let out = Command::new(env!("CARGO_BIN_EXE_vlang"))
+    let out = Command::new(env!("CARGO_BIN_EXE_trulang"))
         .args(["check", fib_path.to_str().unwrap()])
         .output()
-        .expect("Failed to run vlang check");
+        .expect("Failed to run trulang check");
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.contains("Check passed"));
@@ -38,10 +38,10 @@ fn test_cli_check_valid_file() {
 #[test]
 fn test_cli_run_vm_mode() {
     let fib_path = get_example_fibonacci_path();
-    let out = Command::new(env!("CARGO_BIN_EXE_vlang"))
+    let out = Command::new(env!("CARGO_BIN_EXE_trulang"))
         .args(["run", fib_path.to_str().unwrap()])
         .output()
-        .expect("Failed to run vlang run");
+        .expect("Failed to run trulang run");
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.contains("Program exited with value: 55"));
@@ -51,10 +51,10 @@ fn test_cli_run_vm_mode() {
 #[test]
 fn test_cli_run_jit_mode() {
     let fib_path = get_example_fibonacci_path();
-    let out = Command::new(env!("CARGO_BIN_EXE_vlang"))
+    let out = Command::new(env!("CARGO_BIN_EXE_trulang"))
         .args(["run", "--jit", fib_path.to_str().unwrap()])
         .output()
-        .expect("Failed to run vlang run --jit");
+        .expect("Failed to run trulang run --jit");
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.contains("Program exited with value: 55"));
@@ -69,17 +69,17 @@ fn test_cli_build_and_execute_standalone() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    let out_bin = temp_dir.join(format!("vlang_cli_test_bin_{}", nanos));
+    let out_bin = temp_dir.join(format!("trulang_cli_test_bin_{}", nanos));
 
     // 1. Build standalone executable
-    let build_out = Command::new(env!("CARGO_BIN_EXE_vlang"))
+    let build_out = Command::new(env!("CARGO_BIN_EXE_trulang"))
         .args(["build", "--release", fib_path.to_str().unwrap(), "-o", out_bin.to_str().unwrap()])
         .output()
-        .expect("Failed to run vlang build");
+        .expect("Failed to run trulang build");
     assert!(build_out.status.success());
     assert!(out_bin.exists());
 
-    // 2. Run standalone binary directly without vlang
+    // 2. Run standalone binary directly without trulang
     let run_out = Command::new(&out_bin)
         .output()
         .expect("Failed to execute compiled standalone binary");
@@ -94,12 +94,12 @@ fn test_cli_build_and_execute_standalone() {
 #[test]
 fn test_cli_build_emit_c() {
     let fib_path = get_example_fibonacci_path();
-    let out = Command::new(env!("CARGO_BIN_EXE_vlang"))
+    let out = Command::new(env!("CARGO_BIN_EXE_trulang"))
         .args(["build", "--emit-c", fib_path.to_str().unwrap()])
         .output()
-        .expect("Failed to run vlang build --emit-c");
+        .expect("Failed to run trulang build --emit-c");
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("vlang_region_a_init"));
+    assert!(stdout.contains("trulang_region_a_init"));
     assert!(stdout.contains("int main(int argc, char** argv)"));
 }

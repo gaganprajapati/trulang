@@ -1,11 +1,11 @@
-//! VLang Codegen: Native AOT & JIT Code Generation Backend.
+//! TruLang Codegen: Native AOT & JIT Code Generation Backend.
 //!
-//! Provides dual-mode native code generation for VLang:
-//! 1. Production AOT Compilation (`vlang build [--release] file.vl [-o <out>]`):
+//! Provides dual-mode native code generation for TruLang:
+//! 1. Production AOT Compilation (`trulang build [--release] file.tr [-o <out>]`):
 //!    Generates optimized native C code preserving Region A bump arena and Region B
 //!    persistent memory, invoked through host toolchains (clang, gcc, cc, or cl.exe)
 //!    to produce standalone executables (Mach-O, ELF, PE) with 90-95%+ native performance.
-//! 2. JIT Execution (`vlang run --jit file.vl`):
+//! 2. JIT Execution (`trulang run --jit file.tr`):
 //!    On-the-fly native machine code compilation and execution.
 
 pub mod builder;
@@ -20,7 +20,7 @@ pub use jit::{JitEngine, JitResult};
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vlang_compiler::bytecode::{Chunk, Opcode};
+    use trulang_compiler::bytecode::{Chunk, Opcode};
 
     #[test]
     fn test_end_to_end_native_build_and_run() {
@@ -38,7 +38,7 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos();
-        let temp_bin = std::env::temp_dir().join(format!("vlang_e2e_test_{}_{}", std::process::id(), nanos));
+        let temp_bin = std::env::temp_dir().join(format!("trulang_e2e_test_{}_{}", std::process::id(), nanos));
         let config = CodegenConfig {
             release: true,
             output_path: Some(temp_bin.clone()),

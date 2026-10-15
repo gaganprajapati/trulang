@@ -232,7 +232,7 @@ service UserService {
 - `crates/compiler`: Symbol resolution, type checker, lexical borrow checker, bytecode compiler.
 - `crates/vm`: Stack-based bytecode VM, Region A arena allocator, Region B ARC runtime, exception unwinding.
 - `crates/supervisor`: Shared memory ring buffer reader, telemetry metrics, and diagnostic reporting.
-- `crates/cli`: Command-line tool (`vlang`) providing `run`, `check`, and `monitor` commands.
+- `crates/cli`: Command-line tool (`trulang`) providing `run`, `check`, and `monitor` commands.
 
 ## 9. Development Milestones
 
@@ -299,11 +299,11 @@ The initial implementation is not complete until it passes the following tests.
 
 ## 12. Production Hardening, Security, & Resource Boundary Guarantees
 
-The VLang runtime enforces strict security, resource exhaustion, and concurrency boundaries:
+The TruLang runtime enforces strict security, resource exhaustion, and concurrency boundaries:
 
 1. **Shared Memory Directory Isolation & Permissions (P0)**:
    - Shared memory segments are never stored in world-writable `/tmp`.
-   - VLang targets `$XDG_RUNTIME_DIR/vlang` (fallback: `~/.vlang/shm/` or `/tmp/vlang_runtime_{uid}/`).
+   - TruLang targets `$XDG_RUNTIME_DIR/trulang` (fallback: `~/.trulang/shm/` or `/tmp/trulang_runtime_{uid}/`).
    - Directories enforce POSIX permissions `0700` (user-only), and memory-mapped telemetry files enforce `0600` permissions.
 2. **Atomic Seqlock Telemetry Ring Buffer (P0)**:
    - Multi-process metrics avoid torn reads across memory boundaries via a 64-bit sequence lock (Seqlock).

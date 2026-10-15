@@ -11,7 +11,7 @@ mod tests {
     #[test]
     fn test_shm_create_write_read_records() {
         let temp_dir = std::env::temp_dir();
-        let shm_path = temp_dir.join(format!("vlang_test_shm_{}.dat", std::process::id()));
+        let shm_path = temp_dir.join(format!("trulang_test_shm_{}.dat", std::process::id()));
 
         // Cleanup any existing
         let _ = std::fs::remove_file(&shm_path);
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn test_shm_seqlock_atomic_consistency() {
         let temp_dir = std::env::temp_dir();
-        let shm_path = temp_dir.join(format!("vlang_seqlock_test_{}.dat", std::process::id()));
+        let shm_path = temp_dir.join(format!("trulang_seqlock_test_{}.dat", std::process::id()));
         let _ = std::fs::remove_file(&shm_path);
 
         let region = SharedTelemetryRegion::create_or_open(&shm_path, std::process::id())
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn test_arena_burst_telemetry_event() {
         let temp_dir = std::env::temp_dir();
-        let shm_path = temp_dir.join(format!("vlang_burst_test_{}.dat", std::process::id()));
+        let shm_path = temp_dir.join(format!("trulang_burst_test_{}.dat", std::process::id()));
         let _ = std::fs::remove_file(&shm_path);
 
         let region = SharedTelemetryRegion::create_or_open(&shm_path, std::process::id())

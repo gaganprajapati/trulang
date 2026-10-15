@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VLang — Complete Language Specification & Interactive Docs</title>
-  <meta name="description" content="Comprehensive interactive language documentation, syntax specification, memory architecture, and live playground for VLang.">
+  <title>TruLang — Complete Language Specification & Interactive Docs</title>
+  <meta name="description" content="Comprehensive interactive language documentation, syntax specification, memory architecture, and live playground for TruLang.">
   <meta name="color-scheme" content="light dark">
   <script>
     (function() {
-      const saved = localStorage.getItem('vlang_theme');
+      const saved = localStorage.getItem('trulang_theme');
       const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.setAttribute('data-theme', saved || (systemDark ? 'dark' : 'light'));
     })();
@@ -24,7 +24,7 @@
   <header>
     <a href="index.html" class="brand">
       <div class="brand-logo">V</div>
-      <div class="brand-name">VLang</div>
+      <div class="brand-name">TruLang</div>
       <span class="brand-badge">VSpec 1.0.0</span>
     </a>
 
@@ -47,7 +47,7 @@
       <a href="#playground" class="btn btn-secondary">
         Playground
       </a>
-      <a href="https://github.com/gaganprajapati/vlang" target="_blank" class="btn btn-secondary">GitHub</a>
+      <a href="https://github.com/gaganprajapati/trulang" target="_blank" class="btn btn-secondary">GitHub</a>
       <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light and dark theme" title="Toggle theme">
         <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
@@ -75,7 +75,7 @@
         <a href="#overview" class="sidebar-link active">Overview & Vision</a>
         <a href="internals.html" class="sidebar-link" style="color: #38bdf8; font-weight: 600;">How It Works (Internals) <span class="tag tag-decl">DEEP DIVE</span></a>
         <a href="#installation" class="sidebar-link">Installation & Setup <span class="tag tag-cli">INSTALL</span></a>
-        <a href="#architecture" class="sidebar-link">Why VLang? (Problems Solved) <span class="tag tag-mem">WHY</span></a>
+        <a href="#architecture" class="sidebar-link">Why TruLang? (Problems Solved) <span class="tag tag-mem">WHY</span></a>
         <a href="#playground" class="sidebar-link">Live Playground</a>
       </div>
 
@@ -117,12 +117,12 @@
 
       <div class="sidebar-group">
         <div class="sidebar-title">CLI Tooling</div>
-        <a href="#cli-check" class="sidebar-link">vlang check <span class="tag tag-cli">CLI</span></a>
-        <a href="#cli-run" class="sidebar-link">vlang run / --jit <span class="tag tag-cli">RUN</span></a>
-        <a href="#cli-build" class="sidebar-link">vlang build <span class="tag tag-decl">AOT</span></a>
-        <a href="#cli-monitor" class="sidebar-link">vlang monitor <span class="tag tag-cli">CLI</span></a>
-        <a href="#cli-lsp" class="sidebar-link">vlang lsp <span class="tag tag-cli">LSP</span></a>
-        <a href="#cli-fmt" class="sidebar-link">vlang fmt <span class="tag tag-cli">FMT</span></a>
+        <a href="#cli-check" class="sidebar-link">trulang check <span class="tag tag-cli">CLI</span></a>
+        <a href="#cli-run" class="sidebar-link">trulang run / --jit <span class="tag tag-cli">RUN</span></a>
+        <a href="#cli-build" class="sidebar-link">trulang build <span class="tag tag-decl">AOT</span></a>
+        <a href="#cli-monitor" class="sidebar-link">trulang monitor <span class="tag tag-cli">CLI</span></a>
+        <a href="#cli-lsp" class="sidebar-link">trulang lsp <span class="tag tag-cli">LSP</span></a>
+        <a href="#cli-fmt" class="sidebar-link">trulang fmt <span class="tag tag-cli">FMT</span></a>
       </div>
 
       <div class="sidebar-group">
@@ -152,9 +152,9 @@
 
       <div class="sidebar-group">
         <div class="sidebar-title">Ecosystem & Community</div>
-        <a href="https://github.com/gaganprajapati/vlang/blob/main/CHANGELOG.md" target="_blank" class="sidebar-link">Release Changelog <span class="tag tag-cli">v0.1.0</span></a>
-        <a href="https://github.com/gaganprajapati/vlang/blob/main/CONTRIBUTING.md" target="_blank" class="sidebar-link">Contributor Guide <span class="tag tag-decl">CONTRIB</span></a>
-        <a href="https://github.com/gaganprajapati/vlang/releases" target="_blank" class="sidebar-link">GitHub Releases <span class="tag tag-mem">ASSETS</span></a>
+        <a href="https://github.com/gaganprajapati/trulang/blob/main/CHANGELOG.md" target="_blank" class="sidebar-link">Release Changelog <span class="tag tag-cli">v0.1.0</span></a>
+        <a href="https://github.com/gaganprajapati/trulang/blob/main/CONTRIBUTING.md" target="_blank" class="sidebar-link">Contributor Guide <span class="tag tag-decl">CONTRIB</span></a>
+        <a href="https://github.com/gaganprajapati/trulang/releases" target="_blank" class="sidebar-link">GitHub Releases <span class="tag tag-mem">ASSETS</span></a>
       </div>
     </aside>
 
@@ -162,7 +162,7 @@
     <main>
       <!-- Hero Banner -->
       <section class="hero-banner" id="overview">
-        <h1>Complete VLang Language Reference</h1>
+        <h1>Complete TruLang Language Reference</h1>
         <p class="lead">
           A general-purpose memory-safe language designed for backend services and APIs. Statically typed with local type inference, immutable by default, featuring dual-region execution arenas, single-threaded Service Actors, and independent supervisor telemetry.
         </p>
@@ -175,7 +175,7 @@
         </div>
         <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
           <a href="internals.html" class="btn btn-primary" style="background: linear-gradient(135deg, #06b6d4, #3b82f6); border: none; font-size: 0.92rem; padding: 0.55rem 1.25rem; font-weight: 600;">
-            🧠 Deep Dive: How VLang Works Under the Hood →
+            🧠 Deep Dive: How TruLang Works Under the Hood →
           </a>
           <a href="#installation" class="btn btn-secondary" style="font-size: 0.92rem; padding: 0.55rem 1.25rem;">
             Quick Start (5 Mins)
@@ -183,14 +183,14 @@
         </div>
       </section>
 
-      <!-- Why VLang? Architectural Problems Solved -->
+      <!-- Why TruLang? Architectural Problems Solved -->
       <section id="architecture" style="margin-bottom: 3.5rem;">
         <div class="section-header">
-          <h2>Why VLang? What Problems Does It Solve?</h2>
+          <h2>Why TruLang? What Problems Does It Solve?</h2>
           <span class="pill pill-purple">Architectural Breakthrough</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.75rem;">
-          Modern backend services are caught in a fundamental dilemma: <strong>Tracing GC runtimes (Go, Node.js, Java)</strong> suffer from unpredictable tail latency (Stop-the-World pauses) and heavy memory footprints, while <strong>manual borrow-checked systems (Rust, C++)</strong> introduce extreme cognitive complexity with lifetimes and mutex synchronization. <strong>VLang eliminates this trade-off</strong> through four foundational innovations.
+          Modern backend services are caught in a fundamental dilemma: <strong>Tracing GC runtimes (Go, Node.js, Java)</strong> suffer from unpredictable tail latency (Stop-the-World pauses) and heavy memory footprints, while <strong>manual borrow-checked systems (Rust, C++)</strong> introduce extreme cognitive complexity with lifetimes and mutex synchronization. <strong>TruLang eliminates this trade-off</strong> through four foundational innovations.
         </p>
 
         <!-- The Tradeoff Visual Grid -->
@@ -219,7 +219,7 @@
 
           <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-top: 3px solid var(--accent-green); border-radius: 8px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
             <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--accent-green); font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">
-              <span>⚡ The VLang Sweet Spot</span>
+              <span>⚡ The TruLang Sweet Spot</span>
             </div>
             <ul style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; margin: 0; padding-left: 1.2rem;">
               <li><strong>0.0 ms GC Pauses:</strong> $O(1)$ request arena pointer resets.</li>
@@ -229,7 +229,7 @@
           </div>
         </div>
 
-        <!-- 4 Pillars of VLang Card Grid -->
+        <!-- 4 Pillars of TruLang Card Grid -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
           <!-- Pillar 1 -->
           <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #0284c7;">
@@ -238,7 +238,7 @@
               <strong style="color: var(--text-main); font-size: 1rem;">Dual-Region Memory Arenas</strong>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.75rem;">
-              99% of web backend allocations are short-lived. Instead of forcing them through a tracing garbage collector, VLang routes all request data into <strong>Region A (High-Speed Bump Arena)</strong>. When the request completes, Region A is wiped in <strong>$O(1)$ constant time</strong> with zero garbage collection sweeps.
+              99% of web backend allocations are short-lived. Instead of forcing them through a tracing garbage collector, TruLang routes all request data into <strong>Region A (High-Speed Bump Arena)</strong>. When the request completes, Region A is wiped in <strong>$O(1)$ constant time</strong> with zero garbage collection sweeps.
             </p>
             <div style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 4px; color: var(--accent-blue);">
               ✓ 0.0 ms Stop-the-World &bull; Zero Heap Fragmentation
@@ -280,7 +280,7 @@
               <strong style="color: var(--text-main); font-size: 1rem;">Zero-Overhead Seqlock Live Telemetry</strong>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.75rem;">
-              Traditional profilers degrade server throughput by 10%–25% when attached. VLang streams real-time allocation counts, budgets, and ring buffer events into an OS shared memory segment via an atomic 64-bit <strong>Seqlock protocol</strong>. The supervisor daemon reads live metrics out-of-process with <strong>0.0% worker performance penalty</strong>.
+              Traditional profilers degrade server throughput by 10%–25% when attached. TruLang streams real-time allocation counts, budgets, and ring buffer events into an OS shared memory segment via an atomic 64-bit <strong>Seqlock protocol</strong>. The supervisor daemon reads live metrics out-of-process with <strong>0.0% worker performance penalty</strong>.
             </p>
             <div style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 4px; color: var(--accent-amber);">
               ✓ Lock-Free Atomic SHM &bull; 0.0% APM Profiling Overhead
@@ -322,7 +322,7 @@
           <span class="pill pill-green">Official CLI & Toolchain</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
-          Get started with VLang in minutes. The <code>vlang</code> CLI bundles the high-speed lexer, parser, static typechecker, bytecode virtual machine, and real-time supervisor monitor into a single self-contained binary with zero external runtime dependencies.
+          Get started with TruLang in minutes. The <code>trulang</code> CLI bundles the high-speed lexer, parser, static typechecker, bytecode virtual machine, and real-time supervisor monitor into a single self-contained binary with zero external runtime dependencies.
         </p>
 
         <!-- One-Liner Quick Install Banner -->
@@ -332,8 +332,8 @@
             <div style="font-size: 0.85rem; color: var(--text-muted);">Detects OS and architecture, downloads standalone binary from GitHub Releases — <strong>No Rust or compiler required</strong></div>
           </div>
           <div class="install-quick-cmd">
-            <code>curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash</code>
-            <button class="copy-btn" onclick="copySnippet('curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash', this)">Copy</button>
+            <code>curl -fsSL https://raw.githubusercontent.com/gaganprajapati/trulang/main/scripts/install.sh | bash</code>
+            <button class="copy-btn" onclick="copySnippet('curl -fsSL https://raw.githubusercontent.com/gaganprajapati/trulang/main/scripts/install.sh | bash', this)">Copy</button>
           </div>
         </div>
 
@@ -362,7 +362,7 @@
           <div class="bench-tab-content active" id="tabInstallBinary">
             <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Pre-Compiled Standalone Binaries (Release v0.1.0)</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              Download standalone, statically linked binaries directly from <a href="https://github.com/gaganprajapati/vlang/releases/tag/v0.1.0" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">GitHub Releases</a>. Zero external dependencies or Rust toolchain required.
+              Download standalone, statically linked binaries directly from <a href="https://github.com/gaganprajapati/trulang/releases/tag/v0.1.0" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">GitHub Releases</a>. Zero external dependencies or Rust toolchain required.
             </p>
 
             <div style="overflow-x: auto; margin-bottom: 1.25rem;">
@@ -380,30 +380,30 @@
                   <tr class="highlight-row">
                     <td><strong>macOS</strong> (Apple Silicon)</td>
                     <td>ARM64 (M1/M2/M3/M4)</td>
-                    <td><code>vlang-darwin-arm64.tar.gz</code></td>
+                    <td><code>trulang-darwin-arm64.tar.gz</code></td>
                     <td><code style="font-size: 0.75rem;">sha256</code> verified</td>
-                    <td><a href="https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-darwin-arm64.tar.gz" class="pill pill-green" style="text-decoration: none;">Download (.tar.gz)</a></td>
+                    <td><a href="https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-darwin-arm64.tar.gz" class="pill pill-green" style="text-decoration: none;">Download (.tar.gz)</a></td>
                   </tr>
                   <tr>
                     <td><strong>macOS</strong> (Intel)</td>
                     <td>x86_64</td>
-                    <td><code>vlang-darwin-x86_64.tar.gz</code></td>
+                    <td><code>trulang-darwin-x86_64.tar.gz</code></td>
                     <td><code style="font-size: 0.75rem;">sha256</code> verified</td>
-                    <td><a href="https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-darwin-x86_64.tar.gz" class="pill pill-blue" style="text-decoration: none;">Download (.tar.gz)</a></td>
+                    <td><a href="https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-darwin-x86_64.tar.gz" class="pill pill-blue" style="text-decoration: none;">Download (.tar.gz)</a></td>
                   </tr>
                   <tr class="highlight-row">
                     <td><strong>Linux</strong></td>
                     <td>x86_64</td>
-                    <td><code>vlang-linux-x86_64.tar.gz</code></td>
+                    <td><code>trulang-linux-x86_64.tar.gz</code></td>
                     <td><code style="font-size: 0.75rem;">sha256</code> verified</td>
-                    <td><a href="https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-linux-x86_64.tar.gz" class="pill pill-green" style="text-decoration: none;">Download (.tar.gz)</a></td>
+                    <td><a href="https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-linux-x86_64.tar.gz" class="pill pill-green" style="text-decoration: none;">Download (.tar.gz)</a></td>
                   </tr>
                   <tr>
                     <td><strong>Windows</strong></td>
                     <td>x64 (MSVC)</td>
-                    <td><code>vlang-windows-x64.zip</code></td>
+                    <td><code>trulang-windows-x64.zip</code></td>
                     <td><code style="font-size: 0.75rem;">sha256</code> verified</td>
-                    <td><a href="https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-windows-x64.zip" class="pill pill-purple" style="text-decoration: none;">Download (.zip)</a></td>
+                    <td><a href="https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-windows-x64.zip" class="pill pill-purple" style="text-decoration: none;">Download (.zip)</a></td>
                   </tr>
                 </tbody>
               </table>
@@ -415,12 +415,12 @@
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               </div>
               <pre><code><span class="comment"># Example for macOS Apple Silicon:</span>
-tar -xzf vlang-darwin-arm64.tar.gz
-sudo mv vlang /usr/local/bin/
+tar -xzf trulang-darwin-arm64.tar.gz
+sudo mv trulang /usr/local/bin/
 
 <span class="comment"># Verify installation</span>
-vlang --version
-<span class="comment"># Output: vlang 0.1.0</span></code></pre>
+trulang --version
+<span class="comment"># Output: trulang 0.1.0</span></code></pre>
             </div>
           </div>
 
@@ -436,8 +436,8 @@ vlang --version
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               </div>
               <pre><code><span class="comment"># 1. Clone the repository</span>
-git clone https://github.com/gaganprajapati/vlang.git
-cd vlang
+git clone https://github.com/gaganprajapati/trulang.git
+cd trulang
 
 <span class="comment"># 2. Run unit and integration tests (25 test suites)</span>
 cargo test
@@ -449,8 +449,8 @@ cargo build --release
 cargo install --path crates/cli
 
 <span class="comment"># 5. Verify successful installation</span>
-vlang --version
-<span class="comment"># Output: vlang 0.1.0</span></code></pre>
+trulang --version
+<span class="comment"># Output: trulang 0.1.0</span></code></pre>
             </div>
           </div>
 
@@ -458,7 +458,7 @@ vlang --version
           <div class="bench-tab-content" id="tabInstallBrew">
             <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Direct 1-Line Install via Cargo Git</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              Installs VLang directly from GitHub into <code>~/.cargo/bin</code> without requiring a manual git clone:
+              Installs TruLang directly from GitHub into <code>~/.cargo/bin</code> without requiring a manual git clone:
             </p>
             <div class="code-box">
               <div class="code-top">
@@ -466,11 +466,11 @@ vlang --version
                 <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               </div>
               <pre><code><span class="comment"># Install directly from the GitHub repository</span>
-cargo install --git https://github.com/gaganprajapati/vlang.git vlang_cli
+cargo install --git https://github.com/gaganprajapati/trulang.git trulang_cli
 
 <span class="comment"># Verify CLI availability in $PATH</span>
-vlang --version
-vlang --help</code></pre>
+trulang --version
+trulang --help</code></pre>
             </div>
           </div>
 
@@ -495,7 +495,7 @@ vlang --help</code></pre>
                     <td>GitHub Releases</td>
                     <td>Standalone prebuilt binaries (macOS, Linux, Windows)</td>
                     <td><span style="color: #34d399; font-weight: 700;">✓ Available (v0.1.0)</span></td>
-                    <td><a href="https://github.com/gaganprajapati/vlang/releases/tag/v0.1.0" target="_blank" style="color: #34d399; text-decoration: underline;">v0.1.0 Assets</a></td>
+                    <td><a href="https://github.com/gaganprajapati/trulang/releases/tag/v0.1.0" target="_blank" style="color: #34d399; text-decoration: underline;">v0.1.0 Assets</a></td>
                   </tr>
                   <tr>
                     <td>1-Line Install Script</td>
@@ -513,19 +513,19 @@ vlang --help</code></pre>
                     <td>Cargo Git</td>
                     <td>Universal</td>
                     <td><span style="color: #34d399; font-weight: 700;">✓ Available Now</span></td>
-                    <td><code>cargo install --git &lt;repo&gt; vlang_cli</code></td>
+                    <td><code>cargo install --git &lt;repo&gt; trulang_cli</code></td>
                   </tr>
                   <tr class="highlight-row">
                     <td>Homebrew Tap</td>
                     <td>macOS / Linux</td>
                     <td><span style="color: #fbbf24;">In Progress</span></td>
-                    <td><code>brew install gaganprajapati/vlang</code></td>
+                    <td><code>brew install gaganprajapati/trulang</code></td>
                   </tr>
                   <tr>
                     <td>Docker OCI Image</td>
                     <td>Alpine container (&lt; 12 MB)</td>
                     <td><span style="color: #fbbf24;">Planned</span></td>
-                    <td><code>docker pull ghcr.io/gaganprajapati/vlang</code></td>
+                    <td><code>docker pull ghcr.io/gaganprajapati/trulang</code></td>
                   </tr>
                 </tbody>
               </table>
@@ -535,7 +535,7 @@ vlang --help</code></pre>
 
         <!-- 3-Step Quickstart Guide -->
         <div style="margin-top: 3rem;">
-          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Your First VLang Service in 60 Seconds</h3>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Your First TruLang Service in 60 Seconds</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem;">
             Follow this 3-step walkthrough to write, statically check, and execute your first dual-region memory-safe service.
           </p>
@@ -545,14 +545,14 @@ vlang --help</code></pre>
             <div class="step-card">
               <div class="step-header">
                 <div class="step-badge">1</div>
-                <div class="step-title">Write your service definition (<code>greeter.vl</code>)</div>
+                <div class="step-title">Write your service definition (<code>greeter.tr</code>)</div>
               </div>
               <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
                 Declare a single-threaded <code>service</code> actor with bounded memory budgets and immutable handlers:
               </p>
               <div class="code-box">
                 <div class="code-top">
-                  <span>greeter.vl</span>
+                  <span>greeter.tr</span>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
                 <pre><code><span class="kw">service</span> GreeterService {
@@ -576,7 +576,7 @@ vlang --help</code></pre>
             <div class="step-card">
               <div class="step-header">
                 <div class="step-badge">2</div>
-                <div class="step-title">Statically verify with <code>vlang check</code></div>
+                <div class="step-title">Statically verify with <code>trulang check</code></div>
               </div>
               <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
                 Verifies syntax, type safety, immutability rules, and ownership constraints before compilation:
@@ -586,8 +586,8 @@ vlang --help</code></pre>
                   <span>Terminal</span>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
-                <pre><code>$ vlang check greeter.vl
-✓ File "greeter.vl" is syntactically and semantically valid! (0 errors, 0 warnings)</code></pre>
+                <pre><code>$ trulang check greeter.tr
+✓ File "greeter.tr" is syntactically and semantically valid! (0 errors, 0 warnings)</code></pre>
               </div>
             </div>
 
@@ -595,7 +595,7 @@ vlang --help</code></pre>
             <div class="step-card">
               <div class="step-header">
                 <div class="step-badge">3</div>
-                <div class="step-title">Execute on the Bytecode VM with <code>vlang run</code></div>
+                <div class="step-title">Execute on the Bytecode VM with <code>trulang run</code></div>
               </div>
               <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
                 Compiles AST to compact bytecode and executes with sub-3ms cold start:
@@ -605,7 +605,7 @@ vlang --help</code></pre>
                   <span>Terminal — Development VM Mode</span>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
-                <pre><code>$ vlang run greeter.vl
+                <pre><code>$ trulang run greeter.tr
 Hello, Production Engineer! Dual-Region O(1) Memory Active.
 
 Program exited with value: null
@@ -619,7 +619,7 @@ Region B (Persistent): 0 bytes retained (0 live objects)</code></pre>
             <div class="step-card">
               <div class="step-header">
                 <div class="step-badge">4</div>
-                <div class="step-title">Compile Standalone Native Binary with <code>vlang build --release</code></div>
+                <div class="step-title">Compile Standalone Native Binary with <code>trulang build --release</code></div>
               </div>
               <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
                 Translates bytecode into native machine code (Mach-O on macOS, ELF on Linux, PE on Windows) with <code>-O3</code> optimizations:
@@ -629,9 +629,9 @@ Region B (Persistent): 0 bytes retained (0 live objects)</code></pre>
                   <span>Terminal — Production AOT Compilation</span>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
-                <pre><code>$ vlang build --release greeter.vl -o greeter_app
+                <pre><code>$ trulang build --release greeter.tr -o greeter_app
 ╔════════════════════════════════════════════════════════════════════════╗
-║              VLang Native AOT Compilation Complete                     ║
+║              TruLang Native AOT Compilation Complete                     ║
 ╠════════════════════════════════════════════════════════════════════════╣
 ║ Output Binary: ./greeter_app                                           ║
 ║ Binary Size:   33.48 KB (34288 bytes)                                   ║
@@ -660,10 +660,10 @@ $ ./greeter_app</code></pre>
                 <strong style="color: var(--text-main); font-size: 0.95rem;">VS Code Extension</strong>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-                Official grammar syntax highlighting for <code>.vl</code> files, bracket matching, code snippets, and inline error diagnostics.
+                Official grammar syntax highlighting for <code>.tr</code> files, bracket matching, code snippets, and inline error diagnostics.
               </p>
               <div class="code-box" style="margin-top: 0.5rem;">
-                <pre><code>code --install-extension vlang-core.vlang-vscode</code></pre>
+                <pre><code>code --install-extension trulang-core.trulang-vscode</code></pre>
               </div>
             </div>
 
@@ -676,7 +676,7 @@ $ ./greeter_app</code></pre>
                 Add filetype detection to your <code>init.vim</code> or <code>.vimrc</code> for automatic indentation and highlighting:
               </p>
               <div class="code-box" style="margin-top: 0.5rem;">
-                <pre><code>autocmd BufRead,BufNewFile *.vl set filetype=vlang</code></pre>
+                <pre><code>autocmd BufRead,BufNewFile *.tr set filetype=trulang</code></pre>
               </div>
             </div>
 
@@ -689,8 +689,8 @@ $ ./greeter_app</code></pre>
                 Generate shell completions for tab completion of subcommands and flags:
               </p>
               <div class="code-box" style="margin-top: 0.5rem;">
-                <pre><code>vlang completions zsh > ~/.zfunc/_vlang
-vlang completions bash > /etc/bash_completion.d/vlang</code></pre>
+                <pre><code>trulang completions zsh > ~/.zfunc/_trulang
+trulang completions bash > /etc/bash_completion.d/trulang</code></pre>
               </div>
             </div>
           </div>
@@ -713,22 +713,22 @@ vlang completions bash > /etc/bash_completion.d/vlang</code></pre>
               </thead>
               <tbody>
                 <tr class="highlight-row">
-                  <td><code>VLANG_SHM_PATH</code></td>
-                  <td><code>/tmp/vlang_shm_active.dat</code></td>
+                  <td><code>TRULANG_SHM_PATH</code></td>
+                  <td><code>/tmp/trulang_shm_active.dat</code></td>
                   <td>Out-of-process seqlock shared memory telemetry file.</td>
                 </tr>
                 <tr>
-                  <td><code>VLANG_MEMORY_LIMIT</code></td>
+                  <td><code>TRULANG_MEMORY_LIMIT</code></td>
                   <td><code>512 MB</code></td>
                   <td>Default upper limit for persistent Region B actor storage.</td>
                 </tr>
                 <tr class="highlight-row">
-                  <td><code>VLANG_QUIET</code></td>
+                  <td><code>TRULANG_QUIET</code></td>
                   <td><code>0</code></td>
                   <td>Set to <code>1</code> to silence stdout during automated benchmarks for max throughput.</td>
                 </tr>
                 <tr>
-                  <td><code>VLANG_BACKTRACE</code></td>
+                  <td><code>TRULANG_BACKTRACE</code></td>
                   <td><code>0</code></td>
                   <td>Set to <code>1</code> or <code>full</code> to print bytecode instruction stack trace on panic.</td>
                 </tr>
@@ -755,7 +755,7 @@ vlang completions bash > /etc/bash_completion.d/vlang</code></pre>
           </div>
           <div class="spec-body">
             <p style="font-size: 0.9rem; color: var(--text-muted);">
-              All variable declarations in VLang are <strong>immutable by default</strong>. Once initialized, the variable cannot be reassigned. Attempting to assign to a variable declared with <code>let</code> causes a compile-time error.
+              All variable declarations in TruLang are <strong>immutable by default</strong>. Once initialized, the variable cannot be reassigned. Attempting to assign to a variable declared with <code>let</code> causes a compile-time error.
             </p>
             <div class="code-box">
               <div class="code-top">
@@ -1059,7 +1059,7 @@ println(sum); <span class="comment">// Output: 55</span></code></pre>
           </div>
           <div class="spec-body">
             <p style="font-size: 0.9rem; color: var(--text-muted);">
-              Services represent actor units in VLang. Handlers process incoming messages sequentially from the actor mailbox. Parallel throughput is achieved by instantiating worker pools of actors, eliminating shared mutable concurrency issues.
+              Services represent actor units in TruLang. Handlers process incoming messages sequentially from the actor mailbox. Parallel throughput is achieved by instantiating worker pools of actors, eliminating shared mutable concurrency issues.
             </p>
             <div class="code-box">
               <div class="code-top">
@@ -1182,26 +1182,26 @@ println(sum); <span class="comment">// Output: 55</span></code></pre>
         <div class="spec-card expanded" id="cli-check">
           <div class="spec-header" onclick="toggleCard('cli-check')">
             <span class="method-badge badge-cli">CLI</span>
-            <span class="spec-name">vlang check &lt;file.vl&gt;</span>
+            <span class="spec-name">trulang check &lt;file.tr&gt;</span>
             <span class="spec-desc">Verifies syntax, static types, and ownership rules with caret diagnostics</span>
           </div>
           <div class="spec-body">
-            <pre><code>$ vlang check examples/user_service.vl
-✓ Check passed: No syntax, typing, or ownership violations found in examples/user_service.vl</code></pre>
+            <pre><code>$ trulang check examples/user_service.tr
+✓ Check passed: No syntax, typing, or ownership violations found in examples/user_service.tr</code></pre>
           </div>
         </div>
 
         <div class="spec-card expanded" id="cli-run">
           <div class="spec-header" onclick="toggleCard('cli-run')">
             <span class="method-badge badge-cli">RUN</span>
-            <span class="spec-name">vlang run &lt;file.vl&gt; [--disassemble] [--jit]</span>
+            <span class="spec-name">trulang run &lt;file.tr&gt; [--disassemble] [--jit]</span>
             <span class="spec-desc">Dual-Mode execution: Instantaneous VM startup (&lt;3ms) or Native JIT engine</span>
           </div>
           <div class="spec-body">
             <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
               <strong>Dual-Mode Execution Strategy:</strong> Run in development mode on the stack-based Bytecode VM for sub-second feedback loops, or pass <code>--jit</code> to compile and execute natively on-the-fly.
             </p>
-            <pre><code>$ vlang run examples/fibonacci.vl
+            <pre><code>$ trulang run examples/fibonacci.tr
 Calculating Fibonacci sequence up to N = 10:
 0, 1, 1, 2, 3, 5, 8, 13, 21, 34
 
@@ -1211,7 +1211,7 @@ Region A (Execution):  48 bytes used (budget: 16777216 bytes)
 Region B (Persistent): 0 bytes retained (0 live objects)
 
 # Native JIT Mode:
-$ vlang run --jit examples/fibonacci.vl
+$ trulang run --jit examples/fibonacci.tr
 [Native JIT Execution completed in 347.038 ms with exit code 0]</code></pre>
           </div>
         </div>
@@ -1219,16 +1219,16 @@ $ vlang run --jit examples/fibonacci.vl
         <div class="spec-card expanded" id="cli-build">
           <div class="spec-header" onclick="toggleCard('cli-build')">
             <span class="method-badge badge-decl">AOT</span>
-            <span class="spec-name">vlang build &lt;file.vl&gt; [--release] [-o &lt;output&gt;] [--emit-c]</span>
+            <span class="spec-name">trulang build &lt;file.tr&gt; [--release] [-o &lt;output&gt;] [--emit-c]</span>
             <span class="spec-desc">Compiles to a standalone statically-linked native executable (Mach-O, ELF, PE)</span>
           </div>
           <div class="spec-body">
             <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-              Translates VLang bytecode into optimized native machine code via host toolchains (<code>clang</code>, <code>gcc</code>, or <code>cl.exe</code>). Emits a standalone executable binary that runs directly on the OS without requiring the <code>vlang</code> CLI or VM, strictly preserving Region A $O(1)$ bump arena allocation and Region B persistent memory.
+              Translates TruLang bytecode into optimized native machine code via host toolchains (<code>clang</code>, <code>gcc</code>, or <code>cl.exe</code>). Emits a standalone executable binary that runs directly on the OS without requiring the <code>trulang</code> CLI or VM, strictly preserving Region A $O(1)$ bump arena allocation and Region B persistent memory.
             </p>
-            <pre><code>$ vlang build --release examples/fibonacci.vl -o fib_native
+            <pre><code>$ trulang build --release examples/fibonacci.tr -o fib_native
 ╔════════════════════════════════════════════════════════════════════════╗
-║              VLang Native AOT Compilation Complete                     ║
+║              TruLang Native AOT Compilation Complete                     ║
 ╠════════════════════════════════════════════════════════════════════════╣
 ║ Output Binary: ./fib_native                                            ║
 ║ Binary Size:   33.48 KB (34288 bytes)                                   ║
@@ -1257,15 +1257,15 @@ Calculating Fibonacci sequence up to N = 10:
         <div class="spec-card expanded" id="cli-monitor">
           <div class="spec-header" onclick="toggleCard('cli-monitor')">
             <span class="method-badge badge-cli">CLI</span>
-            <span class="spec-name">vlang monitor [--target &lt;pid_or_shm&gt;]</span>
+            <span class="spec-name">trulang monitor [--target &lt;pid_or_shm&gt;]</span>
             <span class="spec-desc">Launches the supervisor live monitoring dashboard</span>
           </div>
           <div class="spec-body">
-            <pre><code>$ vlang monitor
-Attaching Memory Supervisor to telemetry segment: "/tmp/vlang_shm_7305.dat"
+            <pre><code>$ trulang monitor
+Attaching Memory Supervisor to telemetry segment: "/tmp/trulang_shm_7305.dat"
 
 ╔══════════════════════════════════════════════════════════════════════════╗
-║                      VLang Independent Memory Supervisor                 ║
+║                      TruLang Independent Memory Supervisor                 ║
 ╠══════════════════════════════════════════════════════════════════════════╣
 ║ Worker Process PID: 7305         Heartbeat: 0.12s ago                    ║
 ║ Health Status: 🟢 HEALTHY (Within configured budgets)                    ║
@@ -1279,12 +1279,12 @@ Attaching Memory Supervisor to telemetry segment: "/tmp/vlang_shm_7305.dat"
         <div class="spec-card expanded" id="cli-lsp">
           <div class="spec-header" onclick="toggleCard('cli-lsp')">
             <span class="method-badge badge-cli">LSP</span>
-            <span class="spec-name">vlang lsp [--stdio]</span>
+            <span class="spec-name">trulang lsp [--stdio]</span>
             <span class="spec-desc">Starts the integrated Language Server Protocol JSON-RPC daemon</span>
           </div>
           <div class="spec-body">
-            <pre><code>$ vlang lsp --stdio
-Starting VLang Language Server daemon (JSON-RPC 2.0 over stdio)...</code></pre>
+            <pre><code>$ trulang lsp --stdio
+Starting TruLang Language Server daemon (JSON-RPC 2.0 over stdio)...</code></pre>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
               Compiled directly into the core binary. Eliminates toolchain divergence and provides live syntax checking, type diagnostics with compiler actionable hints (e.g. suggesting <code>let mut</code>), hover tooltips, and jump-to-definition for VS Code, Cursor, Neovim, and Zed.
             </p>
@@ -1294,12 +1294,12 @@ Starting VLang Language Server daemon (JSON-RPC 2.0 over stdio)...</code></pre>
         <div class="spec-card expanded" id="cli-fmt">
           <div class="spec-header" onclick="toggleCard('cli-fmt')">
             <span class="method-badge badge-cli">FMT</span>
-            <span class="spec-name">vlang fmt &lt;file.vl&gt; [--write]</span>
+            <span class="spec-name">trulang fmt &lt;file.tr&gt; [--write]</span>
             <span class="spec-desc">Automated code formatting engine enforcing 4-space indentation and clean structure</span>
           </div>
           <div class="spec-body">
-            <pre><code>$ vlang fmt examples/user_service.vl --write
-✓ Formatted examples/user_service.vl</code></pre>
+            <pre><code>$ trulang fmt examples/user_service.tr --write
+✓ Formatted examples/user_service.tr</code></pre>
           </div>
         </div>
       </section>
@@ -1311,7 +1311,7 @@ Starting VLang Language Server daemon (JSON-RPC 2.0 over stdio)...</code></pre>
           <span class="pill pill-green">PRD Section 12 Verified</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.95rem;">
-          To guarantee non-stop backend reliability under high-concurrency loads and adversarial environments, VLang implements kernel-grade safeguards across shared memory, concurrency, arithmetic safety, and execution boundaries.
+          To guarantee non-stop backend reliability under high-concurrency loads and adversarial environments, TruLang implements kernel-grade safeguards across shared memory, concurrency, arithmetic safety, and execution boundaries.
         </p>
 
         <!-- Seqlock Telemetry Card -->
@@ -1349,7 +1349,7 @@ for _ in 0..16 {
           </div>
           <div class="spec-body">
             <p>
-              Shared memory segments are strictly isolated from world-writable <code>/tmp</code>. VLang targets <code>$XDG_RUNTIME_DIR/vlang/</code> (falling back to <code>~/.vlang/shm/</code> or <code>/tmp/vlang_runtime_{uid}/</code>) with directory mode <code>0700</code> and file creation mode <code>0600</code>.
+              Shared memory segments are strictly isolated from world-writable <code>/tmp</code>. TruLang targets <code>$XDG_RUNTIME_DIR/trulang/</code> (falling back to <code>~/.trulang/shm/</code> or <code>/tmp/trulang_runtime_{uid}/</code>) with directory mode <code>0700</code> and file creation mode <code>0600</code>.
             </p>
           </div>
         </div>
@@ -1422,7 +1422,7 @@ for _ in 0..16 {
           <span class="pill pill-blue">Zero-Mailbox Starvation FFI</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
-          Phase 2 bridges VLang to the broader ecosystem through a high-performance, memory-safe FFI bridge and standard library modules. Foreign blocking calls are offloaded to an asynchronous background worker pool, preventing database and network queries from starving the single-threaded actor mailbox, while Region A arena marshaling ensures foreign data strictly respects execution memory budgets.
+          Phase 2 bridges TruLang to the broader ecosystem through a high-performance, memory-safe FFI bridge and standard library modules. Foreign blocking calls are offloaded to an asynchronous background worker pool, preventing database and network queries from starving the single-threaded actor mailbox, while Region A arena marshaling ensures foreign data strictly respects execution memory budgets.
         </p>
 
         <!-- Safe FFI Bridge Card -->
@@ -1436,9 +1436,9 @@ for _ in 0..16 {
           <div class="spec-body">
             <h4 style="color: #38bdf8; margin-top: 0;">1. Hybrid Worker Thread Pool Architecture</h4>
             <p style="font-size: 0.9rem; color: var(--text-muted);">
-              In high-throughput actor systems, executing blocking I/O (e.g. PostgreSQL network socket reads or heavy cryptographic hashing) directly inside the actor thread starves incoming requests. VLang's <code>WorkerPool</code> offloads blocking native calls to a thread pool with zero thread leakage, keeping the actor mailbox responsive:
+              In high-throughput actor systems, executing blocking I/O (e.g. PostgreSQL network socket reads or heavy cryptographic hashing) directly inside the actor thread starves incoming requests. TruLang's <code>WorkerPool</code> offloads blocking native calls to a thread pool with zero thread leakage, keeping the actor mailbox responsive:
             </p>
-            <pre><code class="language-vlang">import "rust:vlang_std_pg" as db;
+            <pre><code class="language-trulang">import "rust:trulang_std_pg" as db;
 
 service UserService {
     memory_budget request = 64 KB;
@@ -1457,7 +1457,7 @@ service UserService {
             </p>
             <h4 style="color: #fbbf24; margin-top: 1.5rem;">3. Region A Arena Marshaling</h4>
             <p style="font-size: 0.9rem; color: var(--text-muted);">
-              Foreign DTOs, JSON payloads, and primitive types returned by native code are marshaled directly into the request's Region A bump arena. If a foreign query returns a payload exceeding the actor's memory budget, VLang halts the request with <code>VmError::MemoryExceeded</code>, guaranteeing that foreign code cannot bypass memory limits.
+              Foreign DTOs, JSON payloads, and primitive types returned by native code are marshaled directly into the request's Region A bump arena. If a foreign query returns a payload exceeding the actor's memory budget, TruLang halts the request with <code>VmError::MemoryExceeded</code>, guaranteeing that foreign code cannot bypass memory limits.
             </p>
           </div>
         </div>
@@ -1475,7 +1475,7 @@ service UserService {
               <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
                 <h4 style="color: #38bdf8; margin: 0 0 0.5rem 0;">std::json</h4>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Fast JSON parser and serializer streaming directly into Region A.</p>
-                <pre><code class="language-vlang">import "std::json" as json;
+                <pre><code class="language-trulang">import "std::json" as json;
 
 let obj = json.parse("{\"status\": \"ok\"}");
 let raw = json.stringify(obj);</code></pre>
@@ -1484,16 +1484,16 @@ let raw = json.stringify(obj);</code></pre>
               <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
                 <h4 style="color: #34d399; margin: 0 0 0.5rem 0;">std::http</h4>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Non-blocking HTTP client offloaded to background workers.</p>
-                <pre><code class="language-vlang">import "std::http" as http;
+                <pre><code class="language-trulang">import "std::http" as http;
 
-let resp = http.get("https://api.vlang.org/v1/ping");
-let data = http.post("https://api.vlang.org/login", payload);</code></pre>
+let resp = http.get("https://api.trulang.org/v1/ping");
+let data = http.post("https://api.trulang.org/login", payload);</code></pre>
               </div>
 
               <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
-                <h4 style="color: #fbbf24; margin: 0 0 0.5rem 0;">std::sql / rust:vlang_std_pg</h4>
+                <h4 style="color: #fbbf24; margin: 0 0 0.5rem 0;">std::sql / rust:trulang_std_pg</h4>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">Thread-safe connection pooling for relational databases.</p>
-                <pre><code class="language-vlang">import "rust:vlang_std_pg" as db;
+                <pre><code class="language-trulang">import "rust:trulang_std_pg" as db;
 
 let pool = db.create_pool("postgres://localhost/app");
 let row = pool.query_user(1001);</code></pre>
@@ -1510,7 +1510,7 @@ let row = pool.query_user(1001);</code></pre>
           <span class="pill pill-green">Empirical Head-to-Head Testing</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6;">
-          To give developers, system architects, and DevOps teams transparent visualization into how VLang performs in production, we benchmarked VLang directly against <strong>Rust, Go, Java 21 (OpenJDK), Node.js (V8), and Python 3.10</strong> across identical microservice API lifecycle workloads (50,000 requests, concurrent worker actors, JSON-like object transforms, dynamic lookups, and cache promotion).
+          To give developers, system architects, and DevOps teams transparent visualization into how TruLang performs in production, we benchmarked TruLang directly against <strong>Rust, Go, Java 21 (OpenJDK), Node.js (V8), and Python 3.10</strong> across identical microservice API lifecycle workloads (50,000 requests, concurrent worker actors, JSON-like object transforms, dynamic lookups, and cache promotion).
         </p>
 
         <!-- KPI Metrics Grid -->
@@ -1593,14 +1593,14 @@ let row = pool.query_user(1001);</code></pre>
                 <div class="chart-val-label">850,000 req/s</div>
               </div>
 
-              <!-- VLang -->
+              <!-- TruLang -->
               <div class="chart-bar-row">
                 <div class="chart-lang-label" style="color: #38bdf8;">
-                  <span>★ VLang (Ours)</span>
+                  <span>★ TruLang (Ours)</span>
                   <span class="chart-lang-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">Bytecode VM</span>
                 </div>
                 <div class="chart-track" style="border: 1px solid rgba(56, 189, 248, 0.4);">
-                  <div class="chart-fill bar-vlang" style="width: 70%;">780K</div>
+                  <div class="chart-fill bar-trulang" style="width: 70%;">780K</div>
                 </div>
                 <div class="chart-val-label" style="color: #38bdf8;">780,471 req/s</div>
               </div>
@@ -1643,7 +1643,7 @@ let row = pool.query_user(1001);</code></pre>
             </div>
 
             <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); box-shadow: var(--shadow-sm);">
-              <strong style="color: var(--accent-blue);">Why VLang achieves near-compiled throughput:</strong> In conventional managed runtimes, each request performs dozens of individual heap allocations with lock contention on the global allocator. In VLang, all per-request objects live inside a bump-pointer Region A arena ($O(1)$ allocation), eliminating malloc locks and cache thrashing entirely.
+              <strong style="color: var(--accent-blue);">Why TruLang achieves near-compiled throughput:</strong> In conventional managed runtimes, each request performs dozens of individual heap allocations with lock contention on the global allocator. In TruLang, all per-request objects live inside a bump-pointer Region A arena ($O(1)$ allocation), eliminating malloc locks and cache thrashing entirely.
             </div>
           </div>
 
@@ -1670,14 +1670,14 @@ let row = pool.query_user(1001);</code></pre>
                 <div class="chart-val-label">18 µs (p50: 4 µs)</div>
               </div>
 
-              <!-- VLang -->
+              <!-- TruLang -->
               <div class="chart-bar-row">
                 <div class="chart-lang-label" style="color: #38bdf8;">
-                  <span>★ VLang</span>
+                  <span>★ TruLang</span>
                   <span class="chart-lang-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">Dual-Region</span>
                 </div>
                 <div class="chart-track" style="border: 1px solid rgba(56, 189, 248, 0.4);">
-                  <div class="chart-fill bar-vlang" style="width: 14%;">32 µs</div>
+                  <div class="chart-fill bar-trulang" style="width: 14%;">32 µs</div>
                 </div>
                 <div class="chart-val-label" style="color: #38bdf8;">32 µs (p50: 7 µs)</div>
               </div>
@@ -1732,7 +1732,7 @@ let row = pool.query_user(1001);</code></pre>
             </div>
 
             <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); box-shadow: var(--shadow-sm);">
-              <strong style="color: var(--accent-purple);">Predictable SLA Guarantee:</strong> In Node.js, Go, and Java, background tracing GC cycles periodically freeze worker threads to compact memory (major pauses lasting from 15 ms to 120 ms). VLang reclaims request memory instantly by resetting the Region A arena pointer back to offset 0 in $O(1)$ time, yielding mathematically zero GC pause latency.
+              <strong style="color: var(--accent-purple);">Predictable SLA Guarantee:</strong> In Node.js, Go, and Java, background tracing GC cycles periodically freeze worker threads to compact memory (major pauses lasting from 15 ms to 120 ms). TruLang reclaims request memory instantly by resetting the Region A arena pointer back to offset 0 in $O(1)$ time, yielding mathematically zero GC pause latency.
             </div>
           </div>
 
@@ -1759,14 +1759,14 @@ let row = pool.query_user(1001);</code></pre>
                 <div class="chart-val-label">1.8 MB</div>
               </div>
 
-              <!-- VLang -->
+              <!-- TruLang -->
               <div class="chart-bar-row">
                 <div class="chart-lang-label" style="color: #38bdf8;">
-                  <span>★ VLang</span>
+                  <span>★ TruLang</span>
                   <span class="chart-lang-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">~6,400 pods</span>
                 </div>
                 <div class="chart-track" style="border: 1px solid rgba(56, 189, 248, 0.4);">
-                  <div class="chart-fill bar-vlang" style="width: 6%;">2.5 MB</div>
+                  <div class="chart-fill bar-trulang" style="width: 6%;">2.5 MB</div>
                 </div>
                 <div class="chart-val-label" style="color: #38bdf8;">2.5 MB</div>
               </div>
@@ -1821,7 +1821,7 @@ let row = pool.query_user(1001);</code></pre>
             </div>
 
             <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); box-shadow: var(--shadow-sm);">
-              <strong style="color: var(--accent-amber);">Cloud Cost Multiplier:</strong> On a standard 16 GB RAM Kubernetes node, VLang can pack over <strong>6,000 active service micro-instances</strong>, compared to <strong>340 instances</strong> for Node.js and just <strong>140 instances</strong> for standard Java. This translates to an immediate <strong>15x to 40x cloud hosting cost reduction</strong> for microservice fleets.
+              <strong style="color: var(--accent-amber);">Cloud Cost Multiplier:</strong> On a standard 16 GB RAM Kubernetes node, TruLang can pack over <strong>6,000 active service micro-instances</strong>, compared to <strong>340 instances</strong> for Node.js and just <strong>140 instances</strong> for standard Java. This translates to an immediate <strong>15x to 40x cloud hosting cost reduction</strong> for microservice fleets.
             </div>
           </div>
 
@@ -1837,7 +1837,7 @@ let row = pool.query_user(1001);</code></pre>
                 <thead>
                   <tr>
                     <th>Feature / Dimension</th>
-                    <th style="color: #38bdf8;">VLang (Ours)</th>
+                    <th style="color: #38bdf8;">TruLang (Ours)</th>
                     <th>Rust</th>
                     <th>Go</th>
                     <th>Node.js</th>
@@ -1923,7 +1923,7 @@ let row = pool.query_user(1001);</code></pre>
             </div>
 
             <div style="margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-dim); line-height: 1.5;">
-              <strong>Benchmark Reproduction:</strong> All benchmarks were performed on Apple Silicon (M-series, 16 vCPU) with <code>vlang bench --threads 8 --requests 50000 examples/user_service.vl</code> compared against standalone Node.js v24.21.0, Go 1.22, Python 3.10.12, and Rust 1.80. All test scripts are open-source in the <code>benchmarks/</code> repository directory.
+              <strong>Benchmark Reproduction:</strong> All benchmarks were performed on Apple Silicon (M-series, 16 vCPU) with <code>trulang bench --threads 8 --requests 50000 examples/user_service.tr</code> compared against standalone Node.js v24.21.0, Go 1.22, Python 3.10.12, and Rust 1.80. All test scripts are open-source in the <code>benchmarks/</code> repository directory.
             </div>
           </div>
         </div>
@@ -1936,7 +1936,7 @@ let row = pool.query_user(1001);</code></pre>
           <span class="pill pill-blue">Simulated VM in Browser</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.95rem;">
-          Select a sample program below or write custom VLang code to simulate execution on the Bytecode VM and watch Region A and Region B memory metrics update in real time.
+          Select a sample program below or write custom TruLang code to simulate execution on the Bytecode VM and watch Region A and Region B memory metrics update in real time.
         </p>
 
         <div class="playground-container">
@@ -1995,7 +1995,7 @@ let row = pool.query_user(1001);</code></pre>
       </section>
 
       <footer>
-        VLang Language Specification & Reference Documentation • Built with Rust Bytecode VM & Memory Supervisor
+        TruLang Language Specification & Reference Documentation • Built with Rust Bytecode VM & Memory Supervisor
       </footer>
     </main>
   </div>

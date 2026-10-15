@@ -1,12 +1,12 @@
 [package]
-name = "vlang_lsp"
+name = "trulang_lsp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-vlang_syntax = { path = "../syntax" }
-vlang_compiler = { path = "../compiler" }
+trulang_syntax = { path = "../syntax" }
+trulang_compiler = { path = "../compiler" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }

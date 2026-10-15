@@ -1,12 +1,12 @@
 [package]
-name = "vlang_ffi"
+name = "trulang_ffi"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-vlang_compiler = { path = "../compiler" }
-vlang_syntax = { path = "../syntax" }
+trulang_compiler = { path = "../compiler" }
+trulang_syntax = { path = "../syntax" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

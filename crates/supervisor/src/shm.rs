@@ -7,42 +7,42 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[cfg(unix)]
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt, PermissionsExt};
 
-pub const SHM_MAGIC: u32 = 0x564C414E; // "VLAN"
+pub const SHM_MAGIC: u32 = 0x5452554C; // "TRUL"
 pub const SHM_VERSION: u32 = 1;
 pub const RING_CAPACITY: usize = 512;
 
-/// Get the secure default directory for VLang shared memory segments.
-/// Follows standard security hierarchy: $XDG_RUNTIME_DIR/vlang -> ~/.vlang/shm -> /tmp/vlang_runtime_{uid}
+/// Get the secure default directory for TruLang shared memory segments.
+/// Follows standard security hierarchy: $XDG_RUNTIME_DIR/trulang -> ~/.trulang/shm -> /tmp/trulang_runtime_{uid}
 pub fn default_shm_dir() -> PathBuf {
     #[cfg(unix)]
     {
         if let Ok(runtime_dir) = std::env::var("XDG_RUNTIME_DIR") {
-            let path = PathBuf::from(runtime_dir).join("vlang");
+            let path = PathBuf::from(runtime_dir).join("trulang");
             if ensure_secure_dir(&path).is_ok() {
                 return path;
             }
         }
         if let Ok(home) = std::env::var("HOME") {
-            let path = PathBuf::from(home).join(".vlang").join("shm");
+            let path = PathBuf::from(home).join(".trulang").join("shm");
             if ensure_secure_dir(&path).is_ok() {
                 return path;
             }
         }
         let uid = unsafe { libc::getuid() };
-        let path = std::env::temp_dir().join(format!("vlang_runtime_{}", uid));
+        let path = std::env::temp_dir().join(format!("trulang_runtime_{}", uid));
         let _ = ensure_secure_dir(&path);
         path
     }
     #[cfg(not(unix))]
     {
-        let path = std::env::temp_dir().join("vlang_shm");
+        let path = std::env::temp_dir().join("trulang_shm");
         let _ = std::fs::create_dir_all(&path);
         path
     }
 }
 
 pub fn default_shm_path(pid: u32) -> PathBuf {
-    default_shm_dir().join(format!("vlang_shm_{}.dat", pid))
+    default_shm_dir().join(format!("trulang_shm_{}.dat", pid))
 }
 
 pub fn ensure_secure_dir(path: &Path) -> io::Result<()> {

@@ -3,7 +3,7 @@ use crate::protocol::{Position, Range, TextEdit};
 pub struct Formatter;
 
 impl Formatter {
-    /// Formats a complete VLang source string using standard 4-space indentation rules
+    /// Formats a complete TruLang source string using standard 4-space indentation rules
     pub fn format(content: &str) -> String {
         let mut result = String::with_capacity(content.len());
         let mut indent_level = 0;

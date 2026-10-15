@@ -1,7 +1,7 @@
 use crate::error::CompileError;
 use crate::types::SemType;
 use std::collections::HashMap;
-use vlang_syntax::span::Span;
+use trulang_syntax::span::Span;
 
 #[derive(Debug, Clone)]
 pub struct Symbol {

@@ -1,14 +1,14 @@
-# How VLang Works: Under the Hood Architecture & Execution Mechanism 🧠
+# How TruLang Works: Under the Hood Architecture & Execution Mechanism 🧠
 
-> **A Comprehensive Guide to VLang's Internal Runtime, Memory Engine, and Concurrency Architecture.**  
+> **A Comprehensive Guide to TruLang's Internal Runtime, Memory Engine, and Concurrency Architecture.**  
 > *Targeted at engineers coming from Node.js, Go, Rust, Java, and Python.*
 
 ---
 
 ## Table of Contents
-1. [The Core Paradigm Shift: Node.js vs VLang](#1-the-core-paradigm-shift-nodejs-vs-vlang)
+1. [The Core Paradigm Shift: Node.js vs TruLang](#1-the-core-paradigm-shift-nodejs-vs-trulang)
 2. [The Dual-Region Memory Architecture in Depth](#2-the-dual-region-memory-architecture-in-depth)
-3. [Step-by-Step Lifecycle of a VLang Request](#3-step-by-step-lifecycle-of-a-vlang-request)
+3. [Step-by-Step Lifecycle of a TruLang Request](#3-step-by-step-lifecycle-of-a-trulang-request)
 4. [Zero-Lock Service Actors & Mailbox Backpressure](#4-zero-lock-service-actors--mailbox-backpressure)
 5. [The Hybrid Thread-Pooled FFI Bridge (`crates/ffi`)](#5-the-hybrid-thread-pooled-ffi-bridge-cratesffi)
 6. [Dual-Mode Execution Pipeline (Dev VM vs Production Native AOT)](#6-dual-mode-execution-pipeline-dev-vm-vs-production-native-aot)
@@ -17,13 +17,13 @@
 
 ---
 
-## 1. The Core Paradigm Shift: Node.js vs VLang
+## 1. The Core Paradigm Shift: Node.js vs TruLang
 
 In **Node.js**, every developer quickly learns that **"Never block the Event Loop"** is the fundamental design rule. Because JavaScript is single-threaded, any CPU-intensive operation (large JSON parses, cryptography, image processing) blocks the main thread, freezing all concurrent socket events. Furthermore, V8's Garbage Collector runs Stop-the-World pauses (15–45 ms) to mark and sweep dead heap references.
 
-In **VLang**, the paradigm shifts to **Zero-Lock Service Actors**, **Dual-Region Arenas**, and an **Offloaded Hybrid FFI Worker Pool**:
+In **TruLang**, the paradigm shifts to **Zero-Lock Service Actors**, **Dual-Region Arenas**, and an **Offloaded Hybrid FFI Worker Pool**:
 
-| Dimension | Node.js (Event Loop + V8) | VLang (Service Actors + Dual-Region) |
+| Dimension | Node.js (Event Loop + V8) | TruLang (Service Actors + Dual-Region) |
 | :--- | :--- | :--- |
 | **Concurrency Model** | Single-Threaded Event Loop with libuv thread pool | Independent Single-Threaded Service Actors with lock-free bounded mailboxes |
 | **Memory Reclamation** | Generational GC (Stop-the-World pauses of 15–45 ms) | **$O(1)$ Bulk Arena Reset: exactly 0.0 ms GC pauses** |
@@ -33,7 +33,7 @@ In **VLang**, the paradigm shifts to **Zero-Lock Service Actors**, **Dual-Region
 | **Fault Isolation** | An uncaught error or memory leak can crash the process | Requests run with strict memory budgets; overflows fail fast without crashing the actor |
 
 ```
-                                  VLang Architecture at a Glance
+                                  TruLang Architecture at a Glance
                                   
   [ Ingress TCP / HTTP Requests ]
                 │
@@ -52,14 +52,14 @@ In **VLang**, the paradigm shifts to **Zero-Lock Service Actors**, **Dual-Region
   └────────────────────────────────────────────────────────┘   └────────────────────────────────┘
                 │
                 ▼ Lockless Seqlock Atomic Shm (0 overhead)
-  [ Independent Memory Supervisor (/tmp/vlang_shm_*.dat) ]
+  [ Independent Memory Supervisor (/tmp/trulang_shm_*.dat) ]
 ```
 
 ---
 
 ## 2. The Dual-Region Memory Architecture in Depth
 
-Traditional languages force a difficult compromise: accept GC pause jitter (Java, Go, Node.js) or struggle with complex manual borrow checkers (Rust, C++). VLang eliminates this trade-off by categorizing all memory into two distinct operational regions:
+Traditional languages force a difficult compromise: accept GC pause jitter (Java, Go, Node.js) or struggle with complex manual borrow checkers (Rust, C++). TruLang eliminates this trade-off by categorizing all memory into two distinct operational regions:
 
 ### Region A: Request Execution Arena (Transient)
 - **Linear Bump Allocation ($O(1)$)**: When your code instantiates a variable, parses JSON, or builds a response string, the allocator simply advances an offset in pre-allocated memory:
@@ -67,7 +67,7 @@ Traditional languages force a difficult compromise: accept GC pause jitter (Java
   void* ptr = arena->memory + arena->offset;
   arena->offset += (size + 7) & ~7; // 8-byte aligned bump
   ```
-- **Instant $O(1)$ Bulk Reset**: When the request completes, VLang sets `offset = 0`. The entire memory arena is reclaimed in **a single CPU cycle**.
+- **Instant $O(1)$ Bulk Reset**: When the request completes, TruLang sets `offset = 0`. The entire memory arena is reclaimed in **a single CPU cycle**.
 - **0.0 ms Garbage Collection Pauses**: Memory is never traversed or swept.
 - **Elastic Burst Arenas**: With `memory_budget request = 16 MB max 64 MB;`, the arena handles sudden traffic spikes up to 64 MB, failing fast with HTTP 413 if the ceiling is exceeded, then resetting cleanly back to base.
 
@@ -78,7 +78,7 @@ Traditional languages force a difficult compromise: accept GC pause jitter (Java
 
 ---
 
-## 3. Step-by-Step Lifecycle of a VLang Request
+## 3. Step-by-Step Lifecycle of a TruLang Request
 
 1. **Ingress & Mailbox Backpressure**:  
    Incoming HTTP/RPC messages enter the Service Actor's bounded mailbox queue. If the queue is saturated, the request is shed immediately with `ActorError::MailboxFull` (HTTP 429), protecting upstream services.
@@ -97,7 +97,7 @@ Traditional languages force a difficult compromise: accept GC pause jitter (Java
 
 In multi-threaded architectures, shared mutable state requires mutexes. Under heavy concurrent load, threads spend up to **70% of CPU cycles waiting for locks**.
 
-In VLang:
+In TruLang:
 - Every `service` is a self-contained Actor.
 - Actors communicate exclusively via asynchronous message queues.
 - Internal actor state is never exposed to other threads.
@@ -107,7 +107,7 @@ In VLang:
 
 ## 5. The Hybrid Thread-Pooled FFI Bridge (`crates/ffi`)
 
-If an actor invokes a slow blocking foreign library directly, its mailbox freezes. VLang's `crates/ffi` solves this:
+If an actor invokes a slow blocking foreign library directly, its mailbox freezes. TruLang's `crates/ffi` solves this:
 - **Worker Pool**: Foreign blocking calls (`std::sql`, `std::http`) execute on background threads.
 - **Deterministic RAII Destructors (`ExternalHandle<T>`)**: Opaque resources (e.g. PostgreSQL connection pools) are freed deterministically when dropped.
 - **Region A Marshaling**: Foreign returns are marshaled directly into the caller's Region A arena, ensuring memory limits are strictly enforced.
@@ -116,17 +116,17 @@ If an actor invokes a slow blocking foreign library directly, its mailbox freeze
 
 ## 6. Dual-Mode Execution Pipeline (Dev VM vs Production Native AOT)
 
-VLang provides a dual-mode execution strategy:
+TruLang provides a dual-mode execution strategy:
 
 ```bash
 # 1. Dev Mode: Fast Bytecode VM (<3ms startup)
-vlang run examples/user_service.vl
+trulang run examples/user_service.tr
 
 # 2. Native JIT Mode: Compile & execute on-the-fly
-vlang run --jit examples/user_service.vl
+trulang run --jit examples/user_service.tr
 
 # 3. Production Mode: Standalone AOT Native executable
-vlang build --release examples/user_service.vl -o my_service
+trulang build --release examples/user_service.tr -o my_service
 ```
 
 - **Dev Mode**: Instantaneous cold-start for rapid testing.
@@ -136,7 +136,7 @@ vlang build --release examples/user_service.vl -o my_service
 
 ## 7. Out-of-Process Atomic Seqlock Telemetry (`crates/supervisor`)
 
-Monitoring request metrics (latency, memory usage) often introduces latency jitter. VLang decouples monitoring into an independent out-of-process supervisor using lockless atomic shared memory (`/tmp/vlang_shm_*.dat`):
+Monitoring request metrics (latency, memory usage) often introduces latency jitter. TruLang decouples monitoring into an independent out-of-process supervisor using lockless atomic shared memory (`/tmp/trulang_shm_*.dat`):
 - Workers update telemetry atomically using Release-Acquire seqlocks.
 - The supervisor reads memory snapshots without pausing or slowing down the worker.
 
@@ -152,7 +152,7 @@ Only promote data to Region B if it needs to survive across requests (e.g., cach
 
 ### Rule 3: Size Budgets with Headroom
 Use elastic budgets:
-```vlang
+```trulang
 memory_budget request = 16 MB max 64 MB;
 ```
 This keeps baseline RSS at ~2.5 MB while providing burst headroom during transient spikes.

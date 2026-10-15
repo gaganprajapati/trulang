@@ -3,10 +3,10 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use vlang_supervisor::{MemorySupervisor, SharedTelemetryRegion};
+use trulang_supervisor::{MemorySupervisor, SharedTelemetryRegion};
 
 #[derive(Parser)]
-#[command(name = "vlang")]
+#[command(name = "trulang")]
 #[command(version = "0.1.0")]
 #[command(about = "Memory-Safe Language Compiler and Runtime", long_about = None)]
 struct Cli {
@@ -80,7 +80,7 @@ enum Commands {
         #[arg(long, default_value_t = true)]
         stdio: bool,
     },
-    /// Format VLang source files according to language conventions
+    /// Format TruLang source files according to language conventions
     Fmt {
         /// Source file to format
         file: PathBuf,
@@ -105,14 +105,14 @@ fn main() -> anyhow::Result<()> {
 
     match command {
         Commands::Version => {
-            println!("vlang 0.1.0");
+            println!("trulang 0.1.0");
             return Ok(());
         }
         Commands::Check { file } => {
             let content = fs::read_to_string(&file)?;
             let file_str = file.to_str().unwrap_or("unknown");
 
-            let program = match vlang_syntax::parse(&content) {
+            let program = match trulang_syntax::parse(&content) {
                 Ok(prog) => prog,
                 Err(err) => {
                     eprintln!("{}", err.format_with_source(&content, file_str));
@@ -120,7 +120,7 @@ fn main() -> anyhow::Result<()> {
                 }
             };
 
-            let mut checker = vlang_compiler::type_checker::TypeChecker::new();
+            let mut checker = trulang_compiler::type_checker::TypeChecker::new();
             if let Err(err) = checker.check_program(&program) {
                 eprintln!("{}", err.format_with_source(&content, file_str));
                 std::process::exit(1);
@@ -132,7 +132,7 @@ fn main() -> anyhow::Result<()> {
             let content = fs::read_to_string(&file)?;
             let file_str = file.to_str().unwrap_or("unknown");
 
-            let program = match vlang_syntax::parse(&content) {
+            let program = match trulang_syntax::parse(&content) {
                 Ok(prog) => prog,
                 Err(err) => {
                     eprintln!("{}", err.format_with_source(&content, file_str));
@@ -140,7 +140,7 @@ fn main() -> anyhow::Result<()> {
                 }
             };
 
-            let chunk = match vlang_compiler::compile(&program) {
+            let chunk = match trulang_compiler::compile(&program) {
                 Ok(chunk) => chunk,
                 Err(err) => {
                     eprintln!("{}", err.format_with_source(&content, file_str));
@@ -157,7 +157,7 @@ fn main() -> anyhow::Result<()> {
             }
 
             if jit {
-                let jit_res = match vlang_codegen::JitEngine::execute(&chunk) {
+                let jit_res = match trulang_codegen::JitEngine::execute(&chunk) {
                     Ok(res) => res,
                     Err(err) => {
                         eprintln!("\nNative JIT Compilation Error: {}", err);
@@ -176,10 +176,10 @@ fn main() -> anyhow::Result<()> {
             }
 
             let pid = std::process::id();
-            let shm_path = vlang_supervisor::shm::default_shm_path(pid);
+            let shm_path = trulang_supervisor::shm::default_shm_path(pid);
             let shm = SharedTelemetryRegion::create_or_open(&shm_path, pid).ok().map(Arc::new);
 
-            let mut vm = vlang_vm::VirtualMachine::new();
+            let mut vm = trulang_vm::VirtualMachine::new();
             if let Some(ref telemetry) = shm {
                 vm.attach_telemetry(Arc::clone(telemetry));
             }
@@ -226,7 +226,7 @@ fn main() -> anyhow::Result<()> {
             let content = fs::read_to_string(&file)?;
             let file_str = file.to_str().unwrap_or("unknown");
 
-            let program = match vlang_syntax::parse(&content) {
+            let program = match trulang_syntax::parse(&content) {
                 Ok(prog) => prog,
                 Err(err) => {
                     eprintln!("{}", err.format_with_source(&content, file_str));
@@ -234,13 +234,13 @@ fn main() -> anyhow::Result<()> {
                 }
             };
 
-            let mut checker = vlang_compiler::type_checker::TypeChecker::new();
+            let mut checker = trulang_compiler::type_checker::TypeChecker::new();
             if let Err(err) = checker.check_program(&program) {
                 eprintln!("{}", err.format_with_source(&content, file_str));
                 std::process::exit(1);
             }
 
-            let chunk = match vlang_compiler::compile(&program) {
+            let chunk = match trulang_compiler::compile(&program) {
                 Ok(chunk) => chunk,
                 Err(err) => {
                     eprintln!("{}", err.format_with_source(&content, file_str));
@@ -248,7 +248,7 @@ fn main() -> anyhow::Result<()> {
                 }
             };
 
-            let c_source = vlang_codegen::CBackend::emit(&chunk);
+            let c_source = trulang_codegen::CBackend::emit(&chunk);
 
             if emit_c {
                 if let Some(ref out_path) = output {
@@ -261,20 +261,20 @@ fn main() -> anyhow::Result<()> {
             }
 
             let default_out = output.unwrap_or_else(|| {
-                let stem = file.file_stem().and_then(|s| s.to_str()).unwrap_or("vlang_app");
+                let stem = file.file_stem().and_then(|s| s.to_str()).unwrap_or("trulang_app");
                 #[cfg(target_os = "windows")]
                 return PathBuf::from(format!("{}.exe", stem));
                 #[cfg(not(target_os = "windows"))]
                 return PathBuf::from(stem);
             });
 
-            let config = vlang_codegen::CodegenConfig {
+            let config = trulang_codegen::CodegenConfig {
                 release,
                 output_path: Some(default_out.clone()),
             };
 
             let start = std::time::Instant::now();
-            let bin_path = match vlang_codegen::NativeBuilder::build(&c_source, &config) {
+            let bin_path = match trulang_codegen::NativeBuilder::build(&c_source, &config) {
                 Ok(p) => p,
                 Err(err) => {
                     eprintln!("Native Compilation Error: {}", err);
@@ -287,7 +287,7 @@ fn main() -> anyhow::Result<()> {
             let opt_mode = if release { "Release (-O3)" } else { "Debug (-O0 -g)" };
 
             println!("╔════════════════════════════════════════════════════════════════════════╗");
-            println!("║              VLang Native AOT Compilation Complete                     ║");
+            println!("║              TruLang Native AOT Compilation Complete                     ║");
             println!("╠════════════════════════════════════════════════════════════════════════╣");
             println!("║ Output Binary: {:<56} ║", bin_path.display());
             println!("║ Binary Size:   {:<56} ║", format!("{:.2} KB ({} bytes)", file_size as f64 / 1024.0, file_size));
@@ -303,20 +303,20 @@ fn main() -> anyhow::Result<()> {
                 if candidate.exists() {
                     candidate
                 } else if let Ok(pid) = target_str.parse::<u32>() {
-                    vlang_supervisor::shm::default_shm_path(pid)
+                    trulang_supervisor::shm::default_shm_path(pid)
                 } else {
                     candidate
                 }
             } else {
-                // Find most recent vlang_shm_*.dat in secure runtime dir
-                let shm_dir = vlang_supervisor::shm::default_shm_dir();
+                // Find most recent trulang_shm_*.dat in secure runtime dir
+                let shm_dir = trulang_supervisor::shm::default_shm_dir();
                 let mut found = None;
                 let mut latest_time = None;
                 if let Ok(entries) = fs::read_dir(&shm_dir) {
                     for entry in entries.flatten() {
                         let path = entry.path();
                         if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                            if file_name.starts_with("vlang_shm_") && file_name.ends_with(".dat") {
+                            if file_name.starts_with("trulang_shm_") && file_name.ends_with(".dat") {
                                 if let Ok(meta) = entry.metadata() {
                                     if let Ok(mod_time) = meta.modified() {
                                         if latest_time.is_none_or(|t| mod_time > t) {
@@ -329,7 +329,7 @@ fn main() -> anyhow::Result<()> {
                         }
                     }
                 }
-                found.ok_or_else(|| anyhow::anyhow!("No active VLang telemetry shared memory segment found in {:?}", shm_dir))?
+                found.ok_or_else(|| anyhow::anyhow!("No active TruLang telemetry shared memory segment found in {:?}", shm_dir))?
             };
 
             println!("Attaching Memory Supervisor to telemetry segment: {:?}", shm_path);
@@ -343,7 +343,7 @@ fn main() -> anyhow::Result<()> {
                 eprintln!("Documentation file not found at {:?}", docs_path);
                 std::process::exit(1);
             }
-            println!("📖 VLang Interactive Documentation is available at:\nfile://{}", docs_path.display());
+            println!("📖 TruLang Interactive Documentation is available at:\nfile://{}", docs_path.display());
             if !no_open {
                 #[cfg(target_os = "macos")]
                 let _ = std::process::Command::new("open").arg(&docs_path).spawn();
@@ -354,12 +354,12 @@ fn main() -> anyhow::Result<()> {
         Commands::Lsp { stdio: _ } => {
             let stdin = std::io::stdin();
             let stdout = std::io::stdout();
-            let mut server = vlang_lsp::LanguageServer::new();
+            let mut server = trulang_lsp::LanguageServer::new();
             server.run(stdin.lock(), stdout.lock())?;
         }
         Commands::Fmt { file, write } => {
             let content = fs::read_to_string(&file)?;
-            let formatted = vlang_lsp::Formatter::format(&content);
+            let formatted = trulang_lsp::Formatter::format(&content);
             if write {
                 fs::write(&file, formatted)?;
                 println!("Formatted {}", file.display());
@@ -371,7 +371,7 @@ fn main() -> anyhow::Result<()> {
             let content = fs::read_to_string(&file)?;
             let file_str = file.to_str().unwrap_or("unknown");
 
-            let program = match vlang_syntax::parse(&content) {
+            let program = match trulang_syntax::parse(&content) {
                 Ok(prog) => prog,
                 Err(err) => {
                     eprintln!("{}", err.format_with_source(&content, file_str));
@@ -379,7 +379,7 @@ fn main() -> anyhow::Result<()> {
                 }
             };
 
-            let chunk = Arc::new(match vlang_compiler::compile(&program) {
+            let chunk = Arc::new(match trulang_compiler::compile(&program) {
                 Ok(c) => c,
                 Err(err) => {
                     eprintln!("{}", err.format_with_source(&content, file_str));
@@ -388,11 +388,11 @@ fn main() -> anyhow::Result<()> {
             });
 
             let pid = std::process::id();
-            let shm_path = vlang_supervisor::shm::default_shm_path(pid);
+            let shm_path = trulang_supervisor::shm::default_shm_path(pid);
             let shm = SharedTelemetryRegion::create_or_open(&shm_path, pid).ok().map(Arc::new);
 
             println!("╔════════════════════════════════════════════════════════════════════════╗");
-            println!("║              VLang High-Concurrency Load & Memory Leak Test            ║");
+            println!("║              TruLang High-Concurrency Load & Memory Leak Test            ║");
             println!("╠════════════════════════════════════════════════════════════════════════╣");
             println!("║ Target File:  {:<56} ║", file_str);
             println!("║ Total Work:   {:<56} ║", format!("{} requests across {} worker threads", requests, concurrency));
@@ -401,7 +401,7 @@ fn main() -> anyhow::Result<()> {
             println!("\nExecuting benchmark under sustained concurrency...\n");
 
             let initial_rss = get_current_rss_bytes();
-            let shared_region_b = Arc::new(vlang_vm::RegionBAllocator::new(512 * 1024 * 1024));
+            let shared_region_b = Arc::new(trulang_vm::RegionBAllocator::new(512 * 1024 * 1024));
             let success_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
             let error_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
             let latencies_us = Arc::new(std::sync::Mutex::new(Vec::with_capacity(requests)));
@@ -427,7 +427,7 @@ fn main() -> anyhow::Result<()> {
                             }
 
                             let req_start = std::time::Instant::now();
-                            let mut vm = vlang_vm::VirtualMachine::with_persistent_allocator(
+                            let mut vm = trulang_vm::VirtualMachine::with_persistent_allocator(
                                 16 * 1024 * 1024,
                                 Arc::clone(&reg_b),
                             );
@@ -435,7 +435,7 @@ fn main() -> anyhow::Result<()> {
                             if let Some(ref tel) = shm_clone {
                                 vm.attach_telemetry(Arc::clone(tel));
                             }
-                            vm.stack.push(vlang_compiler::bytecode::Value::Int(req_id));
+                            vm.stack.push(trulang_compiler::bytecode::Value::Int(req_id));
 
                             match vm.execute(&chunk_ref) {
                                 Ok(_) => {

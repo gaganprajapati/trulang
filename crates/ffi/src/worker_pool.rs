@@ -15,7 +15,7 @@ struct Worker {
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<Receiver<Job>>>, is_shutdown: Arc<AtomicBool>) -> Self {
         let thread = thread::Builder::new()
-            .name(format!("vlang-ffi-worker-{}", id))
+            .name(format!("trulang-ffi-worker-{}", id))
             .spawn(move || loop {
                 let job = {
                     let rx = match receiver.lock() {
@@ -93,7 +93,7 @@ impl WorkerPool {
 
     /// Submits a blocking foreign task to the background pool and waits for completion.
     /// This prevents blocking foreign operations (like DB queries or network requests)
-    /// from starving or holding up the single-threaded VLang actor mailbox.
+    /// from starving or holding up the single-threaded TruLang actor mailbox.
     pub fn spawn_blocking<F, R>(&self, task: F) -> Result<R, FfiError>
     where
         F: FnOnce() -> Result<R, FfiError> + Send + 'static,

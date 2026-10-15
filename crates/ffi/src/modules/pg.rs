@@ -1,6 +1,6 @@
 use crate::error::FfiError;
 use crate::handle::PgPoolResource;
-use vlang_compiler::bytecode::Value;
+use trulang_compiler::bytecode::Value;
 
 pub fn create_pool(args: &[Value]) -> Result<Value, FfiError> {
     let conn_url = match args.first() {
@@ -11,7 +11,7 @@ pub fn create_pool(args: &[Value]) -> Result<Value, FfiError> {
                 other
             )));
         }
-        None => "postgres://localhost:5432/vlang_db",
+        None => "postgres://localhost:5432/trulang_db",
     };
 
     let pool = PgPoolResource::new(conn_url);

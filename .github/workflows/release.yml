@@ -19,16 +19,16 @@ jobs:
         include:
           - os: macos-14
             target: aarch64-apple-darwin
-            artifact_name: vlang-darwin-arm64.tar.gz
+            artifact_name: trulang-darwin-arm64.tar.gz
           - os: macos-14
             target: x86_64-apple-darwin
-            artifact_name: vlang-darwin-x86_64.tar.gz
+            artifact_name: trulang-darwin-x86_64.tar.gz
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            artifact_name: vlang-linux-x86_64.tar.gz
+            artifact_name: trulang-linux-x86_64.tar.gz
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact_name: vlang-windows-x64.zip
+            artifact_name: trulang-windows-x64.zip
 
     steps:
       - name: Checkout repository
@@ -40,16 +40,16 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Build release binary
-        run: cargo build --release --target ${{ matrix.target }} --bin vlang
+        run: cargo build --release --target ${{ matrix.target }} --bin trulang
 
       - name: Package binary (Unix)
         if: runner.os != 'Windows'
         run: |
           mkdir -p staging
-          cp target/${{ matrix.target }}/release/vlang staging/
+          cp target/${{ matrix.target }}/release/trulang staging/
           cp README.md staging/
           cd staging
-          tar -czvf "../${{ matrix.artifact_name }}" vlang README.md
+          tar -czvf "../${{ matrix.artifact_name }}" trulang README.md
           cd ..
           shasum -a 256 "${{ matrix.artifact_name }}" > "${{ matrix.artifact_name }}.sha256"
 
@@ -58,10 +58,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p staging
-          cp target/${{ matrix.target }}/release/vlang.exe staging/
+          cp target/${{ matrix.target }}/release/trulang.exe staging/
           cp README.md staging/
           cd staging
-          7z a "../${{ matrix.artifact_name }}" vlang.exe README.md
+          7z a "../${{ matrix.artifact_name }}" trulang.exe README.md
           cd ..
           certutil -hashfile "${{ matrix.artifact_name }}" SHA256 > "${{ matrix.artifact_name }}.sha256"
 

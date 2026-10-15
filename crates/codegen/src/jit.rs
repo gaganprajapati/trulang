@@ -1,12 +1,12 @@
-//! JIT Engine for VLang.
+//! JIT Engine for TruLang.
 //!
-//! Provides on-the-fly compilation and execution of VLang chunks,
+//! Provides on-the-fly compilation and execution of TruLang chunks,
 //! delivering near-instant execution with native machine code speed.
 
 use std::fs;
 use std::process::Command;
 use std::time::{Duration, Instant};
-use vlang_compiler::bytecode::Chunk;
+use trulang_compiler::bytecode::Chunk;
 use crate::builder::{CodegenConfig, CodegenError, NativeBuilder};
 use crate::c_backend::CBackend;
 
@@ -21,7 +21,7 @@ pub struct JitResult {
 pub struct JitEngine;
 
 impl JitEngine {
-    /// Compiles and runs a VLang Chunk with native JIT execution.
+    /// Compiles and runs a TruLang Chunk with native JIT execution.
     pub fn execute(chunk: &Chunk) -> Result<JitResult, CodegenError> {
         let c_source = CBackend::emit(chunk);
 
@@ -30,7 +30,7 @@ impl JitEngine {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos();
-        let temp_bin = temp_dir.join(format!("vlang_jit_{}_{}", std::process::id(), timestamp));
+        let temp_bin = temp_dir.join(format!("trulang_jit_{}_{}", std::process::id(), timestamp));
 
         let config = CodegenConfig {
             release: false,
@@ -66,7 +66,7 @@ impl JitEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vlang_compiler::bytecode::Opcode;
+    use trulang_compiler::bytecode::Opcode;
 
     #[test]
     fn test_jit_execute_arithmetic() {

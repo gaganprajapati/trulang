@@ -1,12 +1,12 @@
-//! Embedded Native C Runtime for VLang.
+//! Embedded Native C Runtime for TruLang.
 //!
 //! Provides the core Region A bump arena allocator (with elastic burst expansions),
 //! Region B persistent heap manager, tagged value representations, checked arithmetic,
 //! and standard service dispatch.
 
-pub const VLANG_RUNTIME_C: &str = r#"
-#ifndef VLANG_RUNTIME_H
-#define VLANG_RUNTIME_H
+pub const TRULANG_RUNTIME_C: &str = r#"
+#ifndef TRULANG_RUNTIME_H
+#define TRULANG_RUNTIME_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,11 +26,11 @@ typedef struct {
     size_t budget_bytes;
     size_t max_budget_bytes;
     uint64_t burst_count;
-} VLangRegionA;
+} TruLangRegionA;
 
-static VLangRegionA g_region_a = {0};
+static TruLangRegionA g_region_a = {0};
 
-static void vlang_region_a_init(size_t budget_bytes, size_t max_budget_bytes) {
+static void trulang_region_a_init(size_t budget_bytes, size_t max_budget_bytes) {
     if (budget_bytes == 0) {
         budget_bytes = 16 * 1024 * 1024; // 16 MB default
     }
@@ -48,7 +48,7 @@ static void vlang_region_a_init(size_t budget_bytes, size_t max_budget_bytes) {
     g_region_a.burst_count = 0;
 }
 
-static void* vlang_region_a_alloc(size_t size) {
+static void* trulang_region_a_alloc(size_t size) {
     // 8-byte alignment
     size_t aligned_size = (size + 7) & ~7;
     if (g_region_a.offset + aligned_size > g_region_a.budget_bytes) {
@@ -85,7 +85,7 @@ static void* vlang_region_a_alloc(size_t size) {
     return ptr;
 }
 
-static void vlang_region_a_reset(void) {
+static void trulang_region_a_reset(void) {
     g_region_a.offset = 0;
 }
 
@@ -96,11 +96,11 @@ static void vlang_region_a_reset(void) {
 typedef struct {
     size_t live_bytes;
     size_t live_objects;
-} VLangRegionB;
+} TruLangRegionB;
 
-static VLangRegionB g_region_b = {0};
+static TruLangRegionB g_region_b = {0};
 
-static void* vlang_region_b_alloc(size_t size) {
+static void* trulang_region_b_alloc(size_t size) {
     size_t aligned_size = (size + 7) & ~7;
     void* ptr = malloc(aligned_size);
     if (!ptr) {
@@ -124,23 +124,23 @@ typedef enum {
     VAL_STRING,
     VAL_MAP,
     VAL_HANDLE
-} VLangValType;
+} TruLangValType;
 
-typedef struct VLangMapEntry {
+typedef struct TruLangMapEntry {
     char* key;
-    struct VLangVal* value;
-    struct VLangMapEntry* next;
-} VLangMapEntry;
+    struct TruLangVal* value;
+    struct TruLangMapEntry* next;
+} TruLangMapEntry;
 
-typedef struct VLangMap {
+typedef struct TruLangMap {
     size_t capacity;
     size_t count;
-    VLangMapEntry** buckets;
+    TruLangMapEntry** buckets;
     bool is_persistent;
-} VLangMap;
+} TruLangMap;
 
-typedef struct VLangVal {
-    VLangValType type;
+typedef struct TruLangVal {
+    TruLangValType type;
     union {
         bool b;
         int64_t i;
@@ -150,49 +150,49 @@ typedef struct VLangVal {
             size_t len;
             bool is_persistent;
         } s;
-        VLangMap* map;
+        TruLangMap* map;
         struct {
             uint64_t id;
             const char* type_name;
             void* resource;
         } handle;
     } as;
-} VLangVal;
+} TruLangVal;
 
-static inline VLangVal vlang_val_null(void) {
-    VLangVal v;
+static inline TruLangVal trulang_val_null(void) {
+    TruLangVal v;
     v.type = VAL_NULL;
     return v;
 }
 
-static inline VLangVal vlang_val_bool(bool b) {
-    VLangVal v;
+static inline TruLangVal trulang_val_bool(bool b) {
+    TruLangVal v;
     v.type = VAL_BOOL;
     v.as.b = b;
     return v;
 }
 
-static inline VLangVal vlang_val_int(int64_t i) {
-    VLangVal v;
+static inline TruLangVal trulang_val_int(int64_t i) {
+    TruLangVal v;
     v.type = VAL_INT;
     v.as.i = i;
     return v;
 }
 
-static inline VLangVal vlang_val_float(double f) {
-    VLangVal v;
+static inline TruLangVal trulang_val_float(double f) {
+    TruLangVal v;
     v.type = VAL_FLOAT;
     v.as.f = f;
     return v;
 }
 
-static VLangVal vlang_val_string(const char* str, bool persistent) {
+static TruLangVal trulang_val_string(const char* str, bool persistent) {
     size_t len = strlen(str);
-    char* data = (char*)(persistent ? vlang_region_b_alloc(len + 1) : vlang_region_a_alloc(len + 1));
+    char* data = (char*)(persistent ? trulang_region_b_alloc(len + 1) : trulang_region_a_alloc(len + 1));
     memcpy(data, str, len);
     data[len] = '\0';
 
-    VLangVal v;
+    TruLangVal v;
     v.type = VAL_STRING;
     v.as.s.data = data;
     v.as.s.len = len;
@@ -200,7 +200,7 @@ static VLangVal vlang_val_string(const char* str, bool persistent) {
     return v;
 }
 
-static uint32_t vlang_hash_str(const char* s) {
+static uint32_t trulang_hash_str(const char* s) {
     uint32_t hash = 2166136261u;
     while (*s) {
         hash ^= (uint8_t)(*s++);
@@ -209,44 +209,44 @@ static uint32_t vlang_hash_str(const char* s) {
     return hash;
 }
 
-static VLangMap* vlang_map_create(bool persistent) {
-    VLangMap* m = (VLangMap*)(persistent ? vlang_region_b_alloc(sizeof(VLangMap)) : vlang_region_a_alloc(sizeof(VLangMap)));
+static TruLangMap* trulang_map_create(bool persistent) {
+    TruLangMap* m = (TruLangMap*)(persistent ? trulang_region_b_alloc(sizeof(TruLangMap)) : trulang_region_a_alloc(sizeof(TruLangMap)));
     m->capacity = 16;
     m->count = 0;
     m->is_persistent = persistent;
-    size_t bsize = sizeof(VLangMapEntry*) * m->capacity;
-    m->buckets = (VLangMapEntry**)(persistent ? vlang_region_b_alloc(bsize) : vlang_region_a_alloc(bsize));
+    size_t bsize = sizeof(TruLangMapEntry*) * m->capacity;
+    m->buckets = (TruLangMapEntry**)(persistent ? trulang_region_b_alloc(bsize) : trulang_region_a_alloc(bsize));
     memset(m->buckets, 0, bsize);
     return m;
 }
 
-static inline VLangVal vlang_val_map(bool persistent) {
-    VLangVal v;
+static inline TruLangVal trulang_val_map(bool persistent) {
+    TruLangVal v;
     v.type = VAL_MAP;
-    v.as.map = vlang_map_create(persistent);
+    v.as.map = trulang_map_create(persistent);
     return v;
 }
 
-static VLangVal vlang_map_get(VLangVal map_val, const char* key) {
-    if (map_val.type != VAL_MAP || !map_val.as.map) return vlang_val_null();
-    VLangMap* m = map_val.as.map;
-    uint32_t bucket = vlang_hash_str(key) % m->capacity;
-    VLangMapEntry* e = m->buckets[bucket];
+static TruLangVal trulang_map_get(TruLangVal map_val, const char* key) {
+    if (map_val.type != VAL_MAP || !map_val.as.map) return trulang_val_null();
+    TruLangMap* m = map_val.as.map;
+    uint32_t bucket = trulang_hash_str(key) % m->capacity;
+    TruLangMapEntry* e = m->buckets[bucket];
     while (e) {
         if (strcmp(e->key, key) == 0) {
             return *(e->value);
         }
         e = e->next;
     }
-    return vlang_val_null();
+    return trulang_val_null();
 }
 
-static void vlang_map_set(VLangVal map_val, const char* key, VLangVal val) {
+static void trulang_map_set(TruLangVal map_val, const char* key, TruLangVal val) {
     if (map_val.type != VAL_MAP || !map_val.as.map) return;
-    VLangMap* m = map_val.as.map;
+    TruLangMap* m = map_val.as.map;
     bool p = m->is_persistent;
-    uint32_t bucket = vlang_hash_str(key) % m->capacity;
-    VLangMapEntry* e = m->buckets[bucket];
+    uint32_t bucket = trulang_hash_str(key) % m->capacity;
+    TruLangMapEntry* e = m->buckets[bucket];
     while (e) {
         if (strcmp(e->key, key) == 0) {
             *(e->value) = val;
@@ -255,19 +255,19 @@ static void vlang_map_set(VLangVal map_val, const char* key, VLangVal val) {
         e = e->next;
     }
     // New entry
-    VLangMapEntry* new_entry = (VLangMapEntry*)(p ? vlang_region_b_alloc(sizeof(VLangMapEntry)) : vlang_region_a_alloc(sizeof(VLangMapEntry)));
+    TruLangMapEntry* new_entry = (TruLangMapEntry*)(p ? trulang_region_b_alloc(sizeof(TruLangMapEntry)) : trulang_region_a_alloc(sizeof(TruLangMapEntry)));
     size_t klen = strlen(key);
-    new_entry->key = (char*)(p ? vlang_region_b_alloc(klen + 1) : vlang_region_a_alloc(klen + 1));
+    new_entry->key = (char*)(p ? trulang_region_b_alloc(klen + 1) : trulang_region_a_alloc(klen + 1));
     memcpy(new_entry->key, key, klen + 1);
 
-    new_entry->value = (VLangVal*)(p ? vlang_region_b_alloc(sizeof(VLangVal)) : vlang_region_a_alloc(sizeof(VLangVal)));
+    new_entry->value = (TruLangVal*)(p ? trulang_region_b_alloc(sizeof(TruLangVal)) : trulang_region_a_alloc(sizeof(TruLangVal)));
     *(new_entry->value) = val;
     new_entry->next = m->buckets[bucket];
     m->buckets[bucket] = new_entry;
     m->count++;
 }
 
-static inline bool vlang_is_truthy(VLangVal v) {
+static inline bool trulang_is_truthy(TruLangVal v) {
     switch (v.type) {
         case VAL_NULL: return false;
         case VAL_BOOL: return v.as.b;
@@ -284,73 +284,73 @@ static inline bool vlang_is_truthy(VLangVal v) {
 /*                         Checked Arithmetic & Ops                          */
 /* ========================================================================= */
 
-static inline VLangVal vlang_op_add(VLangVal a, VLangVal b) {
+static inline TruLangVal trulang_op_add(TruLangVal a, TruLangVal b) {
     if (a.type == VAL_INT && b.type == VAL_INT) {
         int64_t res;
         if (__builtin_add_overflow(a.as.i, b.as.i, &res)) {
             fprintf(stderr, "\nVM Runtime Error: Integer overflow during addition: %" PRId64 " + %" PRId64 "\n", a.as.i, b.as.i);
             exit(1);
         }
-        return vlang_val_int(res);
+        return trulang_val_int(res);
     }
     if (a.type == VAL_FLOAT || b.type == VAL_FLOAT) {
         double da = (a.type == VAL_FLOAT) ? a.as.f : (double)a.as.i;
         double db = (b.type == VAL_FLOAT) ? b.as.f : (double)b.as.i;
-        return vlang_val_float(da + db);
+        return trulang_val_float(da + db);
     }
     if (a.type == VAL_STRING || b.type == VAL_STRING) {
         char buf_a[64], buf_b[64];
         const char* sa = (a.type == VAL_STRING) ? a.as.s.data : (snprintf(buf_a, sizeof(buf_a), "%" PRId64, a.as.i), buf_a);
         const char* sb = (b.type == VAL_STRING) ? b.as.s.data : (snprintf(buf_b, sizeof(buf_b), "%" PRId64, b.as.i), buf_b);
         size_t total_len = strlen(sa) + strlen(sb);
-        char* concat = (char*)vlang_region_a_alloc(total_len + 1);
+        char* concat = (char*)trulang_region_a_alloc(total_len + 1);
         strcpy(concat, sa);
         strcat(concat, sb);
-        VLangVal res;
+        TruLangVal res;
         res.type = VAL_STRING;
         res.as.s.data = concat;
         res.as.s.len = total_len;
         res.as.s.is_persistent = false;
         return res;
     }
-    return vlang_val_null();
+    return trulang_val_null();
 }
 
-static inline VLangVal vlang_op_sub(VLangVal a, VLangVal b) {
+static inline TruLangVal trulang_op_sub(TruLangVal a, TruLangVal b) {
     if (a.type == VAL_INT && b.type == VAL_INT) {
         int64_t res;
         if (__builtin_sub_overflow(a.as.i, b.as.i, &res)) {
             fprintf(stderr, "\nVM Runtime Error: Integer overflow during subtraction\n");
             exit(1);
         }
-        return vlang_val_int(res);
+        return trulang_val_int(res);
     }
     if (a.type == VAL_FLOAT || b.type == VAL_FLOAT) {
         double da = (a.type == VAL_FLOAT) ? a.as.f : (double)a.as.i;
         double db = (b.type == VAL_FLOAT) ? b.as.f : (double)b.as.i;
-        return vlang_val_float(da - db);
+        return trulang_val_float(da - db);
     }
-    return vlang_val_null();
+    return trulang_val_null();
 }
 
-static inline VLangVal vlang_op_mul(VLangVal a, VLangVal b) {
+static inline TruLangVal trulang_op_mul(TruLangVal a, TruLangVal b) {
     if (a.type == VAL_INT && b.type == VAL_INT) {
         int64_t res;
         if (__builtin_mul_overflow(a.as.i, b.as.i, &res)) {
             fprintf(stderr, "\nVM Runtime Error: Integer overflow during multiplication: %" PRId64 " * %" PRId64 "\n", a.as.i, b.as.i);
             exit(1);
         }
-        return vlang_val_int(res);
+        return trulang_val_int(res);
     }
     if (a.type == VAL_FLOAT || b.type == VAL_FLOAT) {
         double da = (a.type == VAL_FLOAT) ? a.as.f : (double)a.as.i;
         double db = (b.type == VAL_FLOAT) ? b.as.f : (double)b.as.i;
-        return vlang_val_float(da * db);
+        return trulang_val_float(da * db);
     }
-    return vlang_val_null();
+    return trulang_val_null();
 }
 
-static inline VLangVal vlang_op_div(VLangVal a, VLangVal b) {
+static inline TruLangVal trulang_op_div(TruLangVal a, TruLangVal b) {
     if (b.type == VAL_INT && b.as.i == 0) {
         fprintf(stderr, "\nVM Runtime Error: Division by zero\n");
         exit(1);
@@ -360,105 +360,105 @@ static inline VLangVal vlang_op_div(VLangVal a, VLangVal b) {
             fprintf(stderr, "\nVM Runtime Error: Integer overflow during division\n");
             exit(1);
         }
-        return vlang_val_int(a.as.i / b.as.i);
+        return trulang_val_int(a.as.i / b.as.i);
     }
     if (a.type == VAL_FLOAT || b.type == VAL_FLOAT) {
         double da = (a.type == VAL_FLOAT) ? a.as.f : (double)a.as.i;
         double db = (b.type == VAL_FLOAT) ? b.as.f : (double)b.as.i;
-        return vlang_val_float(da / db);
+        return trulang_val_float(da / db);
     }
-    return vlang_val_null();
+    return trulang_val_null();
 }
 
-static inline VLangVal vlang_op_mod(VLangVal a, VLangVal b) {
+static inline TruLangVal trulang_op_mod(TruLangVal a, TruLangVal b) {
     if (b.type == VAL_INT && b.as.i == 0) {
         fprintf(stderr, "\nVM Runtime Error: Division by zero in modulo operation\n");
         exit(1);
     }
     if (a.type == VAL_INT && b.type == VAL_INT) {
-        return vlang_val_int(a.as.i % b.as.i);
+        return trulang_val_int(a.as.i % b.as.i);
     }
-    return vlang_val_null();
+    return trulang_val_null();
 }
 
-static inline VLangVal vlang_op_neg(VLangVal a) {
-    if (a.type == VAL_INT) return vlang_val_int(-a.as.i);
-    if (a.type == VAL_FLOAT) return vlang_val_float(-a.as.f);
-    return vlang_val_null();
+static inline TruLangVal trulang_op_neg(TruLangVal a) {
+    if (a.type == VAL_INT) return trulang_val_int(-a.as.i);
+    if (a.type == VAL_FLOAT) return trulang_val_float(-a.as.f);
+    return trulang_val_null();
 }
 
-static inline VLangVal vlang_op_not(VLangVal a) {
-    return vlang_val_bool(!vlang_is_truthy(a));
+static inline TruLangVal trulang_op_not(TruLangVal a) {
+    return trulang_val_bool(!trulang_is_truthy(a));
 }
 
-static inline VLangVal vlang_op_eq(VLangVal a, VLangVal b) {
-    if (a.type != b.type) return vlang_val_bool(false);
+static inline TruLangVal trulang_op_eq(TruLangVal a, TruLangVal b) {
+    if (a.type != b.type) return trulang_val_bool(false);
     switch (a.type) {
-        case VAL_NULL: return vlang_val_bool(true);
-        case VAL_BOOL: return vlang_val_bool(a.as.b == b.as.b);
-        case VAL_INT: return vlang_val_bool(a.as.i == b.as.i);
-        case VAL_FLOAT: return vlang_val_bool(a.as.f == b.as.f);
-        case VAL_STRING: return vlang_val_bool(strcmp(a.as.s.data, b.as.s.data) == 0);
-        case VAL_MAP: return vlang_val_bool(a.as.map == b.as.map);
-        case VAL_HANDLE: return vlang_val_bool(a.as.handle.id == b.as.handle.id);
+        case VAL_NULL: return trulang_val_bool(true);
+        case VAL_BOOL: return trulang_val_bool(a.as.b == b.as.b);
+        case VAL_INT: return trulang_val_bool(a.as.i == b.as.i);
+        case VAL_FLOAT: return trulang_val_bool(a.as.f == b.as.f);
+        case VAL_STRING: return trulang_val_bool(strcmp(a.as.s.data, b.as.s.data) == 0);
+        case VAL_MAP: return trulang_val_bool(a.as.map == b.as.map);
+        case VAL_HANDLE: return trulang_val_bool(a.as.handle.id == b.as.handle.id);
     }
-    return vlang_val_bool(false);
+    return trulang_val_bool(false);
 }
 
-static inline VLangVal vlang_op_ne(VLangVal a, VLangVal b) {
-    VLangVal eq = vlang_op_eq(a, b);
-    return vlang_val_bool(!eq.as.b);
+static inline TruLangVal trulang_op_ne(TruLangVal a, TruLangVal b) {
+    TruLangVal eq = trulang_op_eq(a, b);
+    return trulang_val_bool(!eq.as.b);
 }
 
-static inline VLangVal vlang_op_lt(VLangVal a, VLangVal b) {
-    if (a.type == VAL_INT && b.type == VAL_INT) return vlang_val_bool(a.as.i < b.as.i);
-    if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) return vlang_val_bool(a.as.f < b.as.f);
-    return vlang_val_bool(false);
+static inline TruLangVal trulang_op_lt(TruLangVal a, TruLangVal b) {
+    if (a.type == VAL_INT && b.type == VAL_INT) return trulang_val_bool(a.as.i < b.as.i);
+    if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) return trulang_val_bool(a.as.f < b.as.f);
+    return trulang_val_bool(false);
 }
 
-static inline VLangVal vlang_op_le(VLangVal a, VLangVal b) {
-    if (a.type == VAL_INT && b.type == VAL_INT) return vlang_val_bool(a.as.i <= b.as.i);
-    if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) return vlang_val_bool(a.as.f <= b.as.f);
-    return vlang_val_bool(false);
+static inline TruLangVal trulang_op_le(TruLangVal a, TruLangVal b) {
+    if (a.type == VAL_INT && b.type == VAL_INT) return trulang_val_bool(a.as.i <= b.as.i);
+    if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) return trulang_val_bool(a.as.f <= b.as.f);
+    return trulang_val_bool(false);
 }
 
-static inline VLangVal vlang_op_gt(VLangVal a, VLangVal b) {
-    if (a.type == VAL_INT && b.type == VAL_INT) return vlang_val_bool(a.as.i > b.as.i);
-    if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) return vlang_val_bool(a.as.f > b.as.f);
-    return vlang_val_bool(false);
+static inline TruLangVal trulang_op_gt(TruLangVal a, TruLangVal b) {
+    if (a.type == VAL_INT && b.type == VAL_INT) return trulang_val_bool(a.as.i > b.as.i);
+    if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) return trulang_val_bool(a.as.f > b.as.f);
+    return trulang_val_bool(false);
 }
 
-static inline VLangVal vlang_op_ge(VLangVal a, VLangVal b) {
-    if (a.type == VAL_INT && b.type == VAL_INT) return vlang_val_bool(a.as.i >= b.as.i);
-    if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) return vlang_val_bool(a.as.f >= b.as.f);
-    return vlang_val_bool(false);
+static inline TruLangVal trulang_op_ge(TruLangVal a, TruLangVal b) {
+    if (a.type == VAL_INT && b.type == VAL_INT) return trulang_val_bool(a.as.i >= b.as.i);
+    if (a.type == VAL_FLOAT && b.type == VAL_FLOAT) return trulang_val_bool(a.as.f >= b.as.f);
+    return trulang_val_bool(false);
 }
 
 /* ========================================================================= */
 /*                         Region B Promotion (Persist)                      */
 /* ========================================================================= */
 
-static VLangVal vlang_persist(VLangVal val) {
+static TruLangVal trulang_persist(TruLangVal val) {
     switch (val.type) {
         case VAL_STRING: {
             if (val.as.s.is_persistent) return val;
-            return vlang_val_string(val.as.s.data, true);
+            return trulang_val_string(val.as.s.data, true);
         }
         case VAL_MAP: {
             if (!val.as.map || val.as.map->is_persistent) return val;
-            VLangMap* old_map = val.as.map;
-            VLangMap* new_map = vlang_map_create(true);
+            TruLangMap* old_map = val.as.map;
+            TruLangMap* new_map = trulang_map_create(true);
             for (size_t i = 0; i < old_map->capacity; i++) {
-                VLangMapEntry* e = old_map->buckets[i];
+                TruLangMapEntry* e = old_map->buckets[i];
                 while (e) {
-                    VLangVal pval = vlang_persist(*(e->value));
-                    vlang_map_set(vlang_val_null(), e->key, pval); // Helper
-                    uint32_t bucket = vlang_hash_str(e->key) % new_map->capacity;
-                    VLangMapEntry* ne = (VLangMapEntry*)vlang_region_b_alloc(sizeof(VLangMapEntry));
+                    TruLangVal pval = trulang_persist(*(e->value));
+                    trulang_map_set(trulang_val_null(), e->key, pval); // Helper
+                    uint32_t bucket = trulang_hash_str(e->key) % new_map->capacity;
+                    TruLangMapEntry* ne = (TruLangMapEntry*)trulang_region_b_alloc(sizeof(TruLangMapEntry));
                     size_t klen = strlen(e->key);
-                    ne->key = (char*)vlang_region_b_alloc(klen + 1);
+                    ne->key = (char*)trulang_region_b_alloc(klen + 1);
                     memcpy(ne->key, e->key, klen + 1);
-                    ne->value = (VLangVal*)vlang_region_b_alloc(sizeof(VLangVal));
+                    ne->value = (TruLangVal*)trulang_region_b_alloc(sizeof(TruLangVal));
                     *(ne->value) = pval;
                     ne->next = new_map->buckets[bucket];
                     new_map->buckets[bucket] = ne;
@@ -466,7 +466,7 @@ static VLangVal vlang_persist(VLangVal val) {
                     e = e->next;
                 }
             }
-            VLangVal res;
+            TruLangVal res;
             res.type = VAL_MAP;
             res.as.map = new_map;
             return res;
@@ -480,7 +480,7 @@ static VLangVal vlang_persist(VLangVal val) {
 /*                         Printing & Diagnostic Output                      */
 /* ========================================================================= */
 
-static void vlang_val_print(VLangVal val) {
+static void trulang_val_print(TruLangVal val) {
     switch (val.type) {
         case VAL_NULL: printf("null"); break;
         case VAL_BOOL: printf("%s", val.as.b ? "true" : "false"); break;
@@ -492,11 +492,11 @@ static void vlang_val_print(VLangVal val) {
             if (val.as.map) {
                 bool first = true;
                 for (size_t i = 0; i < val.as.map->capacity; i++) {
-                    VLangMapEntry* e = val.as.map->buckets[i];
+                    TruLangMapEntry* e = val.as.map->buckets[i];
                     while (e) {
                         if (!first) printf(", ");
                         printf("%s: ", e->key);
-                        vlang_val_print(*(e->value));
+                        trulang_val_print(*(e->value));
                         first = false;
                         e = e->next;
                     }
@@ -509,12 +509,12 @@ static void vlang_val_print(VLangVal val) {
     }
 }
 
-static void vlang_val_println(VLangVal val) {
-    vlang_val_print(val);
+static void trulang_val_println(TruLangVal val) {
+    trulang_val_print(val);
     printf("\n");
 }
 
-static void vlang_print_diagnostics(void) {
+static void trulang_print_diagnostics(void) {
     printf("--- Memory Diagnostics ---\n");
     if (g_region_a.max_budget_bytes > 0) {
         printf("Region A (Execution):  %zu bytes used (base: %zu bytes, max: %zu bytes)\n",
@@ -530,5 +530,5 @@ static void vlang_print_diagnostics(void) {
            g_region_b.live_bytes, g_region_b.live_objects);
 }
 
-#endif /* VLANG_RUNTIME_H */
+#endif /* TRULANG_RUNTIME_H */
 "#;

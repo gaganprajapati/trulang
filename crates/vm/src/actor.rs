@@ -3,7 +3,7 @@ use crate::vm::{VirtualMachine, VmError};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use vlang_compiler::bytecode::{Chunk, Value};
+use trulang_compiler::bytecode::{Chunk, Value};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ActorError {

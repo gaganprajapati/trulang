@@ -1,5 +1,5 @@
 /* ==========================================================================
-   VLang Professional Documentation Design System
+   TruLang Professional Documentation Design System
    Modern, Clean, Human-Crafted Architecture with Light & Dark Themes
    ========================================================================== */
 
@@ -1133,7 +1133,7 @@ pre code {
   text-align: right;
 }
 
-.bar-vlang  { background: #0284c7; }
+.bar-trulang  { background: #0284c7; }
 .bar-rust   { background: #c2410c; }
 .bar-go     { background: #0f766e; }
 .bar-java   { background: #b91c1c; }
@@ -1315,7 +1315,7 @@ pre code {
   border-top: 3px solid #16a34a;
 }
 
-.comparison-col.vlang-col {
+.comparison-col.trulang-col {
   border-top: 3px solid #0284c7;
 }
 

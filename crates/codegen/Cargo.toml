@@ -1,13 +1,13 @@
 [package]
-name = "vlang_codegen"
+name = "trulang_codegen"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Native AOT & JIT Code Generation Backend for VLang"
+description = "Native AOT & JIT Code Generation Backend for TruLang"
 
 [dependencies]
-vlang_syntax = { path = "../syntax" }
-vlang_compiler = { path = "../compiler" }
+trulang_syntax = { path = "../syntax" }
+trulang_compiler = { path = "../compiler" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }

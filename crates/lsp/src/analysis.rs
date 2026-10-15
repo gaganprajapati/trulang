@@ -1,6 +1,6 @@
 use crate::protocol::{Diagnostic, Hover, Location, MarkupContent, Position, Range};
-use vlang_syntax::ast::*;
-use vlang_syntax::span::Span;
+use trulang_syntax::ast::*;
+use trulang_syntax::span::Span;
 
 pub struct Analyzer;
 
@@ -9,7 +9,7 @@ impl Analyzer {
     pub fn validate(content: &str) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
 
-        let program = match vlang_syntax::parse(content) {
+        let program = match trulang_syntax::parse(content) {
             Ok(prog) => prog,
             Err(err) => {
                 let range = span_to_range(&err.span, content);
@@ -17,13 +17,13 @@ impl Analyzer {
                     range,
                     severity: Some(1), // Error
                     message: err.message,
-                    source: Some("vlang".into()),
+                    source: Some("trulang".into()),
                 });
                 return diagnostics;
             }
         };
 
-        let mut checker = vlang_compiler::type_checker::TypeChecker::new();
+        let mut checker = trulang_compiler::type_checker::TypeChecker::new();
         if let Err(err) = checker.check_program(&program) {
             let range = span_to_range(&err.span, content);
             let msg = if let Some(hint) = err.hint {
@@ -35,7 +35,7 @@ impl Analyzer {
                 range,
                 severity: Some(1), // Error
                 message: msg,
-                source: Some("vlang-typecheck".into()),
+                source: Some("trulang-typecheck".into()),
             });
         }
 
@@ -44,7 +44,7 @@ impl Analyzer {
 
     /// Computes hover tooltip markdown at the given position
     pub fn hover(content: &str, pos: Position) -> Option<Hover> {
-        let program = vlang_syntax::parse(content).ok()?;
+        let program = trulang_syntax::parse(content).ok()?;
         let target_word = get_word_at_position(content, &pos)?;
 
         // Search Declarations
@@ -72,7 +72,7 @@ impl Analyzer {
 
                         let doc = format!(
                             "### Service Actor: `{}`\n\n\
-                            **VLang Zero-Lock Concurrency Unit**\n\n\
+                            **TruLang Zero-Lock Concurrency Unit**\n\n\
                             - **Request Arena (Region A)**: `{}` with $O(1)$ zero-pause reclamation\n\
                             - **Persistent State (Region B)**: `{}` reference-counted DAG\n\
                             - **Mailbox**: Bounded single-threaded queue with automatic backpressure",
@@ -93,7 +93,7 @@ impl Analyzer {
                             let mutability = if field.node.is_mut { "mut " } else { "" };
                             let ty_str = field.node.ty.as_ref().map_or("inferred".into(), |t| format!("{:?}", t));
                             let doc = format!(
-                                "```vlang\nlet {}{}: {}\n```\n\n\
+                                "```trulang\nlet {}{}: {}\n```\n\n\
                                 **Persistent Actor Field (Region B)**\n\n\
                                 Values assigned or inserted here are automatically promoted to Region B with cycle detection.",
                                 mutability, field.node.name, ty_str
@@ -118,7 +118,7 @@ impl Analyzer {
                             let ret_str = method.node.return_type.as_ref().map_or("void".into(), |t| format!("{:?}", t));
 
                             let doc = format!(
-                                "```vlang\nfn {}({}) -> {}\n```\n\n\
+                                "```trulang\nfn {}({}) -> {}\n```\n\n\
                                 **Actor Request Handler Method**\n\n\
                                 Executes sequentially inside `{}`'s dedicated thread. Transient request variables are allocated inside Region A.",
                                 method.node.name, params_str.join(", "), ret_str, svc.name
@@ -141,7 +141,7 @@ impl Analyzer {
                     let ret_str = func.return_type.as_ref().map_or("void".into(), |t| format!("{:?}", t));
 
                     let doc = format!(
-                        "```vlang\nfn {}({}) -> {}\n```\n\n\
+                        "```trulang\nfn {}({}) -> {}\n```\n\n\
                         **Standard Function**",
                         func.name, params_str.join(", "), ret_str
                     );
@@ -175,7 +175,7 @@ impl Analyzer {
             "persist" => Some(Hover {
                 contents: MarkupContent {
                     kind: "markdown".into(),
-                    value: "### `persist(value)`\n\nPromotes an object from temporary Region A (execution memory) to persistent Region B (long-lived actor state).\n\n*Note: VLang compiler automatically infers persist calls when writing to actor persistent fields.*".into(),
+                    value: "### `persist(value)`\n\nPromotes an object from temporary Region A (execution memory) to persistent Region B (long-lived actor state).\n\n*Note: TruLang compiler automatically infers persist calls when writing to actor persistent fields.*".into(),
                 },
                 range: None,
             }),
@@ -199,7 +199,7 @@ impl Analyzer {
 
     /// Locates the declaration for the symbol at the given position
     pub fn definition(content: &str, uri: &str, pos: Position) -> Option<Location> {
-        let program = vlang_syntax::parse(content).ok()?;
+        let program = trulang_syntax::parse(content).ok()?;
         let target_word = get_word_at_position(content, &pos)?;
 
         for decl in &program.declarations {

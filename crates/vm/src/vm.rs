@@ -1,7 +1,7 @@
 use crate::frame::CallFrame;
 use crate::memory::{MemoryError, RegionAAllocator, RegionBAllocator};
 use std::sync::Arc;
-use vlang_compiler::bytecode::{Chunk, Opcode, Value};
+use trulang_compiler::bytecode::{Chunk, Opcode, Value};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum VmError {
@@ -86,10 +86,10 @@ pub struct VirtualMachine {
     pub frames: Vec<CallFrame>,
     pub region_a: RegionAAllocator,
     pub region_b: Arc<RegionBAllocator>,
-    pub ffi_registry: Arc<vlang_ffi::FfiRegistry>,
-    pub worker_pool: Arc<vlang_ffi::WorkerPool>,
+    pub ffi_registry: Arc<trulang_ffi::FfiRegistry>,
+    pub worker_pool: Arc<trulang_ffi::WorkerPool>,
     pub output_log: Vec<String>,
-    pub telemetry: Option<Arc<vlang_supervisor::SharedTelemetryRegion>>,
+    pub telemetry: Option<Arc<trulang_supervisor::SharedTelemetryRegion>>,
     pub instruction_count: u64,
     pub max_instructions: Option<u64>,
     pub quiet: bool,
@@ -105,8 +105,8 @@ impl VirtualMachine {
             frames: Vec::with_capacity(64),
             region_a: RegionAAllocator::new(16 * 1024 * 1024), // default 16MB Region A
             region_b: Arc::new(RegionBAllocator::new(512 * 1024 * 1024)), // default 512MB Region B
-            ffi_registry: Arc::new(vlang_ffi::FfiRegistry::new()),
-            worker_pool: Arc::new(vlang_ffi::WorkerPool::default()),
+            ffi_registry: Arc::new(trulang_ffi::FfiRegistry::new()),
+            worker_pool: Arc::new(trulang_ffi::WorkerPool::default()),
             output_log: Vec::new(),
             telemetry: None,
             instruction_count: 0,
@@ -121,8 +121,8 @@ impl VirtualMachine {
             frames: Vec::with_capacity(64),
             region_a: RegionAAllocator::new(request_budget),
             region_b: Arc::new(RegionBAllocator::new(persistent_budget)),
-            ffi_registry: Arc::new(vlang_ffi::FfiRegistry::new()),
-            worker_pool: Arc::new(vlang_ffi::WorkerPool::default()),
+            ffi_registry: Arc::new(trulang_ffi::FfiRegistry::new()),
+            worker_pool: Arc::new(trulang_ffi::WorkerPool::default()),
             output_log: Vec::new(),
             telemetry: None,
             instruction_count: 0,
@@ -141,8 +141,8 @@ impl VirtualMachine {
             frames: Vec::with_capacity(64),
             region_a: RegionAAllocator::with_ceiling(request_budget, max_request_budget),
             region_b: Arc::new(RegionBAllocator::new(persistent_budget)),
-            ffi_registry: Arc::new(vlang_ffi::FfiRegistry::new()),
-            worker_pool: Arc::new(vlang_ffi::WorkerPool::default()),
+            ffi_registry: Arc::new(trulang_ffi::FfiRegistry::new()),
+            worker_pool: Arc::new(trulang_ffi::WorkerPool::default()),
             output_log: Vec::new(),
             telemetry: None,
             instruction_count: 0,
@@ -155,7 +155,7 @@ impl VirtualMachine {
         let is_burst = self.region_a.allocate(size).map_err(|e| {
             if let Some(shm) = &self.telemetry {
                 shm.push_event(
-                    vlang_supervisor::TelemetryEventType::BudgetExceeded,
+                    trulang_supervisor::TelemetryEventType::BudgetExceeded,
                     size as u32,
                     0,
                     0,
@@ -168,7 +168,7 @@ impl VirtualMachine {
         if is_burst {
             if let Some(shm) = &self.telemetry {
                 shm.push_event(
-                    vlang_supervisor::TelemetryEventType::ArenaBurst,
+                    trulang_supervisor::TelemetryEventType::ArenaBurst,
                     size as u32,
                     0,
                     0,
@@ -195,8 +195,8 @@ impl VirtualMachine {
             frames: Vec::with_capacity(64),
             region_a: RegionAAllocator::new(request_budget),
             region_b,
-            ffi_registry: Arc::new(vlang_ffi::FfiRegistry::new()),
-            worker_pool: Arc::new(vlang_ffi::WorkerPool::default()),
+            ffi_registry: Arc::new(trulang_ffi::FfiRegistry::new()),
+            worker_pool: Arc::new(trulang_ffi::WorkerPool::default()),
             output_log: Vec::new(),
             telemetry: None,
             instruction_count: 0,
@@ -214,7 +214,7 @@ impl VirtualMachine {
         self
     }
 
-    pub fn attach_telemetry(&mut self, shm: Arc<vlang_supervisor::SharedTelemetryRegion>) {
+    pub fn attach_telemetry(&mut self, shm: Arc<trulang_supervisor::SharedTelemetryRegion>) {
         let header = shm.header();
         header.region_a_budget_bytes.store(self.region_a.budget_bytes as u64, std::sync::atomic::Ordering::Relaxed);
         header.region_b_budget_bytes.store(self.region_b.budget_bytes as u64, std::sync::atomic::Ordering::Relaxed);
@@ -353,7 +353,7 @@ impl VirtualMachine {
                                 .resource
                                 .call_method(method, &args)
                                 .map_err(VmError::InvalidOperand)?;
-                            let bytes = vlang_ffi::estimate_value_size(&res);
+                            let bytes = trulang_ffi::estimate_value_size(&res);
                             self.allocate_region_a(bytes)?;
                             self.stack.push(res);
                         }
@@ -392,7 +392,7 @@ impl VirtualMachine {
                                 .ffi_registry
                                 .invoke(s, method, &args, Some(&self.worker_pool))
                                 .map_err(|e| VmError::InvalidOperand(e.to_string()))?;
-                            let bytes = vlang_ffi::estimate_value_size(&res);
+                            let bytes = trulang_ffi::estimate_value_size(&res);
                             self.allocate_region_a(bytes)?;
                             self.stack.push(res);
                         }
@@ -638,14 +638,14 @@ impl VirtualMachine {
                         let h = shm.header();
                         h.region_a_budget_bytes.store(*bytes as u64, std::sync::atomic::Ordering::Relaxed);
                         h.region_a_used_bytes.store(0, std::sync::atomic::Ordering::Relaxed);
-                        shm.push_event(vlang_supervisor::TelemetryEventType::AllocRegionA, *bytes as u32, 0, 0, "request_arena");
+                        shm.push_event(trulang_supervisor::TelemetryEventType::AllocRegionA, *bytes as u32, 0, 0, "request_arena");
                     }
                 }
                 Opcode::FreeRegionA => {
                     self.region_a.reset();
                     if let Some(shm) = &self.telemetry {
                         shm.header().region_a_used_bytes.store(0, std::sync::atomic::Ordering::Relaxed);
-                        shm.push_event(vlang_supervisor::TelemetryEventType::FreeRegionA, 0, 0, 0, "reset_arena");
+                        shm.push_event(trulang_supervisor::TelemetryEventType::FreeRegionA, 0, 0, 0, "reset_arena");
                     }
                 }
                 Opcode::Persist => {
@@ -669,7 +669,7 @@ impl VirtualMachine {
                     };
                     self.region_b.allocate(size).map_err(|e| {
                         if let Some(shm) = &self.telemetry {
-                            shm.push_event(vlang_supervisor::TelemetryEventType::BudgetExceeded, size as u32, 0, 0, "persist_overflow");
+                            shm.push_event(trulang_supervisor::TelemetryEventType::BudgetExceeded, size as u32, 0, 0, "persist_overflow");
                         }
                         VmError::MemoryExceeded(e)
                     })?;
@@ -677,7 +677,7 @@ impl VirtualMachine {
                         let h = shm.header();
                         h.region_b_live_bytes.store(self.region_b.live_bytes.load(std::sync::atomic::Ordering::Relaxed) as u64, std::sync::atomic::Ordering::Relaxed);
                         h.region_b_live_objects.store(self.region_b.live_objects.load(std::sync::atomic::Ordering::Relaxed) as u64, std::sync::atomic::Ordering::Relaxed);
-                        shm.push_event(vlang_supervisor::TelemetryEventType::PersistToRegionB, size as u32, 0, 0, "persist_object");
+                        shm.push_event(trulang_supervisor::TelemetryEventType::PersistToRegionB, size as u32, 0, 0, "persist_object");
                     }
                 }
                 Opcode::Print => {

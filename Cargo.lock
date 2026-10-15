@@ -471,77 +471,65 @@ dependencies = [
 ]
 
 [[package]]
-name = "unicode-ident"
-version = "1.0.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
-
-[[package]]
-name = "utf8parse"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
-
-[[package]]
-name = "vlang_cli"
+name = "trulang_cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
  "libc",
- "vlang_codegen",
- "vlang_compiler",
- "vlang_ffi",
- "vlang_lsp",
- "vlang_supervisor",
- "vlang_syntax",
- "vlang_vm",
+ "trulang_codegen",
+ "trulang_compiler",
+ "trulang_ffi",
+ "trulang_lsp",
+ "trulang_supervisor",
+ "trulang_syntax",
+ "trulang_vm",
 ]
 
 [[package]]
-name = "vlang_codegen"
+name = "trulang_codegen"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "libc",
  "thiserror 2.0.21",
- "vlang_compiler",
- "vlang_syntax",
+ "trulang_compiler",
+ "trulang_syntax",
 ]
 
 [[package]]
-name = "vlang_compiler"
+name = "trulang_compiler"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "thiserror 2.0.21",
- "vlang_syntax",
+ "trulang_syntax",
 ]
 
 [[package]]
-name = "vlang_ffi"
+name = "trulang_ffi"
 version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.21",
- "vlang_compiler",
- "vlang_syntax",
+ "trulang_compiler",
+ "trulang_syntax",
 ]
 
 [[package]]
-name = "vlang_lsp"
+name = "trulang_lsp"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "serde",
  "serde_json",
- "vlang_compiler",
- "vlang_syntax",
+ "trulang_compiler",
+ "trulang_syntax",
 ]
 
 [[package]]
-name = "vlang_supervisor"
+name = "trulang_supervisor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -554,7 +542,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "vlang_syntax"
+name = "trulang_syntax"
 version = "0.1.0"
 dependencies = [
  "logos",
@@ -563,17 +551,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "vlang_vm"
+name = "trulang_vm"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "libc",
  "thiserror 2.0.21",
- "vlang_compiler",
- "vlang_ffi",
- "vlang_supervisor",
- "vlang_syntax",
+ "trulang_compiler",
+ "trulang_ffi",
+ "trulang_supervisor",
+ "trulang_syntax",
 ]
+
+[[package]]
+name = "unicode-ident"
+version = "1.0.27"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
+
+[[package]]
+name = "utf8parse"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "walkdir"

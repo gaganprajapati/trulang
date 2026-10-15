@@ -1,11 +1,11 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
-use vlang_compiler::bytecode::Value;
-use vlang_compiler::compile;
-use vlang_syntax::parse;
-use vlang_vm::actor::{ActorError, ServiceActor};
-use vlang_vm::VirtualMachine;
+use trulang_compiler::bytecode::Value;
+use trulang_compiler::compile;
+use trulang_syntax::parse;
+use trulang_vm::actor::{ActorError, ServiceActor};
+use trulang_vm::VirtualMachine;
 
 /// Helper to sample OS resident set size (RSS) in bytes
 #[allow(deprecated)]
@@ -113,7 +113,7 @@ fn handle(req_id: i64) -> i64 {
     let reqs_per_thread = 2_500;
     let total_requests = num_threads * reqs_per_thread;
 
-    let persistent_mem = Arc::new(vlang_vm::RegionBAllocator::new(64 * 1024 * 1024));
+    let persistent_mem = Arc::new(trulang_vm::RegionBAllocator::new(64 * 1024 * 1024));
     let chunk_arc = Arc::new(chunk);
     let success_count = Arc::new(AtomicUsize::new(0));
 
@@ -251,7 +251,7 @@ fn handle(req: i64) -> i64 {
 #[test]
 fn test_concurrent_ffi_offloaded_database_queries_zero_mailbox_starvation() {
     let source = r#"
-import "rust:vlang_std_pg" as db;
+import "rust:trulang_std_pg" as db;
 
 fn handle(user_id: i64) -> i64 {
     let pool = db.create_pool("postgres://localhost/users");

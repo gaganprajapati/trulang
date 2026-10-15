@@ -1,21 +1,21 @@
 [package]
-name = "vlang_cli"
+name = "trulang_cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "vlang"
+name = "trulang"
 path = "src/main.rs"
 
 [dependencies]
-vlang_syntax = { path = "../syntax" }
-vlang_compiler = { path = "../compiler" }
-vlang_vm = { path = "../vm" }
-vlang_supervisor = { path = "../supervisor" }
-vlang_lsp = { path = "../lsp" }
-vlang_ffi = { path = "../ffi" }
-vlang_codegen = { path = "../codegen" }
+trulang_syntax = { path = "../syntax" }
+trulang_compiler = { path = "../compiler" }
+trulang_vm = { path = "../vm" }
+trulang_supervisor = { path = "../supervisor" }
+trulang_lsp = { path = "../lsp" }
+trulang_ffi = { path = "../ffi" }
+trulang_codegen = { path = "../codegen" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }

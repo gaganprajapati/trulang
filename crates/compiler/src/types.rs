@@ -1,5 +1,5 @@
 use std::fmt;
-use vlang_syntax::ast::Type as AstType;
+use trulang_syntax::ast::Type as AstType;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemType {

@@ -2,8 +2,8 @@ use crate::bytecode::{Chunk, Opcode, Value};
 use crate::error::CompileError;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
-use vlang_syntax::ast::*;
-use vlang_syntax::span::Spanned;
+use trulang_syntax::ast::*;
+use trulang_syntax::span::Spanned;
 
 #[derive(Default)]
 struct ScopeContext {

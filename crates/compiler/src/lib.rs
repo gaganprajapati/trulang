@@ -9,7 +9,7 @@ use bytecode::Chunk;
 use codegen::CodeGenerator;
 use error::CompileError;
 use type_checker::TypeChecker;
-use vlang_syntax::ast::Program;
+use trulang_syntax::ast::Program;
 
 pub fn compile(program: &Program) -> Result<Chunk, CompileError> {
     let mut checker = TypeChecker::new();
@@ -23,7 +23,7 @@ pub fn compile(program: &Program) -> Result<Chunk, CompileError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vlang_syntax::parse;
+    use trulang_syntax::parse;
 
     #[test]
     fn test_reject_mutation_without_let_mut() {

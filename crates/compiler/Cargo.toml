@@ -1,11 +1,11 @@
 [package]
-name = "vlang_compiler"
+name = "trulang_compiler"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-vlang_syntax = { path = "../syntax" }
+trulang_syntax = { path = "../syntax" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 

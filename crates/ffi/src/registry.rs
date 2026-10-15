@@ -3,7 +3,7 @@ use crate::modules::{http, json, pg};
 use crate::worker_pool::WorkerPool;
 use std::collections::HashMap;
 use std::sync::RwLock;
-use vlang_compiler::bytecode::Value;
+use trulang_compiler::bytecode::Value;
 
 pub type FfiFn = Box<dyn Fn(&[Value], Option<&WorkerPool>) -> Result<Value, FfiError> + Send + Sync>;
 
@@ -40,7 +40,7 @@ impl FfiRegistry {
     pub fn has_module(&self, name_or_alias: &str) -> bool {
         let resolved = self.resolve_module(name_or_alias);
         match resolved.as_str() {
-            "std::json" | "std::http" | "std::sql" | "rust:vlang_std_pg" => true,
+            "std::json" | "std::http" | "std::sql" | "rust:trulang_std_pg" => true,
             other => self.custom_modules.read().unwrap().contains_key(other),
         }
     }
@@ -82,7 +82,7 @@ impl FfiRegistry {
                     method: method.to_string(),
                 }),
             },
-            "rust:vlang_std_pg" | "std::sql" => match method {
+            "rust:trulang_std_pg" | "std::sql" => match method {
                 "create_pool" => pg::create_pool(args),
                 _ => Err(FfiError::MethodNotFound {
                     module: resolved,

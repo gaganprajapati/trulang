@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">⚡ VLang</h1>
+  <h1 align="center">⚡ TruLang</h1>
   <p align="center">
     <strong>A high-performance, memory-safe backend programming language with dual-region memory arenas, zero-lock service actors, and real-time seqlock supervisor telemetry.</strong>
   </p>
@@ -16,16 +16,16 @@
 
 ## 📖 Overview
 
-**VLang** is a modern general-purpose programming language specifically engineered for backend microservices, high-throughput APIs, and latency-critical cloud systems.
+**TruLang** is a modern general-purpose programming language specifically engineered for backend microservices, high-throughput APIs, and latency-critical cloud systems.
 
 Traditional backend runtimes force a compromise:
 - **Tracing GC runtimes (Go, Node.js, Java):** Suffer from unpredictable garbage collection pauses (15 ms to 120 ms tail latency spikes), high idle memory footprint (40 MB to 110 MB RSS), and memory leaks from lingering closure references.
 - **Manual / Borrow-checked systems (C++, Rust):** Provide extreme speed, but impose steep learning curves, complex lifetime annotations, and cognitive overhead for application backend teams.
 
-**VLang eliminates this trade-off.** By enforcing a **Dual-Region Memory Model** and **Single-Threaded Service Actors**, per-request allocations are reclaimed in $O(1)$ constant time with **zero garbage collection pauses**, achieving compiled-level throughput while retaining memory safety and TypeScript-like ergonomics.
+**TruLang eliminates this trade-off.** By enforcing a **Dual-Region Memory Model** and **Single-Threaded Service Actors**, per-request allocations are reclaimed in $O(1)$ constant time with **zero garbage collection pauses**, achieving compiled-level throughput while retaining memory safety and TypeScript-like ergonomics.
 
 > 🧠 **Coming from Node.js, Go, or Rust?**  
-> Read our comprehensive architectural guide: [**How VLang Works: Under the Hood Architecture & Execution Mechanism**](docs/INTERNALS.md) (or view the [Interactive Web Visualizer](https://gaganprajapati.github.io/vlang/internals.html)) to understand the Dual-Region Memory Engine, Request Lifecycle, and Zero-Lock Service Actor concurrency model.
+> Read our comprehensive architectural guide: [**How TruLang Works: Under the Hood Architecture & Execution Mechanism**](docs/INTERNALS.md) (or view the [Interactive Web Visualizer](https://gaganprajapati.github.io/trulang/internals.html)) to understand the Dual-Region Memory Engine, Request Lifecycle, and Zero-Lock Service Actor concurrency model.
 
 ---
 
@@ -36,7 +36,7 @@ Traditional backend runtimes force a compromise:
   - **Region A (Execution Arena):** High-speed bump-pointer allocator for per-request transient objects. Reclaimed in $O(1)$ bulk reset upon request completion.
   - **Region B (Persistent State):** Reference-counted, acyclic DAG storage for actor state. Long-lived objects are promoted explicitly via `persist(x)`.
 - **⏱️ Zero-Lock Actor Mailbox:** Single-threaded actors execute sequentially, eliminating data races, mutex deadlocks, and sync overhead. Incoming bursts are shed via bounded queue backpressure (`ActorError::MailboxFull`).
-- **📊 Real-Time Out-of-Process Telemetry:** Independent supervisor process reads live VM memory metrics via lockless atomic **Seqlock shared memory (`/tmp/vlang_shm_active.dat`)** without interrupting worker execution.
+- **📊 Real-Time Out-of-Process Telemetry:** Independent supervisor process reads live VM memory metrics via lockless atomic **Seqlock shared memory (`/tmp/trulang_shm_active.dat`)** without interrupting worker execution.
 - **🚫 Cycle Detection on Promotion:** `persist()` traverses reference graphs to reject circular references (`VmError::CyclicPersistentData`), guaranteeing zero ARC memory leaks.
 - **⚡ Checked Arithmetic:** All integer arithmetic (`+`, `-`, `*`, `/`) is checked against overflow and underflow, preventing integer wrapping exploits.
 - **📦 Microsecond Cold Starts:** Instantaneous bytecode VM startup (< 3 ms) with an idle footprint of just **2.5 MB RSS**, enabling **15x to 40x higher microservice pod density** in Kubernetes clusters.
@@ -50,80 +50,80 @@ Empirical benchmarks run across identical microservice API lifecycle workloads (
 | Runtime | Throughput (req/s) | p50 Latency | p99 Tail Latency | GC Pause (STW) | Base RSS | Pod Density (16GB Node) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Rust (Native Tokio)** | 1,120,000 | 4 µs | 18 µs | **0.0 ms** | 1.8 MB | ~8,500 pods |
-| **⚡ VLang (Bytecode VM)** | **780,471** | **7 µs** | **32 µs** | **0.0 ms (Zero GC)** | **2.5 MB** | **~6,400 pods** |
+| **⚡ TruLang (Bytecode VM)** | **780,471** | **7 µs** | **32 µs** | **0.0 ms (Zero GC)** | **2.5 MB** | **~6,400 pods** |
 | **Go 1.22 (Goroutines)** | 850,000 | 12 µs | 85 µs | 0.5 – 2.5 ms | 14.2 MB | ~1,100 pods |
 | **Java 21 (OpenJDK JIT)** | 620,000 | 22 µs | 350 µs | 20 – 120 ms | 110.0 MB | ~140 pods |
 | **Node.js 24 (V8 TurboFan)**| 420,000 | 38 µs | 420 µs | 15 – 45 ms | 44.1 MB | ~340 pods |
 | **Python 3.10 (CPython)** | 75,000 | 180 µs | 1,800 µs | 15 – 60 ms | 12.4 MB | ~1,200 pods |
 
-*Reproduce benchmarks using: `vlang bench --threads 8 --requests 50000 examples/user_service.vl`*
+*Reproduce benchmarks using: `trulang bench --threads 8 --requests 50000 examples/user_service.tr`*
 
 ---
 
 ## 🚀 Installation & Setup
 
 ### Option 1: 1-Line Prebuilt Binary Install (Recommended — No Rust Required)
-The fastest way to install VLang on macOS or Linux. The script automatically detects your operating system and architecture, downloads the pre-compiled standalone binary from GitHub Releases, and installs it to `/usr/local/bin` in seconds:
+The fastest way to install TruLang on macOS or Linux. The script automatically detects your operating system and architecture, downloads the pre-compiled standalone binary from GitHub Releases, and installs it to `/usr/local/bin` in seconds:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/gaganprajapati/trulang/main/scripts/install.sh | bash
 ```
 > **Note:** **No Rust or Cargo toolchain is needed.** The binary is completely self-contained.
 
 ---
 
 ### Option 2: Direct Binary Download (No Rust Required)
-Download the standalone executable directly from [GitHub Releases](https://github.com/gaganprajapati/vlang/releases):
-- **macOS ARM64** (Apple Silicon M1/M2/M3/M4): [`vlang-darwin-arm64.tar.gz`](https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-darwin-arm64.tar.gz)
-- **macOS x86_64** (Intel): [`vlang-darwin-x86_64.tar.gz`](https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-darwin-x86_64.tar.gz)
-- **Linux x86_64**: [`vlang-linux-x86_64.tar.gz`](https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-linux-x86_64.tar.gz)
-- **Windows x64**: [`vlang-windows-x64.zip`](https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-windows-x64.zip)
+Download the standalone executable directly from [GitHub Releases](https://github.com/gaganprajapati/trulang/releases):
+- **macOS ARM64** (Apple Silicon M1/M2/M3/M4): [`trulang-darwin-arm64.tar.gz`](https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-darwin-arm64.tar.gz)
+- **macOS x86_64** (Intel): [`trulang-darwin-x86_64.tar.gz`](https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-darwin-x86_64.tar.gz)
+- **Linux x86_64**: [`trulang-linux-x86_64.tar.gz`](https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-linux-x86_64.tar.gz)
+- **Windows x64**: [`trulang-windows-x64.zip`](https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-windows-x64.zip)
 
 Unpack and run:
 ```bash
-tar -xzf vlang-darwin-arm64.tar.gz
-sudo mv vlang /usr/local/bin/
-vlang --version
+tar -xzf trulang-darwin-arm64.tar.gz
+sudo mv trulang /usr/local/bin/
+trulang --version
 ```
 
 ---
 
 ### Option 3: Build & Install from Source (For Developers & Contributors)
-If you want to contribute to VLang, run the test suites, or compile from source, you will need the **Rust 1.75+ toolchain**:
+If you want to contribute to TruLang, run the test suites, or compile from source, you will need the **Rust 1.75+ toolchain**:
 
 ```bash
 # Install Rust (if not already installed)
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Clone repository
-git clone https://github.com/gaganprajapati/vlang.git
-cd vlang
+git clone https://github.com/gaganprajapati/trulang.git
+cd trulang
 
 # Run all 25 unit and integration tests
 cargo test
 
-# Install the vlang CLI to ~/.cargo/bin
+# Install the trulang CLI to ~/.cargo/bin
 cargo install --path crates/cli
 
 # Verify installation
-vlang --version
-# Output: vlang 0.1.0
+trulang --version
+# Output: trulang 0.1.0
 ```
 
 ### Option 4: Install via Cargo Git
 For Rust developers who prefer `cargo install` directly from git:
 ```bash
-cargo install --git https://github.com/gaganprajapati/vlang.git vlang_cli
+cargo install --git https://github.com/gaganprajapati/trulang.git trulang_cli
 ```
 
 ### Option 5: Local Release Build (No Global Install)
 ```bash
-git clone https://github.com/gaganprajapati/vlang.git
-cd vlang
+git clone https://github.com/gaganprajapati/trulang.git
+cd trulang
 cargo build --release
 
 # The compiled binary is located at:
-./target/release/vlang --help
+./target/release/trulang --help
 ```
 
 ---
@@ -132,7 +132,7 @@ cargo build --release
 
 We have set up an automated GitHub Actions CI/CD pipeline (`.github/workflows/release.yml`) for cross-platform binary releases.
 
-To release a new version of VLang:
+To release a new version of TruLang:
 
 1. **Commit your changes and create a version tag**:
    ```bash
@@ -142,21 +142,21 @@ To release a new version of VLang:
 
 2. **Automated Cross-Compilation**:
    GitHub Actions will automatically trigger and compile release binaries for:
-   - **macOS ARM64** (Apple Silicon M1/M2/M3/M4) -> `vlang-darwin-arm64.tar.gz`
-   - **macOS x86_64** (Intel) -> `vlang-darwin-x86_64.tar.gz`
-   - **Linux x86_64** (Ubuntu / Debian / CentOS / Alpine) -> `vlang-linux-x86_64.tar.gz`
-   - **Windows x64** -> `vlang-windows-x64.zip`
+   - **macOS ARM64** (Apple Silicon M1/M2/M3/M4) -> `trulang-darwin-arm64.tar.gz`
+   - **macOS x86_64** (Intel) -> `trulang-darwin-x86_64.tar.gz`
+   - **Linux x86_64** (Ubuntu / Debian / CentOS / Alpine) -> `trulang-linux-x86_64.tar.gz`
+   - **Windows x64** -> `trulang-windows-x64.zip`
 
 3. **Automatic GitHub Release**:
-   All binaries and SHA-256 checksums are automatically published to [GitHub Releases](https://github.com/gaganprajapati/vlang/releases).
+   All binaries and SHA-256 checksums are automatically published to [GitHub Releases](https://github.com/gaganprajapati/trulang/releases).
    Once published, any user running `curl ... | bash` will instantly download the prebuilt binary in 2 seconds!
 
 ---
 
 ## 💡 Quickstart: First Service in 60 Seconds
 
-### 1. Write `user_service.vl`
-```vlang
+### 1. Write `user_service.tr`
+```trulang
 service UserService {
     memory_budget request = 16 MB;
     memory_budget persistent = 512 MB;
@@ -182,25 +182,25 @@ service UserService {
 
 ### 2. Statically Validate Syntax & Ownership
 ```bash
-vlang check examples/user_service.vl
-# ✓ File "examples/user_service.vl" is syntactically and semantically valid!
+trulang check examples/user_service.tr
+# ✓ File "examples/user_service.tr" is syntactically and semantically valid!
 ```
 
 ### 3. Run on the Bytecode Virtual Machine
 ```bash
-vlang run examples/user_service.vl
+trulang run examples/user_service.tr
 ```
 
 ### 4. Monitor Live Out-of-Process Memory Telemetry
 In a separate terminal or metrics daemon:
 ```bash
-vlang monitor
+trulang monitor
 ```
 Output:
 ```
 ======================================================================
-  VLang Out-of-Process Memory Supervisor Monitor
-  Connected to SHM: "/tmp/vlang_shm_active.dat"
+  TruLang Out-of-Process Memory Supervisor Monitor
+  Connected to SHM: "/tmp/trulang_shm_active.dat"
 ======================================================================
 [Seq #48120] Worker PID: 82194 | Status: HEALTHY
   Active Actors:        1
@@ -216,13 +216,13 @@ Output:
 
 | Command | Description |
 | :--- | :--- |
-| `vlang check <file.vl>` | Parses AST, verifies static typing, checks mutability rules, and enforces ownership |
-| `vlang run <file.vl> [--jit]` | Dual-mode execution: Bytecode VM (<3ms cold start) or Native JIT engine |
-| `vlang build <file.vl> [--release] [-o <out>]` | Production AOT compiler producing standalone native executables (Mach-O, ELF, PE) with `-O3` vectorization |
-| `vlang monitor` | Attaches to zero-lock seqlock shared memory to stream live memory telemetry |
-| `vlang lsp --stdio` | Integrated Language Server Protocol daemon for IDE integration (VS Code, Cursor, Neovim) |
-| `vlang fmt <file.vl> [--write]` | Automated code formatter enforcing language layout conventions |
-| `vlang bench <file.vl>` | Runs high-concurrency multi-threaded load tests with p50/p90/p99 latency analysis |
+| `trulang check <file.tr>` | Parses AST, verifies static typing, checks mutability rules, and enforces ownership |
+| `trulang run <file.tr> [--jit]` | Dual-mode execution: Bytecode VM (<3ms cold start) or Native JIT engine |
+| `trulang build <file.tr> [--release] [-o <out>]` | Production AOT compiler producing standalone native executables (Mach-O, ELF, PE) with `-O3` vectorization |
+| `trulang monitor` | Attaches to zero-lock seqlock shared memory to stream live memory telemetry |
+| `trulang lsp --stdio` | Integrated Language Server Protocol daemon for IDE integration (VS Code, Cursor, Neovim) |
+| `trulang fmt <file.tr> [--write]` | Automated code formatter enforcing language layout conventions |
+| `trulang bench <file.tr>` | Runs high-concurrency multi-threaded load tests with p50/p90/p99 latency analysis |
 
 ---
 
@@ -231,7 +231,7 @@ Output:
 The codebase is organized as a modular Rust workspace following clean Single Responsibility Principles:
 
 ```
-vlang/
+trulang/
 ├── crates/
 │   ├── syntax/         # Lexer, recursive descent parser, AST, and recursion depth limits
 │   ├── compiler/       # AST static analysis, borrow checker, auto-promotion pass, and bytecode emitter
@@ -240,9 +240,9 @@ vlang/
 │   ├── lsp/            # Language Server Protocol (JSON-RPC), live diagnostics, hover, definition jump, & formatter
 │   ├── ffi/            # Hybrid thread-pooled Rust/C FFI bridge, RAII handles, and standard library (JSON, HTTP, SQL)
 │   ├── codegen/        # Native AOT compiler backend and JIT engine producing standalone native binaries
-│   └── cli/            # Standalone CLI binary (vlang check, run, build, lsp, fmt, monitor, bench)
-├── examples/           # Sample VLang services, loops, arrays, elastic bursts, and budget overflow demonstrations
-├── benchmarks/         # Direct empirical benchmark scripts for Node.js, Go, Python, and VLang
+│   └── cli/            # Standalone CLI binary (trulang check, run, build, lsp, fmt, monitor, bench)
+├── examples/           # Sample TruLang services, loops, arrays, elastic bursts, and budget overflow demonstrations
+├── benchmarks/         # Direct empirical benchmark scripts for Node.js, Go, Python, and TruLang
 ├── docs/               # Interactive HTML Specification, Playground, and Visual Benchmark Dashboard
 └── tests/              # Multi-threaded load, leakage, and backpressure integration tests
 ```
@@ -274,7 +274,7 @@ cargo test --test load_and_leak_test -- --nocapture
 
 ## 🤝 Contributing
 
-We welcome contributions to VLang! Whether you're fixing a bug, adding new standard library functions, or improving documentation, check out our contributor guide:
+We welcome contributions to TruLang! Whether you're fixing a bug, adding new standard library functions, or improving documentation, check out our contributor guide:
 
 👉 [**CONTRIBUTING.md**](CONTRIBUTING.md) — Setup your local toolchain, architecture deep-dive, clean code standards, and PR guidelines.
 

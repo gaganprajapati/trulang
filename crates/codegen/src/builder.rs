@@ -1,4 +1,4 @@
-//! Native Binary Builder for VLang.
+//! Native Binary Builder for TruLang.
 //!
 //! Discovers the host C compiler (clang, gcc, cc, or cl.exe) and compiles
 //! generated native C source code into standalone executable binaries.
@@ -72,15 +72,15 @@ impl NativeBuilder {
         } else {
             let mut p = std::env::current_dir().map_err(CodegenError::IoError)?;
             #[cfg(target_os = "windows")]
-            p.push(format!("vlang_out_{}_{}.exe", std::process::id(), count));
+            p.push(format!("trulang_out_{}_{}.exe", std::process::id(), count));
             #[cfg(not(target_os = "windows"))]
-            p.push(format!("vlang_out_{}_{}", std::process::id(), count));
+            p.push(format!("trulang_out_{}_{}", std::process::id(), count));
             p
         };
 
         // Write C source to unique temporary file
         let temp_dir = std::env::temp_dir();
-        let temp_src = temp_dir.join(format!("vlang_src_{}_{}_{}.c", std::process::id(), count, nanos));
+        let temp_src = temp_dir.join(format!("trulang_src_{}_{}_{}.c", std::process::id(), count, nanos));
         fs::write(&temp_src, c_source).map_err(CodegenError::IoError)?;
 
         let mut cmd = Command::new(&compiler);
@@ -136,7 +136,7 @@ mod tests {
         let minimal_c = r#"
 #include <stdio.h>
 int main(void) {
-    printf("Hello Native VLang\n");
+    printf("Hello Native TruLang\n");
     return 0;
 }
 "#;
@@ -155,7 +155,7 @@ int main(void) {
         let out = Command::new(&bin_path).output().expect("Failed to execute built binary");
         assert!(out.status.success());
         let stdout = String::from_utf8_lossy(&out.stdout);
-        assert!(stdout.contains("Hello Native VLang"));
+        assert!(stdout.contains("Hello Native TruLang"));
 
         let _ = fs::remove_file(&bin_path);
     }

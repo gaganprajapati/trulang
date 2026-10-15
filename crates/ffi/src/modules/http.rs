@@ -1,7 +1,7 @@
 use crate::error::FfiError;
 use crate::worker_pool::WorkerPool;
 use std::sync::Arc;
-use vlang_compiler::bytecode::Value;
+use trulang_compiler::bytecode::Value;
 
 pub fn get(args: &[Value], pool: Option<&WorkerPool>) -> Result<Value, FfiError> {
     let url = match args.first() {

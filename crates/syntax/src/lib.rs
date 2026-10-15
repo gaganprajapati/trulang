@@ -84,8 +84,8 @@ service UserService {
         let result = parse(source);
         assert!(result.is_err());
         let err = result.unwrap_err();
-        let formatted = err.format_with_source(source, "test.vl");
-        assert!(formatted.contains("test.vl:3:1"));
+        let formatted = err.format_with_source(source, "test.tr");
+        assert!(formatted.contains("test.tr:3:1"));
         assert!(formatted.contains("syntax error"));
     }
 
@@ -147,7 +147,7 @@ service InvalidCeilingService {
     #[test]
     fn test_parse_import_declaration() {
         let source = r#"
-import "rust:vlang_std_pg" as db;
+import "rust:trulang_std_pg" as db;
 import "std::json" as json;
 
 service AccountService {
@@ -160,7 +160,7 @@ service AccountService {
         assert_eq!(program.declarations.len(), 3);
         match &program.declarations[0].node {
             Declaration::Import(imp) => {
-                assert_eq!(imp.path, "rust:vlang_std_pg");
+                assert_eq!(imp.path, "rust:trulang_std_pg");
                 assert_eq!(imp.alias, "db");
             }
             _ => panic!("Expected Import declaration"),

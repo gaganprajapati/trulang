@@ -1,8 +1,8 @@
 use crate::error::CompileError;
 use crate::symbols::SymbolTable;
 use crate::types::SemType;
-use vlang_syntax::ast::*;
-use vlang_syntax::span::{Span, Spanned};
+use trulang_syntax::ast::*;
+use trulang_syntax::span::{Span, Spanned};
 
 pub struct TypeChecker {
     symbols: SymbolTable,

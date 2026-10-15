@@ -1,6 +1,6 @@
-# Contributing to VLang ⚡
+# Contributing to TruLang ⚡
 
-Thank you for your interest in contributing to VLang! We welcome contributions from developers of all skill levels—whether you are reporting an issue, improving documentation, fixing a bug, or building a new language feature.
+Thank you for your interest in contributing to TruLang! We welcome contributions from developers of all skill levels—whether you are reporting an issue, improving documentation, fixing a bug, or building a new language feature.
 
 ---
 
@@ -12,17 +12,17 @@ We are committed to providing a friendly, safe, and welcoming environment for al
 
 ## 🏗️ Architecture & Codebase Overview
 
-VLang is implemented in modern, idiomatic Rust as a modular Cargo workspace:
+TruLang is implemented in modern, idiomatic Rust as a modular Cargo workspace:
 
 ```
-vlang/
+trulang/
 ├── crates/
 │   ├── syntax/         # Lexer (Logos), recursive descent parser, AST, and recursion limits
 │   ├── compiler/       # AST static analysis, borrow checker, typechecker, and bytecode generator
 │   ├── vm/             # Stack-based Bytecode VM, dual-region memory arenas, and Actor runtime
 │   ├── supervisor/     # Atomic 64-bit Seqlock shared memory telemetry protocol (memmap2)
-│   └── cli/            # Standalone CLI binary (vlang check, run, monitor, bench)
-├── examples/           # VLang source programs (.vl) demonstrating language features
+│   └── cli/            # Standalone CLI binary (trulang check, run, monitor, bench)
+├── examples/           # TruLang source programs (.tr) demonstrating language features
 ├── benchmarks/         # Multi-language comparison scripts (Rust, Go, Node.js, Python, Java)
 ├── docs/               # Interactive documentation, language specification, and playground
 └── tests/              # Multi-threaded load, leakage, and backpressure integration tests
@@ -57,8 +57,8 @@ vlang/
 
 ### Clone and Build:
 ```bash
-git clone https://github.com/gaganprajapati/vlang.git
-cd vlang
+git clone https://github.com/gaganprajapati/trulang.git
+cd trulang
 
 # Check workspace compiles with zero errors
 cargo check --all-targets
@@ -74,7 +74,7 @@ cargo test
 
 ## 🧪 Testing Guidelines (Strict Quality Standards)
 
-VLang adheres to strict Test-Driven Development (TDD). Every new feature, language construct, or bug fix **must include automated tests**.
+TruLang adheres to strict Test-Driven Development (TDD). Every new feature, language construct, or bug fix **must include automated tests**.
 
 ### 1. Running the Full Test Suite
 ```bash
@@ -92,13 +92,13 @@ This runs 100,000 sustained iterations verifying that Region A arena resets achi
 ### 3. Testing the CLI Locally
 ```bash
 # Check syntax of an example
-cargo run --bin vlang -- check examples/user_service.vl
+cargo run --bin trulang -- check examples/user_service.tr
 
 # Execute on Bytecode VM
-cargo run --bin vlang -- run examples/user_service.vl
+cargo run --bin trulang -- run examples/user_service.tr
 
 # Run concurrent benchmarking
-cargo run --bin vlang -- bench examples/user_service.vl --requests 50000 --concurrency 8
+cargo run --bin trulang -- bench examples/user_service.tr --requests 50000 --concurrency 8
 ```
 
 ---
@@ -150,5 +150,5 @@ To keep the codebase maintainable and robust, contributors must follow these cle
 
 ## 💬 Community & Questions
 
-- **Issues**: Use [GitHub Issues](https://github.com/gaganprajapati/vlang/issues) to report bugs or submit feature proposals.
+- **Issues**: Use [GitHub Issues](https://github.com/gaganprajapati/trulang/issues) to report bugs or submit feature proposals.
 - **Discussions**: Start a thread in GitHub Discussions for architectural ideas or questions.

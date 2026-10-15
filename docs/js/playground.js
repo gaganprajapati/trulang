@@ -1,4 +1,4 @@
-// Interactive VLang In-Browser Playground Engine
+// Interactive TruLang In-Browser Playground Engine
 
 const samples = {
   user_service: `service UserService {
@@ -48,7 +48,7 @@ const samples = {
 }`,
   variables: `fn main() {
     // Immutable by default:
-    let app_name = "VLang Service";
+    let app_name = "TruLang Service";
     let port: i64 = 8080;
 
     // Mutable variables with 'let mut':
@@ -111,13 +111,13 @@ function runSimulatedCode() {
 
   status.innerText = '● EXECUTING...';
   status.style.color = '#f59e0b';
-  terminal.innerText = 'Compiling AST to Bytecode...\nExecuting on VLang VM...';
+  terminal.innerText = 'Compiling AST to Bytecode...\nExecuting on TruLang VM...';
 
   setTimeout(() => {
     if (code.includes('exceeds the 64 byte')) {
       terminal.innerText = `[Bytecode VM Error]
 Memory limit exceeded: Region A (Execution) memory budget exceeded: attempted 81 bytes, limit is 64 bytes
-Supervisor post-mortem telemetry retained at: "/tmp/vlang_shm_postmortem.dat"
+Supervisor post-mortem telemetry retained at: "/tmp/trulang_shm_postmortem.dat"
 
 Status: Execution Aborted safely (worker isolated, Region A arena reset)`;
       status.innerText = '🔴 BUDGET OVERFLOW CAUGHT';
@@ -158,7 +158,7 @@ Region B (Persistent): 0 bytes retained (0 live objects)`;
       status.style.color = '#10b981';
       updateGauges(184, 16777216, 0, 536870912, false);
     } else if (code.includes('requests_processed')) {
-      terminal.innerText = `VLang Service
+      terminal.innerText = `TruLang Service
 1
 
 Program exited with value: null
@@ -201,7 +201,7 @@ Program exited with value: Object{status: 200, data: Object{id: 42, name: Alice 
 --- Memory Diagnostics ---
 Region A (Execution):  16 bytes used (budget: 16777216 bytes)
 Region B (Persistent): 16 bytes retained (1 live objects)
-Supervisor telemetry segment active at: "/tmp/vlang_shm_active.dat"`;
+Supervisor telemetry segment active at: "/tmp/trulang_shm_active.dat"`;
       status.innerText = '🟢 SUCCESS';
       status.style.color = '#10b981';
       updateGauges(16, 16777216, 16, 536870912, false);

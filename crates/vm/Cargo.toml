@@ -1,14 +1,14 @@
 [package]
-name = "vlang_vm"
+name = "trulang_vm"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-vlang_syntax = { path = "../syntax" }
-vlang_compiler = { path = "../compiler" }
-vlang_supervisor = { path = "../supervisor" }
-vlang_ffi = { path = "../ffi" }
+trulang_syntax = { path = "../syntax" }
+trulang_compiler = { path = "../compiler" }
+trulang_supervisor = { path = "../supervisor" }
+trulang_ffi = { path = "../ffi" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }

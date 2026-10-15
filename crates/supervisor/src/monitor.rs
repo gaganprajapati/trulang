@@ -94,7 +94,7 @@ impl MemorySupervisor {
     pub fn print_dashboard(&self) {
         let snap = self.snapshot();
         println!("\n╔══════════════════════════════════════════════════════════════════════════╗");
-        println!("║                      VLang Independent Memory Supervisor                 ║");
+        println!("║                      TruLang Independent Memory Supervisor                 ║");
         println!("╠══════════════════════════════════════════════════════════════════════════╣");
         println!(
             "║ Worker Process PID: {:<6}       Heartbeat: {:<6.2}s ago                     ║",

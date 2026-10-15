@@ -53,8 +53,8 @@ service TestSvc {
             "method": "textDocument/didOpen",
             "params": {
                 "textDocument": {
-                    "uri": "file:///test.vl",
-                    "languageId": "vlang",
+                    "uri": "file:///test.tr",
+                    "languageId": "trulang",
                     "version": 1,
                     "text": doc
                 }
@@ -80,8 +80,8 @@ service TestSvc {
             "method": "textDocument/didOpen",
             "params": {
                 "textDocument": {
-                    "uri": "file:///broken.vl",
-                    "languageId": "vlang",
+                    "uri": "file:///broken.tr",
+                    "languageId": "trulang",
                     "version": 1,
                     "text": doc
                 }
@@ -112,8 +112,8 @@ fn test() {
             "method": "textDocument/didOpen",
             "params": {
                 "textDocument": {
-                    "uri": "file:///immut.vl",
-                    "languageId": "vlang",
+                    "uri": "file:///immut.tr",
+                    "languageId": "trulang",
                     "version": 1,
                     "text": doc
                 }
@@ -152,8 +152,8 @@ service PaymentService {
             "method": "textDocument/didOpen",
             "params": {
                 "textDocument": {
-                    "uri": "file:///payment.vl",
-                    "languageId": "vlang",
+                    "uri": "file:///payment.tr",
+                    "languageId": "trulang",
                     "version": 1,
                     "text": doc
                 }
@@ -166,7 +166,7 @@ service PaymentService {
             "id": 2,
             "method": "textDocument/hover",
             "params": {
-                "textDocument": { "uri": "file:///payment.vl" },
+                "textDocument": { "uri": "file:///payment.tr" },
                 "position": { "line": 1, "character": 10 }
             }
         });
@@ -196,8 +196,8 @@ service AuthService {
             "method": "textDocument/didOpen",
             "params": {
                 "textDocument": {
-                    "uri": "file:///auth.vl",
-                    "languageId": "vlang",
+                    "uri": "file:///auth.tr",
+                    "languageId": "trulang",
                     "version": 1,
                     "text": doc
                 }
@@ -210,14 +210,14 @@ service AuthService {
             "id": 3,
             "method": "textDocument/definition",
             "params": {
-                "textDocument": { "uri": "file:///auth.vl" },
+                "textDocument": { "uri": "file:///auth.tr" },
                 "position": { "line": 4, "character": 9 }
             }
         });
 
         let (resp_str, _) = server.handle_message(&def_req.to_string());
         let resp: serde_json::Value = serde_json::from_str(&resp_str.unwrap()).unwrap();
-        assert_eq!(resp["result"]["uri"], "file:///auth.vl");
+        assert_eq!(resp["result"]["uri"], "file:///auth.tr");
         assert_eq!(resp["result"]["range"]["start"]["line"], 4);
     }
 
@@ -230,8 +230,8 @@ service AuthService {
             "method": "textDocument/didOpen",
             "params": {
                 "textDocument": {
-                    "uri": "file:///unformatted.vl",
-                    "languageId": "vlang",
+                    "uri": "file:///unformatted.tr",
+                    "languageId": "trulang",
                     "version": 1,
                     "text": unformatted
                 }
@@ -243,7 +243,7 @@ service AuthService {
             "id": 4,
             "method": "textDocument/formatting",
             "params": {
-                "textDocument": { "uri": "file:///unformatted.vl" }
+                "textDocument": { "uri": "file:///unformatted.tr" }
             }
         });
 

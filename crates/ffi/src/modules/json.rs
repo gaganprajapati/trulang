@@ -1,7 +1,7 @@
 use crate::error::FfiError;
-use crate::marshal::{json_to_vlang_value, vlang_value_to_json};
+use crate::marshal::{json_to_trulang_value, trulang_value_to_json};
 use std::sync::Arc;
-use vlang_compiler::bytecode::Value;
+use trulang_compiler::bytecode::Value;
 
 pub fn parse(args: &[Value]) -> Result<Value, FfiError> {
     let input = match args.first() {
@@ -18,7 +18,7 @@ pub fn parse(args: &[Value]) -> Result<Value, FfiError> {
     let parsed: serde_json::Value = serde_json::from_str(input)
         .map_err(|e| FfiError::JsonError(format!("Invalid JSON syntax: {}", e)))?;
 
-    Ok(json_to_vlang_value(&parsed))
+    Ok(json_to_trulang_value(&parsed))
 }
 
 pub fn stringify(args: &[Value]) -> Result<Value, FfiError> {
@@ -27,7 +27,7 @@ pub fn stringify(args: &[Value]) -> Result<Value, FfiError> {
         None => return Err(FfiError::InvalidArgument("json.stringify requires 1 argument".into())),
     };
 
-    let json_val = vlang_value_to_json(input);
+    let json_val = trulang_value_to_json(input);
     let serialized = serde_json::to_string(&json_val)
         .map_err(|e| FfiError::JsonError(format!("Failed to serialize to JSON: {}", e)))?;
 
