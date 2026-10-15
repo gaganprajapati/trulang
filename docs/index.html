@@ -1068,8 +1068,8 @@
         <!-- One-Liner Quick Install Banner -->
         <div class="install-quick-banner" id="install-quick">
           <div>
-            <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #34d399; margin-bottom: 0.35rem;">Automated Install Script (macOS & Linux)</div>
-            <div style="font-size: 0.85rem; color: var(--text-muted);">Clones, compiles, and installs <code>vlang</code> directly to <code>~/.cargo/bin</code></div>
+            <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #34d399; margin-bottom: 0.35rem;">Automated Prebuilt Binary Installer (macOS & Linux)</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Detects OS and architecture, downloads standalone binary from GitHub Releases — <strong>No Rust or compiler required</strong></div>
           </div>
           <div class="install-quick-cmd">
             <code>curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash</code>
@@ -1080,7 +1080,11 @@
         <!-- Package Managers & Installation Options Tabs -->
         <div class="bench-tabs-container">
           <div class="bench-tabs-header">
-            <button class="bench-tab-btn active" id="btnInstallSource" onclick="switchInstallTab('source')">
+            <button class="bench-tab-btn active" id="btnInstallBinary" onclick="switchInstallTab('binary')">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Prebuilt Binaries (v0.1.0)
+            </button>
+            <button class="bench-tab-btn" id="btnInstallSource" onclick="switchInstallTab('source')">
               <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
               Cargo Source Build
             </button>
@@ -1088,19 +1092,81 @@
               <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
               1-Line Cargo Git
             </button>
-            <button class="bench-tab-btn" id="btnInstallBinary" onclick="switchInstallTab('binary')">
-              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-              Install Script
-            </button>
             <button class="bench-tab-btn" id="btnInstallDocker" onclick="switchInstallTab('docker')">
               <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
               Package Roadmap
             </button>
           </div>
 
-          <!-- TAB 1: Source / Cargo -->
-          <div class="bench-tab-content active" id="tabInstallSource">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Build & Install from Source via Cargo (Recommended)</h3>
+          <!-- TAB 1: Prebuilt Binaries (Default Active) -->
+          <div class="bench-tab-content active" id="tabInstallBinary">
+            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Pre-Compiled Standalone Binaries (Release v0.1.0)</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+              Download standalone, statically linked binaries directly from <a href="https://github.com/gaganprajapati/vlang/releases/tag/v0.1.0" target="_blank" style="color: #60a5fa; text-decoration: underline;">GitHub Releases</a>. Zero external dependencies or Rust toolchain required.
+            </p>
+
+            <div style="overflow-x: auto; margin-bottom: 1.25rem;">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>Operating System</th>
+                    <th>Architecture</th>
+                    <th>Package Archive</th>
+                    <th>SHA-256 Checksum</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="highlight-row">
+                    <td><strong>macOS</strong> (Apple Silicon)</td>
+                    <td>ARM64 (M1/M2/M3/M4)</td>
+                    <td><code>vlang-darwin-arm64.tar.gz</code></td>
+                    <td><code style="font-size: 0.75rem;">sha256</code> verified</td>
+                    <td><a href="https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-darwin-arm64.tar.gz" class="pill pill-green" style="text-decoration: none;">Download (.tar.gz)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>macOS</strong> (Intel)</td>
+                    <td>x86_64</td>
+                    <td><code>vlang-darwin-x86_64.tar.gz</code></td>
+                    <td><code style="font-size: 0.75rem;">sha256</code> verified</td>
+                    <td><a href="https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-darwin-x86_64.tar.gz" class="pill pill-blue" style="text-decoration: none;">Download (.tar.gz)</a></td>
+                  </tr>
+                  <tr class="highlight-row">
+                    <td><strong>Linux</strong></td>
+                    <td>x86_64</td>
+                    <td><code>vlang-linux-x86_64.tar.gz</code></td>
+                    <td><code style="font-size: 0.75rem;">sha256</code> verified</td>
+                    <td><a href="https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-linux-x86_64.tar.gz" class="pill pill-green" style="text-decoration: none;">Download (.tar.gz)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Windows</strong></td>
+                    <td>x64 (MSVC)</td>
+                    <td><code>vlang-windows-x64.zip</code></td>
+                    <td><code style="font-size: 0.75rem;">sha256</code> verified</td>
+                    <td><a href="https://github.com/gaganprajapati/vlang/releases/latest/download/vlang-windows-x64.zip" class="pill pill-purple" style="text-decoration: none;">Download (.zip)</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="code-box">
+              <div class="code-top">
+                <span>Terminal — Unpack & Move to PATH</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+              </div>
+              <pre><code><span class="comment"># Example for macOS Apple Silicon:</span>
+tar -xzf vlang-darwin-arm64.tar.gz
+sudo mv vlang /usr/local/bin/
+
+<span class="comment"># Verify installation</span>
+vlang --version
+<span class="comment"># Output: vlang 0.1.0</span></code></pre>
+            </div>
+          </div>
+
+          <!-- TAB 2: Source / Cargo -->
+          <div class="bench-tab-content" id="tabInstallSource">
+            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Build & Install from Source via Cargo</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
               Recommended for development, testing, and full access to workspace crates. Requires the Rust toolchain (<code>rustc</code> and <code>cargo</code> 1.75+).
             </p>
@@ -1128,7 +1194,7 @@ vlang --version
             </div>
           </div>
 
-          <!-- TAB 2: Cargo Git -->
+          <!-- TAB 3: Cargo Git -->
           <div class="bench-tab-content" id="tabInstallBrew">
             <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Direct 1-Line Install via Cargo Git</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
@@ -1148,31 +1214,11 @@ vlang --help</code></pre>
             </div>
           </div>
 
-          <!-- TAB 3: Install Script -->
-          <div class="bench-tab-content" id="tabInstallBinary">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Automated Shell Installer (<code>scripts/install.sh</code>)</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              A verified shell script that checks your Rust environment, compiles the CLI, and places <code>vlang</code> into your executable path.
-            </p>
-            <div class="code-box">
-              <div class="code-top">
-                <span>Terminal — Run Installer</span>
-                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-              </div>
-              <pre><code><span class="comment"># From inside cloned workspace:</span>
-chmod +x ./scripts/install.sh
-./scripts/install.sh
-
-<span class="comment"># Or piped directly via curl:</span>
-curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/install.sh | bash</code></pre>
-            </div>
-          </div>
-
           <!-- TAB 4: Distribution Roadmap -->
           <div class="bench-tab-content" id="tabInstallDocker">
             <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Packaging & Distribution Roadmap</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              We are actively setting up release automation for binary distributions and package registries:
+              Overview of available channels and packaging registries:
             </p>
             <div style="overflow-x: auto;">
               <table class="matrix-table" style="margin-bottom: 1.5rem;">
@@ -1181,10 +1227,22 @@ curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/i
                     <th>Channel / Platform</th>
                     <th>Target</th>
                     <th>Status</th>
-                    <th>Command</th>
+                    <th>Command / Link</th>
                   </tr>
                 </thead>
                 <tbody>
+                  <tr class="highlight-row">
+                    <td>GitHub Releases</td>
+                    <td>Standalone prebuilt binaries (macOS, Linux, Windows)</td>
+                    <td><span style="color: #34d399; font-weight: 700;">✓ Available (v0.1.0)</span></td>
+                    <td><a href="https://github.com/gaganprajapati/vlang/releases/tag/v0.1.0" target="_blank" style="color: #34d399; text-decoration: underline;">v0.1.0 Assets</a></td>
+                  </tr>
+                  <tr>
+                    <td>1-Line Install Script</td>
+                    <td>macOS & Linux (auto-detects architecture)</td>
+                    <td><span style="color: #34d399; font-weight: 700;">✓ Available Now</span></td>
+                    <td><code>curl -fsSL .../install.sh | bash</code></td>
+                  </tr>
                   <tr class="highlight-row">
                     <td>Cargo (Source)</td>
                     <td>Universal (macOS, Linux, Windows)</td>
@@ -1198,22 +1256,10 @@ curl -fsSL https://raw.githubusercontent.com/gaganprajapati/vlang/main/scripts/i
                     <td><code>cargo install --git &lt;repo&gt; vlang_cli</code></td>
                   </tr>
                   <tr class="highlight-row">
-                    <td>Install Script</td>
-                    <td>macOS & Linux</td>
-                    <td><span style="color: #34d399; font-weight: 700;">✓ Available Now</span></td>
-                    <td><code>./scripts/install.sh</code></td>
-                  </tr>
-                  <tr>
                     <td>Homebrew Tap</td>
                     <td>macOS / Linux</td>
                     <td><span style="color: #fbbf24;">In Progress</span></td>
                     <td><code>brew install gaganprajapati/vlang</code></td>
-                  </tr>
-                  <tr class="highlight-row">
-                    <td>GitHub Releases</td>
-                    <td>Standalone tarballs (ARM64 & x86_64)</td>
-                    <td><span style="color: #fbbf24;">Planned v0.2.0</span></td>
-                    <td>Pre-built tarball downloads</td>
                   </tr>
                   <tr>
                     <td>Docker OCI Image</td>

@@ -113,7 +113,7 @@ For Rust developers who prefer `cargo install` directly from git:
 cargo install --git https://github.com/gaganprajapati/vlang.git vlang_cli
 ```
 
-### Option 4: Local Release Build (No Global Install)
+### Option 5: Local Release Build (No Global Install)
 ```bash
 git clone https://github.com/gaganprajapati/vlang.git
 cd vlang
