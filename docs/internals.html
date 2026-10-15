@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>How VLang Works: Under the Hood Architecture & Execution Mechanism</title>
   <meta name="description" content="A comprehensive deep-dive into VLang's internal architecture: Dual-Region memory model, zero-lock service actors, hybrid FFI worker pool, and dual-mode execution pipeline.">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    (function() {
+      const saved = localStorage.getItem('vlang_theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', saved || (systemDark ? 'dark' : 'light'));
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -25,12 +33,28 @@
       <a href="index.html#spec" class="nav-link">Language Spec</a>
       <a href="index.html#tooling" class="nav-link">CLI Tooling</a>
       <a href="index.html#benchmarks" class="nav-link">Benchmarks</a>
-      <a href="internals.html" class="nav-link active" style="color: var(--accent-cyan); font-weight: 700;">🧠 Runtime Internals</a>
+      <a href="internals.html" class="nav-link active">Runtime Internals</a>
     </nav>
 
     <div class="nav-actions">
       <a href="index.html#playground" class="btn btn-secondary">Playground</a>
-      <a href="https://github.com/gaganprajapati/vlang" target="_blank" class="btn btn-primary">GitHub</a>
+      <a href="https://github.com/gaganprajapati/vlang" target="_blank" class="btn btn-secondary">GitHub</a>
+      <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light and dark theme" title="Toggle theme">
+        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -267,7 +291,7 @@ cache.insert(user_id, persist(user_dto));
         </p>
 
         <div class="architecture-callout">
-          <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 0.5rem;">Why VLang Uses the Zero-Lock Actor Model</h3>
+          <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem;">Why VLang Uses the Zero-Lock Actor Model</h3>
           <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
             In VLang, every <code>service</code> declaration defines an independent Actor with its own private memory domain and mailbox queue:
           </p>
@@ -303,8 +327,8 @@ cache.insert(user_id, persist(user_dto));
           A common pitfall with pure actor architectures is <em>Mailbox Starvation</em>: if an actor executes a synchronous blocking foreign call (such as a slow SQL query or network socket read), its mailbox freezes and cannot process incoming messages.
         </p>
 
-        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
-          <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">How VLang Solves Mailbox Starvation</h3>
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; box-shadow: var(--shadow-sm);">
+          <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">How VLang Solves Mailbox Starvation</h3>
           <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
             VLang's <code>crates/ffi</code> introduces a <strong>Hybrid Thread Pool</strong>:
           </p>
@@ -398,21 +422,21 @@ do {
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
             <h4 style="color: var(--accent-blue); font-size: 1rem; margin-bottom: 0.35rem;">💡 Rule 1: Think in Request Scopes</h4>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
               Do not worry about freeing intermediate strings, arrays, or objects created while handling a request. Allocate freely—the entire request arena is reclaimed automatically in $O(1)$ constant time as soon as the function returns.
             </p>
           </div>
 
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
             <h4 style="color: var(--accent-green); font-size: 1rem; margin-bottom: 0.35rem;">💡 Rule 2: Keep Persistent State Truly Shared</h4>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
               Only promote data to Region B if it needs to be accessed across multiple requests (such as an in-memory session cache or database connection pool). All transient request payloads belong in Region A.
             </p>
           </div>
 
-          <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
             <h4 style="color: var(--accent-purple); font-size: 1rem; margin-bottom: 0.35rem;">💡 Rule 3: Size Budgets with Headroom</h4>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
               Use elastic budgets (e.g. <code>memory_budget request = 16 MB max 64 MB;</code>). The base budget (16 MB) keeps memory footprint tiny during normal traffic, while the max ceiling (64 MB) gracefully accommodates occasional large payloads without crashing.

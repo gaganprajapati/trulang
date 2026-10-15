@@ -1,5 +1,48 @@
-// Main Documentation Interactions & Tab Switchers
+// VLang Documentation Interactive Logic & Theme Management
 
+// Theme Management (Light / Dark)
+function getInitialTheme() {
+  const saved = localStorage.getItem('vlang_theme');
+  if (saved === 'light' || saved === 'dark') {
+    return saved;
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`);
+    btn.setAttribute('title', `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`);
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || getInitialTheme();
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('vlang_theme', next);
+  applyTheme(next);
+}
+
+// Sync across browser tabs
+window.addEventListener('storage', (e) => {
+  if (e.key === 'vlang_theme' && (e.newValue === 'light' || e.newValue === 'dark')) {
+    applyTheme(e.newValue);
+  }
+});
+
+// React to OS preference changes if user hasn't explicitly set a preference
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  if (!localStorage.getItem('vlang_theme')) {
+    applyTheme(e.matches ? 'dark' : 'light');
+  }
+});
+
+// Initialize theme on script load
+applyTheme(getInitialTheme());
+
+// Tab Switchers
 function switchBenchTab(tabKey) {
   const tabs = ['throughput', 'latency', 'memory', 'matrix'];
   tabs.forEach(t => {
@@ -64,8 +107,13 @@ function filterSpecs() {
   });
 }
 
-// Highlight active sidebar links on scroll
+// Highlight active sidebar links on scroll & bind theme button
 window.addEventListener('DOMContentLoaded', () => {
+  const themeBtn = document.getElementById('themeToggle');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', toggleTheme);
+  }
+
   const links = document.querySelectorAll('.sidebar-link');
   const sections = document.querySelectorAll('section[id], .spec-card[id]');
 

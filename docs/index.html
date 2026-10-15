@@ -5,9 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VLang — Complete Language Specification & Interactive Docs</title>
   <meta name="description" content="Comprehensive interactive language documentation, syntax specification, memory architecture, and live playground for VLang.">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    (function() {
+      const saved = localStorage.getItem('vlang_theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', saved || (systemDark ? 'dark' : 'light'));
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -16,7 +24,7 @@
   <header>
     <a href="#" class="brand">
       <div class="brand-logo">V</div>
-      <div class="brand-name">VLang Specification</div>
+      <div class="brand-name">VLang</div>
       <span class="brand-badge">VSpec 1.0.0</span>
     </a>
 
@@ -28,23 +36,29 @@
     </div>
 
     <div class="nav-actions">
-      <a href="internals.html" class="btn btn-primary" style="background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue)); border: none; font-weight: 600;">
-        🧠 How It Works (Internals)
-      </a>
-      <a href="#installation" class="btn btn-secondary">
-        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-        </svg>
-        Install CLI
+      <a href="internals.html" class="btn btn-secondary">
+        Runtime Internals
       </a>
       <a href="#playground" class="btn btn-secondary">
-        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        Try It Live
+        Playground
       </a>
       <a href="https://github.com/gaganprajapati/vlang" target="_blank" class="btn btn-secondary">GitHub</a>
+      <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light and dark theme" title="Toggle theme">
+        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -198,11 +212,11 @@
             </ul>
           </div>
 
-          <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 1.25rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; color: #34d399; font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-top: 3px solid var(--accent-green); border-radius: 8px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--accent-green); font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">
               <span>⚡ The VLang Sweet Spot</span>
             </div>
-            <ul style="color: #d1fae5; font-size: 0.85rem; line-height: 1.6; margin: 0; padding-left: 1.2rem;">
+            <ul style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6; margin: 0; padding-left: 1.2rem;">
               <li><strong>0.0 ms GC Pauses:</strong> $O(1)$ request arena pointer resets.</li>
               <li><strong>2.5 MB Base RSS:</strong> 15x–40x higher microservice pod density.</li>
               <li><strong>Ergonomic &amp; Memory Safe:</strong> TypeScript simplicity + C speed.</li>
@@ -213,66 +227,66 @@
         <!-- 4 Pillars of VLang Card Grid -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
           <!-- Pillar 1 -->
-          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #38bdf8;">
+          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #0284c7;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
               <span class="pill pill-blue">Pillar 1</span>
-              <strong style="color: #fff; font-size: 1rem;">Dual-Region Memory Arenas</strong>
+              <strong style="color: var(--text-main); font-size: 1rem;">Dual-Region Memory Arenas</strong>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.75rem;">
               99% of web backend allocations are short-lived. Instead of forcing them through a tracing garbage collector, VLang routes all request data into <strong>Region A (High-Speed Bump Arena)</strong>. When the request completes, Region A is wiped in <strong>$O(1)$ constant time</strong> with zero garbage collection sweeps.
             </p>
-            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.4); padding: 0.5rem 0.75rem; border-radius: 4px; color: #93c5fd;">
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 4px; color: var(--accent-blue);">
               ✓ 0.0 ms Stop-the-World &bull; Zero Heap Fragmentation
             </div>
           </div>
 
           <!-- Pillar 2 -->
-          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #34d399;">
+          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #059669;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
               <span class="pill pill-green">Pillar 2</span>
-              <strong style="color: #fff; font-size: 1rem;">Cycle-Free Acyclic DAG State</strong>
+              <strong style="color: var(--text-main); font-size: 1rem;">Cycle-Free Acyclic DAG State</strong>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.75rem;">
               Long-lived actor state is promoted to <strong>Region B</strong> via <code>persist(x)</code>. During promotion, the runtime statically traverses object references to verify they form a strict <strong>directed acyclic graph (DAG)</strong>. Circular references are rejected at execution time, guaranteeing 100% leak-free reference counting.
             </p>
-            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.4); padding: 0.5rem 0.75rem; border-radius: 4px; color: #6ee7b7;">
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 4px; color: var(--accent-green);">
               ✓ Rejects VmError::CyclicPersistentData &bull; Zero ARC Leaks
             </div>
           </div>
 
           <!-- Pillar 3 -->
-          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #c084fc;">
+          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #7c3aed;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
               <span class="pill pill-purple">Pillar 3</span>
-              <strong style="color: #fff; font-size: 1rem;">Zero-Lock Service Actors &amp; Backpressure</strong>
+              <strong style="color: var(--text-main); font-size: 1rem;">Zero-Lock Service Actors &amp; Backpressure</strong>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.75rem;">
               Services operate as isolated, single-threaded actors processing requests sequentially from bounded mailboxes. Developers never write <code>mutex.lock()</code> or manage lock orders. Traffic spikes that exceed capacity are gracefully shed with backpressure (<code>MailboxFull</code>) rather than crashing the pod with Out-of-Memory.
             </p>
-            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.4); padding: 0.5rem 0.75rem; border-radius: 4px; color: #d8b4fe;">
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 4px; color: var(--accent-purple);">
               ✓ No Data Races &bull; No Mutex Deadlocks &bull; Bounded Memory QoS
             </div>
           </div>
 
           <!-- Pillar 4 -->
-          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #fbbf24;">
+          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #d97706;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
-              <span class="pill" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.3);">Pillar 4</span>
-              <strong style="color: #fff; font-size: 1rem;">Zero-Overhead Seqlock Live Telemetry</strong>
+              <span class="pill" style="color: var(--accent-amber); border-color: rgba(217, 119, 6, 0.3);">Pillar 4</span>
+              <strong style="color: var(--text-main); font-size: 1rem;">Zero-Overhead Seqlock Live Telemetry</strong>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.75rem;">
               Traditional profilers degrade server throughput by 10%–25% when attached. VLang streams real-time allocation counts, budgets, and ring buffer events into an OS shared memory segment via an atomic 64-bit <strong>Seqlock protocol</strong>. The supervisor daemon reads live metrics out-of-process with <strong>0.0% worker performance penalty</strong>.
             </p>
-            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.4); padding: 0.5rem 0.75rem; border-radius: 4px; color: #fde68a;">
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 4px; color: var(--accent-amber);">
               ✓ Lock-Free Atomic SHM &bull; 0.0% APM Profiling Overhead
             </div>
           </div>
         </div>
 
         <!-- Business Impact Metrics Box -->
-        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border: 1px solid var(--border-accent); border-radius: 8px; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: var(--shadow-sm);">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-            <strong style="color: #fff; font-size: 1.05rem;">💼 Real-World Infrastructure Impact</strong>
+            <strong style="color: var(--text-main); font-size: 1.05rem;">💼 Real-World Infrastructure Impact</strong>
             <span class="pill pill-green">Measurable Cloud ROI</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
@@ -341,9 +355,9 @@
 
           <!-- TAB 1: Prebuilt Binaries (Default Active) -->
           <div class="bench-tab-content active" id="tabInstallBinary">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Pre-Compiled Standalone Binaries (Release v0.1.0)</h3>
+            <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Pre-Compiled Standalone Binaries (Release v0.1.0)</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              Download standalone, statically linked binaries directly from <a href="https://github.com/gaganprajapati/vlang/releases/tag/v0.1.0" target="_blank" style="color: #60a5fa; text-decoration: underline;">GitHub Releases</a>. Zero external dependencies or Rust toolchain required.
+              Download standalone, statically linked binaries directly from <a href="https://github.com/gaganprajapati/vlang/releases/tag/v0.1.0" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">GitHub Releases</a>. Zero external dependencies or Rust toolchain required.
             </p>
 
             <div style="overflow-x: auto; margin-bottom: 1.25rem;">
@@ -407,7 +421,7 @@ vlang --version
 
           <!-- TAB 2: Source / Cargo -->
           <div class="bench-tab-content" id="tabInstallSource">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Build & Install from Source via Cargo</h3>
+            <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Build & Install from Source via Cargo</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
               Recommended for development, testing, and full access to workspace crates. Requires the Rust toolchain (<code>rustc</code> and <code>cargo</code> 1.75+).
             </p>
@@ -437,7 +451,7 @@ vlang --version
 
           <!-- TAB 3: Cargo Git -->
           <div class="bench-tab-content" id="tabInstallBrew">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Direct 1-Line Install via Cargo Git</h3>
+            <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Direct 1-Line Install via Cargo Git</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
               Installs VLang directly from GitHub into <code>~/.cargo/bin</code> without requiring a manual git clone:
             </p>
@@ -457,7 +471,7 @@ vlang --help</code></pre>
 
           <!-- TAB 4: Distribution Roadmap -->
           <div class="bench-tab-content" id="tabInstallDocker">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Packaging & Distribution Roadmap</h3>
+            <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Packaging & Distribution Roadmap</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
               Overview of available channels and packaging registries:
             </p>
@@ -516,7 +530,7 @@ vlang --help</code></pre>
 
         <!-- 3-Step Quickstart Guide -->
         <div style="margin-top: 3rem;">
-          <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Your First VLang Service in 60 Seconds</h3>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Your First VLang Service in 60 Seconds</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem;">
             Follow this 3-step walkthrough to write, statically check, and execute your first dual-region memory-safe service.
           </p>
@@ -629,7 +643,7 @@ $ ./greeter_app</code></pre>
 
         <!-- Editor & IDE Tooling Setup -->
         <div style="margin-top: 3rem;">
-          <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Editor & IDE Tooling Setup</h3>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Editor & IDE Tooling Setup</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem;">
             Enhance your workflow with official syntax highlighting, type hints, diagnostics, and shell completions.
           </p>
@@ -638,7 +652,7 @@ $ ./greeter_app</code></pre>
             <div class="ide-card">
               <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                 <span style="font-size: 1.25rem;">⚡</span>
-                <strong style="color: #fff; font-size: 0.95rem;">VS Code Extension</strong>
+                <strong style="color: var(--text-main); font-size: 0.95rem;">VS Code Extension</strong>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
                 Official grammar syntax highlighting for <code>.vl</code> files, bracket matching, code snippets, and inline error diagnostics.
@@ -651,7 +665,7 @@ $ ./greeter_app</code></pre>
             <div class="ide-card">
               <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                 <span style="font-size: 1.25rem;">🛠️</span>
-                <strong style="color: #fff; font-size: 0.95rem;">Vim / Neovim</strong>
+                <strong style="color: var(--text-main); font-size: 0.95rem;">Vim / Neovim</strong>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
                 Add filetype detection to your <code>init.vim</code> or <code>.vimrc</code> for automatic indentation and highlighting:
@@ -664,7 +678,7 @@ $ ./greeter_app</code></pre>
             <div class="ide-card">
               <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                 <span style="font-size: 1.25rem;">🐚</span>
-                <strong style="color: #fff; font-size: 0.95rem;">Shell Auto-Completions</strong>
+                <strong style="color: var(--text-main); font-size: 0.95rem;">Shell Auto-Completions</strong>
               </div>
               <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
                 Generate shell completions for tab completion of subcommands and flags:
@@ -679,7 +693,7 @@ vlang completions bash > /etc/bash_completion.d/vlang</code></pre>
 
         <!-- Environment Variables & Flags -->
         <div style="margin-top: 3rem;">
-          <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem;">Environment Variables & Tuning</h3>
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">Environment Variables & Tuning</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
             Control runtime supervisor telemetry, memory ceilings, and benchmark behavior via environment variables:
           </p>
@@ -1222,11 +1236,11 @@ $ ./fib_native
 Calculating Fibonacci sequence up to N = 10:
 55</code></pre>
             <div style="margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-              <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem;">
+              <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem; box-shadow: var(--shadow-sm);">
                 <h4 style="font-size: 0.9rem; color: var(--accent-blue); margin-bottom: 0.35rem;">🚀 Production Mode (--release)</h4>
                 <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Enables <code>-O3</code> SIMD vectorization and frame-pointer elimination, closing the compute throughput gap to within <strong>90–95%+ of native Rust/C++</strong>.</p>
               </div>
-              <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem;">
+              <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem; box-shadow: var(--shadow-sm);">
                 <h4 style="font-size: 0.9rem; color: var(--accent-green); margin-bottom: 0.35rem;">📄 Native C Export (--emit-c)</h4>
                 <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Emits clean, human-auditable ANSI C99 source with embedded Region A/B runtime for embedded targets, security audits, or custom build pipelines.</p>
               </div>
@@ -1541,7 +1555,7 @@ let row = pool.query_user(1001);</code></pre>
           <!-- TAB 1: Throughput -->
           <div class="bench-tab-content active" id="tabContentThroughput">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
-              <h3 style="font-size: 1.05rem; color: #fff;">Microservice Request Handling Throughput (Higher is Better)</h3>
+              <h3 style="font-size: 1.05rem; color: var(--text-main);">Microservice Request Handling Throughput (Higher is Better)</h3>
               <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">Workload: UserService (50,000 reqs, 8 threads)</span>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
@@ -1622,15 +1636,15 @@ let row = pool.query_user(1001);</code></pre>
               </div>
             </div>
 
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
-              <strong style="color: #38bdf8;">Why VLang achieves near-compiled throughput:</strong> In conventional managed runtimes, each request performs dozens of individual heap allocations with lock contention on the global allocator. In VLang, all per-request objects live inside a bump-pointer Region A arena ($O(1)$ allocation), eliminating malloc locks and cache thrashing entirely.
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); box-shadow: var(--shadow-sm);">
+              <strong style="color: var(--accent-blue);">Why VLang achieves near-compiled throughput:</strong> In conventional managed runtimes, each request performs dozens of individual heap allocations with lock contention on the global allocator. In VLang, all per-request objects live inside a bump-pointer Region A arena ($O(1)$ allocation), eliminating malloc locks and cache thrashing entirely.
             </div>
           </div>
 
           <!-- TAB 2: Latency -->
           <div class="bench-tab-content" id="tabContentLatency">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
-              <h3 style="font-size: 1.05rem; color: #fff;">Tail Latency (p99) Under Continuous Load (Lower is Better)</h3>
+              <h3 style="font-size: 1.05rem; color: var(--text-main);">Tail Latency (p99) Under Continuous Load (Lower is Better)</h3>
               <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">Measured in microseconds (µs)</span>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
@@ -1711,15 +1725,15 @@ let row = pool.query_user(1001);</code></pre>
               </div>
             </div>
 
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
-              <strong style="color: #f472b6;">Predictable SLA Guarantee:</strong> In Node.js, Go, and Java, background tracing GC cycles periodically freeze worker threads to compact memory (major pauses lasting from 15 ms to 120 ms). VLang reclaims request memory instantly by resetting the Region A arena pointer back to offset 0 in $O(1)$ time, yielding mathematically zero GC pause latency.
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); box-shadow: var(--shadow-sm);">
+              <strong style="color: var(--accent-purple);">Predictable SLA Guarantee:</strong> In Node.js, Go, and Java, background tracing GC cycles periodically freeze worker threads to compact memory (major pauses lasting from 15 ms to 120 ms). VLang reclaims request memory instantly by resetting the Region A arena pointer back to offset 0 in $O(1)$ time, yielding mathematically zero GC pause latency.
             </div>
           </div>
 
           <!-- TAB 3: Memory & Density -->
           <div class="bench-tab-content" id="tabContentMemory">
             <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
-              <h3 style="font-size: 1.05rem; color: #fff;">Resident Memory (RSS) Footprint & Microservice Packing Density</h3>
+              <h3 style="font-size: 1.05rem; color: var(--text-main);">Resident Memory (RSS) Footprint & Microservice Packing Density</h3>
               <span style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">Base Process Footprint (MB)</span>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
@@ -1800,14 +1814,14 @@ let row = pool.query_user(1001);</code></pre>
               </div>
             </div>
 
-            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
-              <strong style="color: #fbbf24;">Cloud Cost Multiplier:</strong> On a standard 16 GB RAM Kubernetes node, VLang can pack over <strong>6,000 active service micro-instances</strong>, compared to <strong>340 instances</strong> for Node.js and just <strong>140 instances</strong> for standard Java. This translates to an immediate <strong>15x to 40x cloud hosting cost reduction</strong> for microservice fleets.
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); box-shadow: var(--shadow-sm);">
+              <strong style="color: var(--accent-amber);">Cloud Cost Multiplier:</strong> On a standard 16 GB RAM Kubernetes node, VLang can pack over <strong>6,000 active service micro-instances</strong>, compared to <strong>340 instances</strong> for Node.js and just <strong>140 instances</strong> for standard Java. This translates to an immediate <strong>15x to 40x cloud hosting cost reduction</strong> for microservice fleets.
             </div>
           </div>
 
           <!-- TAB 4: Matrix -->
           <div class="bench-tab-content" id="tabContentMatrix">
-            <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 0.5rem;">Head-to-Head Architecture & Runtime Comparison</h3>
+            <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Head-to-Head Architecture & Runtime Comparison</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
               Comprehensive breakdown comparing memory models, safety guarantees, runtime overhead, and operations tooling.
             </p>
