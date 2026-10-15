@@ -83,5 +83,26 @@ mod tests {
 
         let _ = std::fs::remove_file(&shm_path);
     }
+
+    #[test]
+    fn test_arena_burst_telemetry_event() {
+        let temp_dir = std::env::temp_dir();
+        let shm_path = temp_dir.join(format!("vlang_burst_test_{}.dat", std::process::id()));
+        let _ = std::fs::remove_file(&shm_path);
+
+        let region = SharedTelemetryRegion::create_or_open(&shm_path, std::process::id())
+            .expect("Create shm failed");
+
+        region.push_event(TelemetryEventType::ArenaBurst, 4096, 42, 10, "arena_burst");
+
+        let records = region.read_recent_records(1);
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].event_type, TelemetryEventType::ArenaBurst as u8);
+        assert_eq!(TelemetryEventType::from(records[0].event_type), TelemetryEventType::ArenaBurst);
+        assert_eq!(records[0].bytes, 4096);
+        assert_eq!(records[0].get_label(), "arena_burst");
+
+        let _ = std::fs::remove_file(&shm_path);
+    }
 }
 

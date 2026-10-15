@@ -1,6 +1,6 @@
 use crate::bytecode::{Chunk, Opcode, Value};
 use crate::error::CompileError;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use vlang_syntax::ast::*;
 use vlang_syntax::span::Spanned;
@@ -14,6 +14,7 @@ struct ScopeContext {
 pub struct CodeGenerator {
     pub chunk: Chunk,
     scopes: Vec<ScopeContext>,
+    persistent_fields: HashSet<String>,
 }
 
 impl CodeGenerator {
@@ -21,6 +22,26 @@ impl CodeGenerator {
         Self {
             chunk: Chunk::new(),
             scopes: vec![ScopeContext::default()],
+            persistent_fields: HashSet::new(),
+        }
+    }
+
+    fn is_persistent_field(&self, name: &str) -> bool {
+        self.persistent_fields.contains(name)
+    }
+
+    fn is_persistent_expr(&self, expr: &Spanned<Expr>) -> bool {
+        match &expr.node {
+            Expr::Ident(name) => self.is_persistent_field(name),
+            Expr::MemberAccess { target, field, .. } => {
+                if let Expr::Ident(tgt) = &target.node {
+                    if tgt == "self" || tgt == "this" {
+                        return self.is_persistent_field(field);
+                    }
+                }
+                self.is_persistent_field(field)
+            }
+            _ => false,
         }
     }
 
@@ -65,10 +86,18 @@ impl CodeGenerator {
     }
 
     pub fn compile_service(&mut self, svc: &ServiceDecl) -> Result<(), CompileError> {
+        // Track persistent fields declared on the service actor
+        for field in &svc.fields {
+            self.persistent_fields.insert(field.node.name.clone());
+        }
+
         // Find budgets if declared
         for budget in &svc.budgets {
             if budget.node.region == BudgetRegion::Request {
-                self.chunk.emit(Opcode::AllocRegionA(budget.node.size_bytes), budget.span.line);
+                self.chunk.emit(
+                    Opcode::AllocRegionA(budget.node.size_bytes, budget.node.max_size_bytes),
+                    budget.span.line,
+                );
             }
         }
 
@@ -120,12 +149,20 @@ impl CodeGenerator {
                 match &target.node {
                     Expr::Ident(name) => {
                         self.compile_expr(value)?;
+                        // Auto-promotion: promote transient data to Region B when written to actor persistent field
+                        if self.is_persistent_field(name) && !matches!(value.node, Expr::Persist(_)) {
+                            self.chunk.emit(Opcode::Persist, line);
+                        }
                         if let Some(slot) = self.resolve_local(name) {
                             self.chunk.emit(Opcode::SetLocal(slot), line);
                         }
                     }
                     Expr::MemberAccess { target: obj, field, .. } => {
                         self.compile_expr(value)?;
+                        // Auto-promotion: promote transient data when written to actor persistent state or member
+                        if (self.is_persistent_expr(obj) || self.is_persistent_field(field)) && !matches!(value.node, Expr::Persist(_)) {
+                            self.chunk.emit(Opcode::Persist, line);
+                        }
                         self.compile_expr(obj)?;
                         self.chunk.emit(Opcode::SetFieldNamed(field.clone()), line);
                     }
@@ -331,8 +368,16 @@ impl CodeGenerator {
                 self.chunk.emit(Opcode::Call(args.len()), line);
             }
             Expr::MethodCall { receiver, method, args } => {
-                for arg in args {
+                let is_mutating_persistent_collection = self.is_persistent_expr(receiver)
+                    && (method == "insert" || method == "set" || method == "push");
+
+                for (i, arg) in args.iter().enumerate() {
                     self.compile_expr(arg)?;
+                    let is_value_arg = (method == "push" && i == 0)
+                        || ((method == "insert" || method == "set") && i == 1);
+                    if is_mutating_persistent_collection && is_value_arg && !matches!(arg.node, Expr::Persist(_)) {
+                        self.chunk.emit(Opcode::Persist, line);
+                    }
                 }
                 self.compile_expr(receiver)?;
                 self.chunk.emit(Opcode::CallMethod(method.clone(), args.len()), line);
@@ -352,5 +397,11 @@ impl CodeGenerator {
             }
         }
         Ok(())
+    }
+}
+
+impl Default for CodeGenerator {
+    fn default() -> Self {
+        Self::new()
     }
 }

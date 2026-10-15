@@ -273,6 +273,7 @@ impl<'a> Lexer<'a> {
             "memory_budget" => TokenKind::MemoryBudget,
             "request" => TokenKind::Request,
             "persistent" => TokenKind::Persistent,
+            "max" => TokenKind::Max,
             "true" => TokenKind::True,
             "false" => TokenKind::False,
             "null" => TokenKind::Null,
@@ -290,7 +291,7 @@ impl<'a> Lexer<'a> {
         while let Some(c) = self.peek() {
             if c.is_ascii_digit() {
                 self.advance();
-            } else if c == '.' && self.peek_next().map_or(false, |next| next.is_ascii_digit()) {
+            } else if c == '.' && self.peek_next().is_some_and(|next| next.is_ascii_digit()) {
                 is_float = true;
                 self.advance();
             } else {

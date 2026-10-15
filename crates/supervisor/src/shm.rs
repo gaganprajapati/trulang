@@ -76,6 +76,7 @@ pub enum TelemetryEventType {
     PersistToRegionB = 2,
     BudgetExceeded = 3,
     Heartbeat = 4,
+    ArenaBurst = 5,
 }
 
 impl From<u8> for TelemetryEventType {
@@ -85,13 +86,15 @@ impl From<u8> for TelemetryEventType {
             1 => TelemetryEventType::FreeRegionA,
             2 => TelemetryEventType::PersistToRegionB,
             3 => TelemetryEventType::BudgetExceeded,
+            4 => TelemetryEventType::Heartbeat,
+            5 => TelemetryEventType::ArenaBurst,
             _ => TelemetryEventType::Heartbeat,
         }
     }
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct TelemetryRecord {
     pub seq: u64, // Seqlock counter: odd = writing, even = stable
     pub timestamp_ns: u64,
@@ -101,21 +104,6 @@ pub struct TelemetryRecord {
     pub line: u32,
     pub col: u32,
     pub label: [u8; 32],
-}
-
-impl Default for TelemetryRecord {
-    fn default() -> Self {
-        Self {
-            seq: 0,
-            timestamp_ns: 0,
-            event_type: 0,
-            _reserved: [0; 3],
-            bytes: 0,
-            line: 0,
-            col: 0,
-            label: [0; 32],
-        }
-    }
 }
 
 impl TelemetryRecord {
@@ -278,6 +266,7 @@ impl SharedTelemetryRegion {
         unsafe { &*(self.mmap.as_ptr() as *const ShmHeader) }
     }
 
+    #[allow(clippy::mut_from_ref)]
     pub fn header_mut(&self) -> &mut ShmHeader {
         unsafe { &mut *(self.mmap.as_ptr() as *mut u8 as *mut ShmHeader) }
     }
@@ -361,7 +350,7 @@ impl SharedTelemetryRegion {
                 // Seqlock read sequence with optimistic retry
                 for _ in 0..16 {
                     let seq1 = std::ptr::read_volatile(std::ptr::addr_of!((*slot).seq));
-                    if seq1 % 2 != 0 {
+                    if !seq1.is_multiple_of(2) {
                         // Writer is currently updating this slot, spin
                         std::hint::spin_loop();
                         continue;
@@ -372,7 +361,7 @@ impl SharedTelemetryRegion {
                     std::sync::atomic::fence(Ordering::Acquire);
 
                     let seq2 = std::ptr::read_volatile(std::ptr::addr_of!((*slot).seq));
-                    if seq1 == seq2 && seq1 % 2 == 0 {
+                    if seq1 == seq2 && seq1.is_multiple_of(2) {
                         read_success = true;
                         break;
                     }

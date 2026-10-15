@@ -37,6 +37,7 @@ impl From<VmError> for ActorError {
 pub struct ServiceActor {
     pub name: String,
     pub request_budget_bytes: usize,
+    pub max_request_budget_bytes: Option<usize>,
     pub persistent_budget_bytes: usize,
     pub mailbox_capacity: usize,
     pub pending_requests: AtomicUsize,
@@ -58,6 +59,7 @@ impl ServiceActor {
         Self {
             name: name.into(),
             request_budget_bytes: request_budget,
+            max_request_budget_bytes: None,
             persistent_budget_bytes: persistent_budget,
             mailbox_capacity: Self::DEFAULT_MAILBOX_CAPACITY,
             pending_requests: AtomicUsize::new(0),
@@ -66,6 +68,11 @@ impl ServiceActor {
             service_state: HashMap::new(),
             chunk,
         }
+    }
+
+    pub fn with_max_request_budget(mut self, max_budget: usize) -> Self {
+        self.max_request_budget_bytes = Some(max_budget);
+        self
     }
 
     pub fn with_mailbox_capacity(mut self, capacity: usize) -> Self {
@@ -98,6 +105,7 @@ impl ServiceActor {
             self.request_budget_bytes,
             Arc::clone(&self.persistent_memory),
         );
+        vm.region_a.max_budget_bytes = self.max_request_budget_bytes;
 
         if let Some(limit) = self.instruction_limit {
             vm = vm.with_instruction_limit(limit);

@@ -30,6 +30,7 @@ pub enum BudgetRegion {
 pub struct MemoryBudgetDecl {
     pub region: BudgetRegion,
     pub size_bytes: usize,
+    pub max_size_bytes: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

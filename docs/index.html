@@ -1435,7 +1435,7 @@ vlang --help</code></pre>
                   <button class="copy-btn" onclick="copyCode(this)">Copy</button>
                 </div>
                 <pre><code><span class="kw">service</span> GreeterService {
-    <span class="kw">memory_budget</span> request = <span class="num">16 MB</span>;
+    <span class="kw">memory_budget</span> request = <span class="num">16 MB</span> <span class="kw">max</span> <span class="num">64 MB</span>;
     <span class="kw">memory_budget</span> persistent = <span class="num">128 MB</span>;
 
     <span class="kw">fn</span> handle(name: <span class="type">string</span>) -> <span class="type">string</span> {
@@ -1928,6 +1928,43 @@ println(sum); <span class="comment">// Output: 55</span></code></pre>
         <span class="kw">let</span> user = database.find_user(request.user_id);
         <span class="kw">if</span> user != <span class="kw">null</span> {
             cache.insert(request.user_id, <span class="fn">persist</span>(user));
+        }
+        <span class="kw">return</span> <span class="type">Response</span>.json(user);
+    }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- memory_budget -->
+        <div class="spec-card expanded" id="spec-budget">
+          <div class="spec-header" onclick="toggleCard('spec-budget')">
+            <span class="method-badge badge-mem">MEM</span>
+            <span class="spec-name">memory_budget &lt;region&gt; = &lt;base&gt; [max &lt;ceiling&gt;];</span>
+            <span class="spec-desc">Declares bounded request (Region A) or persistent (Region B) memory budgets with optional elastic burst headroom</span>
+            <svg class="chevron" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
+          <div class="spec-body">
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+              Budgets enforce strict memory ceilings per execution region. The <code>request</code> arena supports <strong>elastic burst headroom</strong> via <code>max &lt;size&gt;</code>, allowing sudden request spikes to succeed without dropping requests while emitting zero-overhead <code>ArenaBurst</code> telemetry events. When <code>max</code> is omitted, strict limits are maintained.
+            </p>
+            <div class="code-box">
+              <div class="code-top">
+                <span>Elastic Budget &amp; Compiler Auto-Promotion Example</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+              </div>
+              <pre><code><span class="kw">service</span> <span class="type">ElasticService</span> {
+    <span class="comment">// 16 MB baseline budget with elastic burst headroom up to 64 MB</span>
+    <span class="kw">memory_budget</span> request = <span class="num">16 MB</span> <span class="kw">max</span> <span class="num">64 MB</span>;
+    <span class="kw">memory_budget</span> persistent = <span class="num">512 MB</span>;
+
+    <span class="kw">let mut</span> cache: <span class="type">Map</span>&lt;<span class="type">string</span>, <span class="type">User</span>&gt; = <span class="type">Map</span>::new();
+
+    <span class="kw">fn</span> <span class="fn">handle</span>(request: <span class="type">Request</span>) -&gt; <span class="type">Response</span> {
+        <span class="kw">let</span> user = database.find_user(request.user_id);
+        <span class="kw">if</span> user != <span class="kw">null</span> {
+            <span class="comment">// Transparent compiler auto-promotion: promoted to Region B cache without persist()</span>
+            cache.insert(request.user_id, user);
         }
         <span class="kw">return</span> <span class="type">Response</span>.json(user);
     }

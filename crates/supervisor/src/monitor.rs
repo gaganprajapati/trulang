@@ -147,6 +147,7 @@ impl MemorySupervisor {
                     TelemetryEventType::PersistToRegionB => "Persist",
                     TelemetryEventType::BudgetExceeded => "BUDGET!",
                     TelemetryEventType::Heartbeat => "Beat   ",
+                    TelemetryEventType::ArenaBurst => "BURST! ",
                 };
                 let label = rec.get_label();
                 println!(

@@ -362,3 +362,9 @@ impl TypeChecker {
         }
     }
 }
+
+impl Default for TypeChecker {
+    fn default() -> Self {
+        Self::new()
+    }
+}

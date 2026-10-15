@@ -124,6 +124,59 @@ impl VirtualMachine {
         }
     }
 
+    pub fn with_elastic_budgets(
+        request_budget: usize,
+        max_request_budget: Option<usize>,
+        persistent_budget: usize,
+    ) -> Self {
+        Self {
+            stack: Vec::with_capacity(256),
+            frames: Vec::with_capacity(64),
+            region_a: RegionAAllocator::with_ceiling(request_budget, max_request_budget),
+            region_b: Arc::new(RegionBAllocator::new(persistent_budget)),
+            output_log: Vec::new(),
+            telemetry: None,
+            instruction_count: 0,
+            max_instructions: None,
+            quiet: false,
+        }
+    }
+
+    pub fn allocate_region_a(&mut self, size: usize) -> Result<(), VmError> {
+        let is_burst = self.region_a.allocate(size).map_err(|e| {
+            if let Some(shm) = &self.telemetry {
+                shm.push_event(
+                    vlang_supervisor::TelemetryEventType::BudgetExceeded,
+                    size as u32,
+                    0,
+                    0,
+                    "request_overflow",
+                );
+            }
+            VmError::MemoryExceeded(e)
+        })?;
+
+        if is_burst {
+            if let Some(shm) = &self.telemetry {
+                shm.push_event(
+                    vlang_supervisor::TelemetryEventType::ArenaBurst,
+                    size as u32,
+                    0,
+                    0,
+                    "arena_burst",
+                );
+            }
+        }
+
+        if let Some(shm) = &self.telemetry {
+            shm.header()
+                .region_a_used_bytes
+                .store(self.region_a.used_bytes as u64, std::sync::atomic::Ordering::Relaxed);
+        }
+
+        Ok(())
+    }
+
     pub fn with_persistent_allocator(
         request_budget: usize,
         region_b: Arc<RegionBAllocator>,
@@ -189,11 +242,11 @@ impl VirtualMachine {
 
             match op {
                 Opcode::LoadInt(n) => {
-                    self.region_a.allocate(8).map_err(VmError::MemoryExceeded)?;
+                    self.allocate_region_a(8)?;
                     self.stack.push(Value::Int(*n));
                 }
                 Opcode::LoadFloat(f) => {
-                    self.region_a.allocate(8).map_err(VmError::MemoryExceeded)?;
+                    self.allocate_region_a(8)?;
                     self.stack.push(Value::Float(*f));
                 }
                 Opcode::LoadBool(b) => {
@@ -205,7 +258,7 @@ impl VirtualMachine {
                 Opcode::LoadConst(idx) => {
                     let val = chunk.constants.get(*idx).cloned().unwrap_or(Value::Null);
                     if let Value::String(ref s) = val {
-                        self.region_a.allocate(s.len()).map_err(VmError::MemoryExceeded)?;
+                        self.allocate_region_a(s.len())?;
                     }
                     self.stack.push(val);
                 }
@@ -317,7 +370,7 @@ impl VirtualMachine {
                                     let user_obj = Value::new_object();
                                     if let Value::Object(ref o) = user_obj {
                                         let mut g = o.lock().unwrap();
-                                        g.insert("id".to_string(), args.get(0).cloned().unwrap_or(Value::Int(1)));
+                                        g.insert("id".to_string(), args.first().cloned().unwrap_or(Value::Int(1)));
                                         g.insert("name".to_string(), Value::String(Arc::new("Alice Smith".to_string())));
                                         g.insert("email".to_string(), Value::String(Arc::new("alice@example.com".to_string())));
                                     }
@@ -328,7 +381,7 @@ impl VirtualMachine {
                                     if let Value::Object(ref o) = resp {
                                         let mut g = o.lock().unwrap();
                                         g.insert("status".to_string(), Value::Int(200));
-                                        g.insert("data".to_string(), args.get(0).cloned().unwrap_or(Value::Null));
+                                        g.insert("data".to_string(), args.first().cloned().unwrap_or(Value::Null));
                                     }
                                     self.stack.push(resp);
                                 }
@@ -336,7 +389,7 @@ impl VirtualMachine {
                                     let resp = Value::new_object();
                                     if let Value::Object(ref o) = resp {
                                         let mut g = o.lock().unwrap();
-                                        g.insert("status".to_string(), args.get(0).cloned().unwrap_or(Value::Int(500)));
+                                        g.insert("status".to_string(), args.first().cloned().unwrap_or(Value::Int(500)));
                                         g.insert("error".to_string(), args.get(1).cloned().unwrap_or(Value::Null));
                                     }
                                     self.stack.push(resp);
@@ -358,7 +411,7 @@ impl VirtualMachine {
                         (Value::String(x), Value::String(y)) => {
                             let mut combined = (*x).clone();
                             combined.push_str(&y);
-                            self.region_a.allocate(combined.len()).map_err(VmError::MemoryExceeded)?;
+                            self.allocate_region_a(combined.len())?;
                             Value::String(Arc::new(combined))
                         }
                         (a, b) => return Err(VmError::InvalidOperand(format!("Cannot add {} and {}", a, b))),
@@ -400,7 +453,7 @@ impl VirtualMachine {
                             Some(v) => Value::Int(v),
                             None => return Err(VmError::ArithmeticOverflow("Integer division overflow".into())),
                         },
-                        (Value::Float(_), Value::Float(y)) if y == 0.0 => return Err(VmError::DivisionByZero),
+                        (Value::Float(_), Value::Float(0.0)) => return Err(VmError::DivisionByZero),
                         (Value::Float(x), Value::Float(y)) => Value::Float(x / y),
                         (a, b) => return Err(VmError::InvalidOperand(format!("Cannot divide {} by {}", a, b))),
                     };
@@ -544,8 +597,9 @@ impl VirtualMachine {
                         self.stack.push(return_val);
                     }
                 }
-                Opcode::AllocRegionA(bytes) => {
+                Opcode::AllocRegionA(bytes, max_bytes) => {
                     self.region_a.budget_bytes = *bytes;
+                    self.region_a.max_budget_bytes = *max_bytes;
                     self.region_a.reset();
                     if let Some(shm) = &self.telemetry {
                         let h = shm.header();
@@ -612,5 +666,11 @@ impl VirtualMachine {
         }
 
         Ok(self.stack.pop().unwrap_or(Value::Null))
+    }
+}
+
+impl Default for VirtualMachine {
+    fn default() -> Self {
+        Self::new()
     }
 }

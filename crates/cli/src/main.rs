@@ -10,10 +10,6 @@ use vlang_supervisor::{MemorySupervisor, SharedTelemetryRegion};
 #[command(version = "0.1.0")]
 #[command(about = "Memory-Safe Language Compiler and Runtime", long_about = None)]
 struct Cli {
-    /// Print version information
-    #[arg(short = 'v', short_alias = 'V', long = "version", action = clap::ArgAction::Version)]
-    version: Option<bool>,
-
     #[command(subcommand)]
     command: Option<Commands>,
 }
@@ -151,10 +147,17 @@ fn main() -> anyhow::Result<()> {
                 Ok(result) => {
                     println!("\nProgram exited with value: {}", result);
                     println!("--- Memory Diagnostics ---");
+                    let budget_str = match vm.region_a.max_budget_bytes {
+                        Some(max) => format!("base: {} bytes, max: {} bytes", vm.region_a.budget_bytes, max),
+                        None => format!("budget: {} bytes", vm.region_a.budget_bytes),
+                    };
                     println!(
-                        "Region A (Execution):  {} bytes used (peak request budget: {} bytes)",
-                        vm.region_a.used_bytes, vm.region_a.budget_bytes
+                        "Region A (Execution):  {} bytes used ({})",
+                        vm.region_a.used_bytes, budget_str
                     );
+                    if vm.region_a.burst_count > 0 {
+                        println!("                       (Elastic bursts recorded: {})", vm.region_a.burst_count);
+                    }
                     println!(
                         "Region B (Persistent): {} bytes retained ({} live objects)",
                         vm.region_b.live_bytes.load(Ordering::Relaxed),
@@ -191,7 +194,7 @@ fn main() -> anyhow::Result<()> {
                             if file_name.starts_with("vlang_shm_") && file_name.ends_with(".dat") {
                                 if let Ok(meta) = entry.metadata() {
                                     if let Ok(mod_time) = meta.modified() {
-                                        if latest_time.map_or(true, |t| mod_time > t) {
+                                        if latest_time.is_none_or(|t| mod_time > t) {
                                             latest_time = Some(mod_time);
                                             found = Some(path);
                                         }
@@ -262,7 +265,7 @@ fn main() -> anyhow::Result<()> {
             let error_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
             let latencies_us = Arc::new(std::sync::Mutex::new(Vec::with_capacity(requests)));
 
-            let reqs_per_thread = (requests + concurrency - 1) / concurrency;
+            let reqs_per_thread = requests.div_ceil(concurrency);
             let start_instant = std::time::Instant::now();
 
             let handles: Vec<_> = (0..concurrency)

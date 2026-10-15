@@ -106,3 +106,9 @@ impl SymbolTable {
         Ok(())
     }
 }
+
+impl Default for SymbolTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}

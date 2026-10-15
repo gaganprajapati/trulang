@@ -107,4 +107,40 @@ service UserService {
         let err = result.unwrap_err();
         assert!(err.message.contains("recursion depth limit (64) exceeded"));
     }
+
+    #[test]
+    fn test_parse_elastic_memory_budget() {
+        let source = r#"
+service ElasticService {
+    memory_budget request = 16 MB max 64 MB;
+    memory_budget persistent = 512 MB;
+}
+"#;
+        let program = parse(source).expect("Failed to parse elastic service");
+        match &program.declarations[0].node {
+            Declaration::Service(svc) => {
+                assert_eq!(svc.budgets.len(), 2);
+                assert_eq!(svc.budgets[0].node.region, BudgetRegion::Request);
+                assert_eq!(svc.budgets[0].node.size_bytes, 16 * 1024 * 1024);
+                assert_eq!(svc.budgets[0].node.max_size_bytes, Some(64 * 1024 * 1024));
+                assert_eq!(svc.budgets[1].node.region, BudgetRegion::Persistent);
+                assert_eq!(svc.budgets[1].node.size_bytes, 512 * 1024 * 1024);
+                assert_eq!(svc.budgets[1].node.max_size_bytes, None);
+            }
+            _ => panic!("Expected Service declaration"),
+        }
+    }
+
+    #[test]
+    fn test_parse_elastic_budget_invalid_ceiling() {
+        let source = r#"
+service InvalidCeilingService {
+    memory_budget request = 64 MB max 16 MB;
+}
+"#;
+        let result = parse(source);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.message.contains("Ceiling budget") && err.message.contains("cannot be less than base budget"));
+    }
 }

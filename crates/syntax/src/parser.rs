@@ -215,12 +215,62 @@ impl Parser {
             _ => 1,
         };
 
+        let max_size_bytes = if self.match_token(&TokenKind::Max) {
+            let max_num = match self.peek() {
+                TokenKind::IntLit(n) => {
+                    let val = *n;
+                    self.advance();
+                    val
+                }
+                other => {
+                    return Err(SyntaxError::new(
+                        format!("Expected numeric ceiling value after 'max', found '{}'", other),
+                        self.current_span(),
+                    ));
+                }
+            };
+
+            let max_unit_multiplier = match self.peek() {
+                TokenKind::ByteUnit(u) => {
+                    let m = match u.as_str() {
+                        "B" => 1,
+                        "KB" => 1024,
+                        "MB" => 1024 * 1024,
+                        "GB" => 1024 * 1024 * 1024,
+                        _ => 1,
+                    };
+                    self.advance();
+                    m
+                }
+                _ => 1,
+            };
+
+            let max_bytes = (max_num.max(0) as usize) * max_unit_multiplier;
+            let base_bytes = (num.max(0) as usize) * unit_multiplier;
+            if max_bytes < base_bytes {
+                return Err(SyntaxError::new(
+                    format!(
+                        "Ceiling budget ({} bytes) cannot be less than base budget ({} bytes)",
+                        max_bytes, base_bytes
+                    ),
+                    self.current_span(),
+                ));
+            }
+            Some(max_bytes)
+        } else {
+            None
+        };
+
         self.expect(TokenKind::Semicolon)?;
         let span = start_span.merge(self.previous_span());
         let size_bytes = (num.max(0) as usize) * unit_multiplier;
 
         Ok(Spanned::new(
-            MemoryBudgetDecl { region, size_bytes },
+            MemoryBudgetDecl {
+                region,
+                size_bytes,
+                max_size_bytes,
+            },
             span,
         ))
     }
@@ -292,11 +342,11 @@ impl Parser {
     fn parse_type(&mut self) -> Result<Type, SyntaxError> {
         let (base_name, _span) = self.expect_ident()?;
         let mut base_ty = match base_name.as_str() {
-            "i64" => Type::I64,
-            "f64" => Type::F64,
-            "bool" => Type::Bool,
-            "string" => Type::String,
-            "void" => Type::Void,
+            "i64" | "I64" | "int" | "Int" => Type::I64,
+            "f64" | "F64" | "float" | "Float" => Type::F64,
+            "bool" | "Bool" => Type::Bool,
+            "string" | "String" => Type::String,
+            "void" | "Void" => Type::Void,
             _ => {
                 // Check if generic, e.g., Map<String, User>
                 if self.match_token(&TokenKind::Lt) {

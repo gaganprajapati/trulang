@@ -9,9 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned (Phase 1: Developer Ergonomics & Robustness)
-- **Compiler Auto-Promotion (`persist` Inference)**: Automatically promote transient Region A values to persistent Region B when assigned to actor fields.
-- **Elastic Burst Arenas**: Support tiered memory budgets (`memory_budget request = 16 MB max 64 MB`) with linked overflow chunks that reclaim in $O(1)$ time.
+### Added
+- **Elastic Burst Arenas**: Support tiered memory budgets (`memory_budget request = 16 MB max 64 MB;`) with burst headroom and `ArenaBurst = 5` Seqlock telemetry warnings, while retaining strict backward-compatible caps when `max` is omitted.
+- **Compiler Auto-Promotion (`persist` Inference)**: Transparent compiler pass that automatically injects `Opcode::Persist` when writing transient data into persistent actor fields or mutating persistent maps (`cache.insert(k, v)`), eliminating manual `persist()` boilerplate while keeping explicit calls valid.
+- **Enhanced CLI Diagnostics**: `vlang run` reports base budget, max ceiling, and runtime elastic burst count.
+- **Primitive Type Aliases**: Added parser support for `String`, `Int`, `Float`, `Bool` capitalized type names alongside standard lowercase tokens.
+- **New Example**: Added `examples/elastic_burst.vl` demonstrating elastic burst allocation and auto-promotion.
+
+### Planned (Phase 2: Tooling & Ecosystem)
 - **Language Server Protocol (`vlang-lsp`)**: Real-time syntax and type diagnostics, hover definitions, jump-to-definition, and auto-complete for modern IDEs (VS Code, Cursor, Neovim).
 - **Rust/C FFI Bridge**: Zero-cost FFI module bridge (`import "rust:pkg" as mod`) to leverage mature database and messaging drivers.
 

@@ -1,0 +1,15 @@
+service ElasticDemoService {
+    // 64 B base request budget with elastic burst headroom up to 512 B
+    memory_budget request = 64 B max 512 B;
+    memory_budget persistent = 1024 B;
+
+    let mut cache = Map::new();
+
+    fn handle(request_id: String) {
+        // String allocation exceeds base 64 B budget, bursting safely into headroom
+        let payload = "Elastic burst headroom accommodates unexpected spikes without dropping requests";
+
+        // Auto-promotion: payload is automatically promoted to Region B cache
+        cache.insert(request_id, payload);
+    }
+}

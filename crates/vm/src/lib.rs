@@ -240,4 +240,87 @@ fn main() -> i64 {
         let err = res.unwrap_err();
         assert!(matches!(err, actor::ActorError::MailboxFull { .. }));
     }
+
+    #[test]
+    fn test_vm_elastic_budget_burst_and_telemetry() {
+        use std::sync::Arc;
+        use vlang_supervisor::{SharedTelemetryRegion, TelemetryEventType};
+
+        let temp_dir = std::env::temp_dir();
+        let shm_path = temp_dir.join(format!("vlang_vm_burst_test_{}.dat", std::process::id()));
+        let _ = std::fs::remove_file(&shm_path);
+
+        let shm = Arc::new(
+            SharedTelemetryRegion::create_or_open(&shm_path, std::process::id())
+                .expect("SHM creation failed"),
+        );
+
+        // Base 16 bytes, ceiling 64 bytes
+        let mut vm = VirtualMachine::with_elastic_budgets(16, Some(64), 1024);
+        vm.attach_telemetry(shm.clone());
+
+        // Allocate 3 integers (3 * 8 = 24 bytes) -> exceeds base 16, within ceiling 64
+        vm.allocate_region_a(8).expect("Allocation 1 failed");
+        vm.allocate_region_a(8).expect("Allocation 2 failed");
+        assert_eq!(vm.region_a.burst_count, 0);
+
+        // Third allocation bursts into headroom
+        vm.allocate_region_a(8).expect("Burst allocation failed");
+        assert_eq!(vm.region_a.burst_count, 1);
+        assert!(vm.region_a.is_bursting());
+
+        // Check telemetry record for ArenaBurst
+        let records = shm.read_recent_records(10);
+        let has_burst = records.iter().any(|r| r.event_type == TelemetryEventType::ArenaBurst as u8);
+        assert!(has_burst, "Expected ArenaBurst telemetry event in SHM");
+
+        // Clean up
+        let _ = std::fs::remove_file(&shm_path);
+    }
+
+    #[test]
+    fn test_vm_elastic_budget_ceiling_exceeded() {
+        // Base 16 bytes, ceiling 32 bytes
+        let mut vm = VirtualMachine::with_elastic_budgets(16, Some(32), 1024);
+        vm.allocate_region_a(16).expect("Base allocation failed");
+        vm.allocate_region_a(16).expect("Ceiling-limit allocation failed");
+        
+        // Exceeding ceiling (32 + 8 = 40 bytes) must fail
+        let res = vm.allocate_region_a(8);
+        assert!(res.is_err());
+        match res.unwrap_err() {
+            VmError::MemoryExceeded(MemoryError::RequestMemoryExceeded { budget, attempted }) => {
+                assert_eq!(budget, 32);
+                assert_eq!(attempted, 40);
+            }
+            other => panic!("Expected RequestMemoryExceeded, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_end_to_end_service_auto_promotion_and_elastic_budget() {
+        let source = r#"
+service AutoPromoteService {
+    memory_budget request = 16 B max 128 B;
+    memory_budget persistent = 1024 B;
+
+    let mut cache = Map::new();
+
+    fn handle(key: String, val: String) -> String {
+        // Transparent auto-promotion: val promoted to Region B on insert
+        cache.insert(key, val);
+        return cache.get(key);
+    }
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compile failed");
+
+        let mut vm = VirtualMachine::new();
+        // Execute service definition and methods
+        let _ = vm.execute(&chunk).expect("Service execution failed");
+        
+        // Check that Region B received the persistent cache allocation
+        assert!(vm.region_b.live_objects.load(std::sync::atomic::Ordering::Relaxed) > 0);
+    }
 }

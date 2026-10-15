@@ -69,4 +69,57 @@ fn handle() {
         let chunk = compile(&prog).expect("Compilation failed");
         assert!(!chunk.code.is_empty());
     }
+
+    #[test]
+    fn test_compile_elastic_memory_budget_opcode() {
+        let source = r#"
+service ElasticSvc {
+    memory_budget request = 16 MB max 64 MB;
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compilation failed");
+        assert!(chunk.code.contains(&bytecode::Opcode::AllocRegionA(16 * 1024 * 1024, Some(64 * 1024 * 1024))));
+    }
+
+    #[test]
+    fn test_compile_auto_promotion_on_persistent_assign_and_insert() {
+        let source = r#"
+service CacheService {
+    let mut cache = Map::new();
+    let mut last_key = "";
+
+    fn handle(key: String, val: String) {
+        last_key = key;
+        cache.insert(key, val);
+    }
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compilation failed");
+        
+        // Count Opcode::Persist in compiled bytecode
+        let persist_count = chunk.code.iter().filter(|op| matches!(op, bytecode::Opcode::Persist)).count();
+        // One for `last_key = key`, and one for `cache.insert(key, val)`
+        assert_eq!(persist_count, 2, "Expected auto-promotion Persist opcodes for persistent field assign and insert");
+    }
+
+    #[test]
+    fn test_compile_no_redundant_persist_when_explicit() {
+        let source = r#"
+service CacheServiceExplicit {
+    let mut cache = Map::new();
+
+    fn handle(key: String, val: String) {
+        cache.insert(key, persist(val));
+    }
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compilation failed");
+        
+        let persist_count = chunk.code.iter().filter(|op| matches!(op, bytecode::Opcode::Persist)).count();
+        // Exactly one Persist opcode (no redundant duplicate)
+        assert_eq!(persist_count, 1, "Expected exactly one Persist opcode when explicit persist() is used");
+    }
 }

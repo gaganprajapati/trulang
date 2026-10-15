@@ -147,9 +147,9 @@ pub enum Opcode {
     PushDefer(usize), // target defer instruction address
     RunDefers,
 
-    AllocRegionA(usize), // request arena budget bytes
-    FreeRegionA,         // bulk reset Region A arena
-    Persist,             // promote top of stack from Region A to Region B
+    AllocRegionA(usize, Option<usize>), // (request arena budget bytes, optional max ceiling)
+    FreeRegionA,                        // bulk reset Region A arena
+    Persist,                            // promote top of stack from Region A to Region B
 
     Print,
     Println,
