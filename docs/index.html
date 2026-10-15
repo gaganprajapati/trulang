@@ -15,7 +15,9 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="128x128" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -23,9 +25,9 @@
   <!-- Top Navigation Header -->
   <header>
     <a href="index.html" class="brand">
-      <div class="brand-logo">V</div>
+      <img src="assets/logo.png" alt="TruLang Logo" class="brand-logo">
       <div class="brand-name">TruLang</div>
-      <span class="brand-badge">VSpec 1.0.0</span>
+      <span class="brand-badge">v0.1.0</span>
     </a>
 
     <nav class="nav-links">
@@ -162,11 +164,16 @@
     <main>
       <!-- Hero Banner -->
       <section class="hero-banner" id="overview">
-        <h1>Complete TruLang Language Reference</h1>
-        <p class="lead">
-          A general-purpose memory-safe language designed for backend services and APIs. Statically typed with local type inference, immutable by default, featuring dual-region execution arenas, single-threaded Service Actors, and independent supervisor telemetry.
-        </p>
-        <div class="badge-row">
+        <div class="hero-header-flex">
+          <img src="assets/logo.png" alt="TruLang Logo" class="hero-brand-logo">
+          <div>
+            <h1>Complete TruLang Language Reference</h1>
+            <p class="lead">
+              A general-purpose memory-safe language designed for backend services and APIs. Statically typed with local type inference, immutable by default, featuring dual-region execution arenas, single-threaded Service Actors, and independent supervisor telemetry.
+            </p>
+          </div>
+        </div>
+        <div class="badge-row" style="margin-top: 1.25rem;">
           <span class="pill pill-green">✓ Immutable by Default (let)</span>
           <span class="pill pill-blue">✓ Safe Nullable Types (T?)</span>
           <span class="pill pill-purple">✓ Zero-Lock Actor Mailbox</span>

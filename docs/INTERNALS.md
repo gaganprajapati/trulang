@@ -1,5 +1,9 @@
 # How TruLang Works: Under the Hood Architecture & Execution Mechanism 🧠
 
+<p align="center">
+  <img src="../assets/logo.png" width="130" alt="TruLang Logo">
+</p>
+
 > **A Comprehensive Guide to TruLang's Internal Runtime, Memory Engine, and Concurrency Architecture.**  
 > *Targeted at engineers coming from Node.js, Go, Rust, Java, and Python.*
 

@@ -15,7 +15,9 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="128x128" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -23,9 +25,9 @@
   <!-- Top Navigation Header -->
   <header>
     <a href="index.html" class="brand">
-      <div class="brand-logo">V</div>
+      <img src="assets/logo.png" alt="TruLang Logo" class="brand-logo">
       <div class="brand-name">TruLang</div>
-      <span class="brand-badge">v1.0.0</span>
+      <span class="brand-badge">v0.1.0</span>
     </a>
 
     <nav class="nav-links">
@@ -85,13 +87,18 @@
     <main>
       <!-- Hero Banner -->
       <div class="hero-banner">
-        <div style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--accent-cyan); font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.08em;">
-          Architectural Whitepaper & Deep Dive
+        <div class="hero-header-flex">
+          <img src="assets/logo.png" alt="TruLang Logo" class="hero-brand-logo">
+          <div>
+            <div style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--accent-cyan); font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.08em;">
+              Architectural Whitepaper & Deep Dive
+            </div>
+            <h1>How TruLang Works Under the Hood</h1>
+            <p class="lead">
+              Just as building production apps in <strong>Node.js</strong> requires understanding the <em>Event Loop</em>, mastering <strong>TruLang</strong> requires understanding its <em>Dual-Region Memory Engine</em>, <em>Zero-Lock Service Actors</em>, and <em>Hybrid FFI Worker Pool</em>.
+            </p>
+          </div>
         </div>
-        <h1>How TruLang Works Under the Hood</h1>
-        <p class="lead">
-          Just as building production apps in <strong>Node.js</strong> requires understanding the <em>Event Loop</em>, mastering <strong>TruLang</strong> requires understanding its <em>Dual-Region Memory Engine</em>, <em>Zero-Lock Service Actors</em>, and <em>Hybrid FFI Worker Pool</em>.
-        </p>
         <div class="badge-row">
           <span class="pill pill-green">✓ 0.0 ms GC Pauses (O(1) Bump Arena)</span>
           <span class="pill pill-blue">✓ Zero-Lock Single-Threaded Actors</span>

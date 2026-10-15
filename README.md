@@ -1,4 +1,7 @@
 <p align="center">
+  <a href="https://github.com/gaganprajapati/trulang">
+    <img src="assets/logo.png" width="150" alt="TruLang Logo">
+  </a>
   <h1 align="center">⚡ TruLang</h1>
   <p align="center">
     <strong>A high-performance, memory-safe backend programming language with dual-region memory arenas, zero-lock service actors, and real-time seqlock supervisor telemetry.</strong>

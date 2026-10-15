@@ -258,15 +258,41 @@ header {
 .brand-logo {
   width: 32px;
   height: 32px;
-  background: var(--brand-logo-bg);
-  color: var(--brand-logo-text);
-  border-radius: 7px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(56, 189, 248, 0.3));
+}
+
+.hero-header-flex {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 1rem;
+  gap: 2.25rem;
+}
+
+.hero-brand-logo {
+  width: 124px;
+  height: 124px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 12px 28px rgba(56, 189, 248, 0.28));
+  transition: transform 0.3s ease;
+}
+
+.hero-brand-logo:hover {
+  transform: scale(1.05) rotate(-2deg);
+}
+
+@media (max-width: 768px) {
+  .hero-header-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+  .hero-brand-logo {
+    width: 80px;
+    height: 80px;
+  }
 }
 
 .brand-name {
