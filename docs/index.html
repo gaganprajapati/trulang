@@ -22,23 +22,28 @@
 
   <!-- Top Navigation Header -->
   <header>
-    <a href="#" class="brand">
+    <a href="index.html" class="brand">
       <div class="brand-logo">V</div>
       <div class="brand-name">VLang</div>
       <span class="brand-badge">VSpec 1.0.0</span>
     </a>
 
+    <nav class="nav-links">
+      <a href="#overview" class="nav-link active">Overview</a>
+      <a href="#spec" class="nav-link">Language Spec</a>
+      <a href="#tooling" class="nav-link">CLI Tooling</a>
+      <a href="#benchmarks" class="nav-link">Benchmarks</a>
+      <a href="internals.html" class="nav-link">Runtime Internals</a>
+    </nav>
+
     <div class="nav-search">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
       </svg>
-      <input type="text" id="specSearch" placeholder="Filter variables, loops, types..." onkeyup="filterSpecs()">
+      <input type="text" id="specSearch" placeholder="Filter variables, loops..." onkeyup="filterSpecs()">
     </div>
 
     <div class="nav-actions">
-      <a href="internals.html" class="btn btn-secondary">
-        Runtime Internals
-      </a>
       <a href="#playground" class="btn btn-secondary">
         Playground
       </a>
@@ -734,6 +739,7 @@ vlang completions bash > /etc/bash_completion.d/vlang</code></pre>
       </section>
 
       <!-- 1. Variables & Mutability -->
+      <div id="spec"></div>
       <section id="variables">
         <div class="section-header">
           <h2>1. Variables, Mutability & Scope Ownership</h2>
