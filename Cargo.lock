@@ -489,12 +489,24 @@ dependencies = [
  "anyhow",
  "clap",
  "libc",
+ "vlang_codegen",
  "vlang_compiler",
  "vlang_ffi",
  "vlang_lsp",
  "vlang_supervisor",
  "vlang_syntax",
  "vlang_vm",
+]
+
+[[package]]
+name = "vlang_codegen"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "libc",
+ "thiserror 2.0.21",
+ "vlang_compiler",
+ "vlang_syntax",
 ]
 
 [[package]]

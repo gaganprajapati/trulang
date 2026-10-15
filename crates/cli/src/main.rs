@@ -23,13 +23,30 @@ enum Commands {
         /// Source file to check
         file: PathBuf,
     },
-    /// Compile and run a source file on the Bytecode VM
+    /// Compile and run a source file on the Bytecode VM or Native JIT Engine
     Run {
         /// Source file to execute
         file: PathBuf,
         /// Dump bytecode disassembly before running
         #[arg(short, long)]
         disassemble: bool,
+        /// Execute using Native JIT compilation backend
+        #[arg(long)]
+        jit: bool,
+    },
+    /// Compile source file into a standalone, statically-linked native executable (AOT)
+    Build {
+        /// Source file to compile
+        file: PathBuf,
+        /// Output binary file path
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// Compile with high-performance -O3 release optimizations
+        #[arg(short, long)]
+        release: bool,
+        /// Emit generated native C source file without invoking the compiler/linker
+        #[arg(long)]
+        emit_c: bool,
     },
     /// Launch the independent memory supervisor monitor
     Monitor {
@@ -111,7 +128,7 @@ fn main() -> anyhow::Result<()> {
 
             println!("✓ Check passed: No syntax, typing, or ownership violations found in {}", file_str);
         }
-        Commands::Run { file, disassemble } => {
+        Commands::Run { file, disassemble, jit } => {
             let content = fs::read_to_string(&file)?;
             let file_str = file.to_str().unwrap_or("unknown");
 
@@ -137,6 +154,25 @@ fn main() -> anyhow::Result<()> {
                     println!("{:04} | {:?}", ip, op);
                 }
                 println!("========================================");
+            }
+
+            if jit {
+                let jit_res = match vlang_codegen::JitEngine::execute(&chunk) {
+                    Ok(res) => res,
+                    Err(err) => {
+                        eprintln!("\nNative JIT Compilation Error: {}", err);
+                        std::process::exit(1);
+                    }
+                };
+                print!("{}", jit_res.stdout);
+                if !jit_res.stderr.is_empty() {
+                    eprint!("{}", jit_res.stderr);
+                }
+                println!("[Native JIT Execution completed in {:.3} ms with exit code {}]", jit_res.duration.as_secs_f64() * 1000.0, jit_res.exit_code);
+                if jit_res.exit_code != 0 {
+                    std::process::exit(jit_res.exit_code);
+                }
+                return Ok(());
             }
 
             let pid = std::process::id();
@@ -185,6 +221,81 @@ fn main() -> anyhow::Result<()> {
                     std::process::exit(1);
                 }
             }
+        }
+        Commands::Build { file, output, release, emit_c } => {
+            let content = fs::read_to_string(&file)?;
+            let file_str = file.to_str().unwrap_or("unknown");
+
+            let program = match vlang_syntax::parse(&content) {
+                Ok(prog) => prog,
+                Err(err) => {
+                    eprintln!("{}", err.format_with_source(&content, file_str));
+                    std::process::exit(1);
+                }
+            };
+
+            let mut checker = vlang_compiler::type_checker::TypeChecker::new();
+            if let Err(err) = checker.check_program(&program) {
+                eprintln!("{}", err.format_with_source(&content, file_str));
+                std::process::exit(1);
+            }
+
+            let chunk = match vlang_compiler::compile(&program) {
+                Ok(chunk) => chunk,
+                Err(err) => {
+                    eprintln!("{}", err.format_with_source(&content, file_str));
+                    std::process::exit(1);
+                }
+            };
+
+            let c_source = vlang_codegen::CBackend::emit(&chunk);
+
+            if emit_c {
+                if let Some(ref out_path) = output {
+                    fs::write(out_path, &c_source)?;
+                    println!("✓ Emitted native C source to {}", out_path.display());
+                } else {
+                    println!("{}", c_source);
+                }
+                return Ok(());
+            }
+
+            let default_out = output.unwrap_or_else(|| {
+                let stem = file.file_stem().and_then(|s| s.to_str()).unwrap_or("vlang_app");
+                #[cfg(target_os = "windows")]
+                return PathBuf::from(format!("{}.exe", stem));
+                #[cfg(not(target_os = "windows"))]
+                return PathBuf::from(stem);
+            });
+
+            let config = vlang_codegen::CodegenConfig {
+                release,
+                output_path: Some(default_out.clone()),
+            };
+
+            let start = std::time::Instant::now();
+            let bin_path = match vlang_codegen::NativeBuilder::build(&c_source, &config) {
+                Ok(p) => p,
+                Err(err) => {
+                    eprintln!("Native Compilation Error: {}", err);
+                    std::process::exit(1);
+                }
+            };
+            let elapsed = start.elapsed();
+
+            let file_size = fs::metadata(&bin_path).map(|m| m.len()).unwrap_or(0);
+            let opt_mode = if release { "Release (-O3)" } else { "Debug (-O0 -g)" };
+
+            println!("╔════════════════════════════════════════════════════════════════════════╗");
+            println!("║              VLang Native AOT Compilation Complete                     ║");
+            println!("╠════════════════════════════════════════════════════════════════════════╣");
+            println!("║ Output Binary: {:<56} ║", bin_path.display());
+            println!("║ Binary Size:   {:<56} ║", format!("{:.2} KB ({} bytes)", file_size as f64 / 1024.0, file_size));
+            println!("║ Optimization:  {:<56} ║", opt_mode);
+            println!("║ Target Arch:   {:<56} ║", std::env::consts::ARCH);
+            println!("║ Build Time:    {:<56} ║", format!("{:.2} ms", elapsed.as_secs_f64() * 1000.0));
+            println!("╚════════════════════════════════════════════════════════════════════════╝");
+            println!("\nRun your standalone binary directly via:\n  {}", bin_path.display());
         }
         Commands::Monitor { target } => {
             let shm_path = if let Some(target_str) = target {

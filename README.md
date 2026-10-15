@@ -214,25 +214,31 @@ Output:
 | Command | Description |
 | :--- | :--- |
 | `vlang check <file.vl>` | Parses AST, verifies static typing, checks mutability rules, and enforces ownership |
-| `vlang run <file.vl>` | Compiles AST to compact bytecode and executes on the VLang VM |
+| `vlang run <file.vl> [--jit]` | Dual-mode execution: Bytecode VM (<3ms cold start) or Native JIT engine |
+| `vlang build <file.vl> [--release] [-o <out>]` | Production AOT compiler producing standalone native executables (Mach-O, ELF, PE) with `-O3` vectorization |
 | `vlang monitor` | Attaches to zero-lock seqlock shared memory to stream live memory telemetry |
+| `vlang lsp --stdio` | Integrated Language Server Protocol daemon for IDE integration (VS Code, Cursor, Neovim) |
+| `vlang fmt <file.vl> [--write]` | Automated code formatter enforcing language layout conventions |
 | `vlang bench <file.vl>` | Runs high-concurrency multi-threaded load tests with p50/p90/p99 latency analysis |
 
 ---
 
 ## 🏗️ Architecture & Crates
 
-The codebase is organized as a modular Rust workspace:
+The codebase is organized as a modular Rust workspace following clean Single Responsibility Principles:
 
 ```
 vlang/
 ├── crates/
 │   ├── syntax/         # Lexer, recursive descent parser, AST, and recursion depth limits
-│   ├── compiler/       # AST static analysis, borrow checker, and bytecode code generation
+│   ├── compiler/       # AST static analysis, borrow checker, auto-promotion pass, and bytecode emitter
 │   ├── vm/             # Stack VM, dual-region allocators (A/B), ServiceActor, and instruction limits
 │   ├── supervisor/     # Out-of-process shared memory supervisor with atomic seqlock protocol
-│   └── cli/            # Standalone CLI binary (vlang check, run, monitor, bench)
-├── examples/           # Sample VLang services, loops, arrays, and budget overflow demonstrations
+│   ├── lsp/            # Language Server Protocol (JSON-RPC), live diagnostics, hover, definition jump, & formatter
+│   ├── ffi/            # Hybrid thread-pooled Rust/C FFI bridge, RAII handles, and standard library (JSON, HTTP, SQL)
+│   ├── codegen/        # Native AOT compiler backend and JIT engine producing standalone native binaries
+│   └── cli/            # Standalone CLI binary (vlang check, run, build, lsp, fmt, monitor, bench)
+├── examples/           # Sample VLang services, loops, arrays, elastic bursts, and budget overflow demonstrations
 ├── benchmarks/         # Direct empirical benchmark scripts for Node.js, Go, Python, and VLang
 ├── docs/               # Interactive HTML Specification, Playground, and Visual Benchmark Dashboard
 └── tests/              # Multi-threaded load, leakage, and backpressure integration tests
