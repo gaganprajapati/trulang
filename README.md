@@ -65,8 +65,22 @@ Empirical benchmarks run across identical microservice API lifecycle workloads (
 
 ## 🚀 Installation & Setup
 
-### Option 1: 1-Line Prebuilt Binary Install (Recommended — No Rust Required)
-The fastest way to install TruLang on macOS or Linux. The script automatically detects your operating system and architecture, downloads the pre-compiled standalone binary from GitHub Releases, and installs it to `/usr/local/bin` in seconds:
+### Option 1: Install via Homebrew (macOS & Linux)
+The recommended package manager installation for macOS and Linux users:
+
+```bash
+# Add official TruLang tap and install
+brew tap gaganprajapati/trulang
+brew install trulang
+
+# Or install directly in a single command:
+brew install gaganprajapati/trulang/trulang
+```
+
+---
+
+### Option 2: 1-Line Prebuilt Binary Install (No Rust Required)
+The fastest script install for macOS or Linux. The script automatically detects your operating system and architecture, downloads the pre-compiled standalone binary from GitHub Releases, and installs it to `/usr/local/bin` in seconds:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/gaganprajapati/trulang/main/scripts/install.sh | bash
@@ -75,7 +89,7 @@ curl -fsSL https://raw.githubusercontent.com/gaganprajapati/trulang/main/scripts
 
 ---
 
-### Option 2: Direct Binary Download (No Rust Required)
+### Option 3: Direct Binary Download (No Rust Required)
 Download the standalone executable directly from [GitHub Releases](https://github.com/gaganprajapati/trulang/releases):
 - **macOS ARM64** (Apple Silicon M1/M2/M3/M4): [`trulang-darwin-arm64.tar.gz`](https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-darwin-arm64.tar.gz)
 - **macOS x86_64** (Intel): [`trulang-darwin-x86_64.tar.gz`](https://github.com/gaganprajapati/trulang/releases/latest/download/trulang-darwin-x86_64.tar.gz)
@@ -91,7 +105,7 @@ trulang --version
 
 ---
 
-### Option 3: Build & Install from Source (For Developers & Contributors)
+### Option 4: Build & Install from Source (For Developers & Contributors)
 If you want to contribute to TruLang, run the test suites, or compile from source, you will need the **Rust 1.75+ toolchain**:
 
 ```bash
@@ -113,7 +127,7 @@ trulang --version
 # Output: trulang 0.1.0
 ```
 
-### Option 4: Install via Cargo Git
+### Option 5: Install via Cargo Git
 For Rust developers who prefer `cargo install` directly from git:
 ```bash
 cargo install --git https://github.com/gaganprajapati/trulang.git trulang_cli
