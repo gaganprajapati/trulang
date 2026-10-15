@@ -24,6 +24,9 @@ Traditional backend runtimes force a compromise:
 
 **VLang eliminates this trade-off.** By enforcing a **Dual-Region Memory Model** and **Single-Threaded Service Actors**, per-request allocations are reclaimed in $O(1)$ constant time with **zero garbage collection pauses**, achieving compiled-level throughput while retaining memory safety and TypeScript-like ergonomics.
 
+> 🧠 **Coming from Node.js, Go, or Rust?**  
+> Read our comprehensive architectural guide: [**How VLang Works: Under the Hood Architecture & Execution Mechanism**](docs/INTERNALS.md) (or view the [Interactive Web Visualizer](https://gaganprajapati.github.io/vlang/internals.html)) to understand the Dual-Region Memory Engine, Request Lifecycle, and Zero-Lock Service Actor concurrency model.
+
 ---
 
 ## ✨ Key Features
