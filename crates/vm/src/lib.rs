@@ -1,13 +1,15 @@
 pub mod actor;
 pub mod frame;
 pub mod memory;
+pub mod profiler;
 pub mod test_runner;
 pub mod vm;
 
 pub use actor::ServiceActor;
 pub use memory::{MemoryError, MemoryRegion, RegionAAllocator, RegionBAllocator};
+pub use profiler::{MemoryEvent, MemoryEventKind, MemoryProfiler, ProfileNode};
 pub use test_runner::{TestOutcome, TestResult, TestRunner};
-pub use vm::{VirtualMachine, VmError};
+pub use vm::{StepStatus, VirtualMachine, VmError};
 
 #[cfg(test)]
 mod tests {
@@ -524,5 +526,123 @@ fn main() -> string {{
             }
             other => panic!("Expected String result from redis.get, got {:?}", other),
         }
+    }
+
+    #[test]
+    fn test_vm_profiler_tracks_allocations_and_persist() {
+        let source = r#"
+fn compute_data() -> i64 {
+    let a = 100;
+    let b = 200;
+    return a + b;
+}
+
+fn main() -> i64 {
+    let mut cache = { status: "cached", val: 42 };
+    persist(cache);
+    let result = compute_data();
+    return result;
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compile failed");
+
+        let mut vm = VirtualMachine::new();
+        vm.attach_profiler(MemoryProfiler::new());
+
+        let res = vm.execute(&chunk).expect("Execution failed");
+        assert_eq!(res, Value::Int(300));
+
+        let profiler = vm.take_profiler().expect("Profiler was attached");
+        assert!(
+            profiler.total_region_a_bytes > 0,
+            "Region A bytes must be tracked"
+        );
+        assert!(
+            profiler.total_region_b_promoted > 0,
+            "Region B persist bytes must be tracked"
+        );
+        assert!(
+            !profiler.events.is_empty(),
+            "Memory events must be recorded"
+        );
+
+        // Verify folded text format contains persist promotion tag
+        let folded = profiler.render_folded_text();
+        assert!(
+            folded.contains("[persist->RegionB]"),
+            "Folded text must identify persist promotion paths"
+        );
+
+        // Verify JSON output
+        let json_str = profiler.render_json();
+        assert!(
+            json_str.contains("total_region_a_bytes"),
+            "JSON must contain total_region_a_bytes"
+        );
+        assert!(
+            json_str.contains("total_region_b_promoted"),
+            "JSON must contain total_region_b_promoted"
+        );
+
+        // Verify SVG flamegraph output
+        let svg_str = profiler.render_svg();
+        assert!(svg_str.contains("<svg"), "Must render valid SVG");
+        assert!(
+            svg_str.contains("TruLang 1.0 Visual Memory Flamegraph"),
+            "Must contain title"
+        );
+        assert!(
+            svg_str.contains("REGION B (PERSIST)"),
+            "Must display Region B badge"
+        );
+    }
+
+    #[test]
+    fn test_vm_step_instruction_and_debugger_inspection() {
+        let source = r#"
+fn add_nums(x: i64, y: i64) -> i64 {
+    return x + y;
+}
+
+fn main() -> i64 {
+    let a = 10;
+    let b = 25;
+    let res = add_nums(a, b);
+    return res;
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compile failed");
+
+        let mut vm = VirtualMachine::new();
+        vm.init_execution(&chunk);
+
+        assert!(!vm.is_terminated());
+        assert_eq!(vm.current_function(&chunk), Some("main"));
+
+        let mut step_count = 0;
+        let mut final_value = None;
+
+        while !vm.is_terminated() {
+            let line = vm.current_line(&chunk);
+            assert!(
+                line.is_some(),
+                "Current line should be available during stepping"
+            );
+            step_count += 1;
+
+            match vm.step_instruction(&chunk).expect("Step failed") {
+                StepStatus::Continued => {}
+                StepStatus::Terminated(val) => {
+                    final_value = Some(val);
+                    break;
+                }
+            }
+        }
+
+        assert!(step_count > 5, "Should have executed multiple instructions");
+        assert_eq!(final_value, Some(Value::Int(35)));
+        assert!(vm.is_terminated());
     }
 }

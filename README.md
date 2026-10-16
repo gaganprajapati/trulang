@@ -79,11 +79,13 @@ TruLang includes an official Visual Studio Code extension with TextMate syntax h
 
 - **Syntax Highlighting:** Full support for `service`, `actor`, `persist`, `let mut`, `memory_budget`, and arena types.
 - **Language Server (LSP):** Real-time compiler diagnostics, go-to-definition, hover type signatures, and auto-formatting (`trulang fmt`).
+- **Interactive Debugger (DAP):** Full breakpoint debugging, stepping (`next`, `stepIn`, `stepOut`), and dual-region memory scope inspection (`Region A` vs `Region B`).
+- **Memory Flamegraph Profiler:** One-click visual memory profiling emitting interactive SVG flamegraphs directly from the editor.
 - **Quick Run Commands:** Execute or type-check the active `.tr` file directly inside VS Code.
 
 To install the extension:
 ```bash
-code --install-extension editors/vscode/trulang-0.1.0.vsix
+code --install-extension editors/vscode/trulang-1.0.0.vsix
 ```
 
 ---
@@ -586,6 +588,57 @@ trulang publish
 
 ---
 
+## 🔍 Interactive Debugger (DAP) & Visual Memory Profiler
+
+TruLang 1.0 provides production-grade observability and interactive debugging tools directly out-of-the-box.
+
+### 1. Debug Adapter Protocol (DAP)
+TruLang implements the open **Debug Adapter Protocol (DAP)** specification over JSON-RPC stdio. It integrates with VS Code, Neovim, Emacs, and any DAP-compliant client:
+
+```bash
+# Start TruLang DAP server over stdio
+trulang dap --stdio
+```
+
+#### Supported Debugger Features:
+- **Breakpoints**: Source line breakpoints verified dynamically against chunk bytecode.
+- **Stepping**: Single-stepping (`next` / step over, `stepIn` / step into function, `stepOut` / step out to caller).
+- **Stack Traces**: Full multi-frame call stacks with instruction pointers and source lines.
+- **Dual-Region Memory Scope Inspection**:
+  - `Region A (Arena)`: Live inspection of transient request allocations, total bytes allocated, and capacity.
+  - `Region B (Persistent DAG)`: Persistent state variables promoted via `persist(...)`.
+  - `Locals`: Scope-resolved variables and runtime values.
+
+### 2. Visual Dual-Region Memory Profiler
+Trace memory allocation patterns, dynamic arena burst expansions, and `persist()` promotion paths without third-party tools:
+
+```bash
+# Generate interactive flamegraph SVG
+trulang profile app.tr --format svg --output profile.svg
+
+# Output structured JSON metrics for CI/CD regression tracking
+trulang profile app.tr --format json --output profile.json
+
+# Folded stack format for flamegraph.pl or speedscope
+trulang profile app.tr --format folded --output profile.folded
+```
+
+The generated SVG flamegraph highlights:
+- **Region A allocations**: Transient heap allocations per call-path.
+- **Region B promotions**: `persist()` operations that escape into persistent DAG storage.
+- **Burst expansions**: Automatic arena doubling under high load.
+
+---
+
+## 📜 TruLang 1.0 Stability & RFCs
+
+TruLang 1.0 GA guarantees strict backward compatibility following Semantic Versioning 2.0.0.
+All breaking syntax, memory model, and stdlib changes require formal RFC approval.
+
+- 👉 [**RFC-0001: TruLang 1.0 GA Stability & Compatibility Policy**](docs/RFC-0001-STABILITY-1.0.md)
+
+---
+
 ## 🏗️ Architecture & Crates
 
 The codebase is organized as a modular Rust workspace following clean Single Responsibility Principles:
@@ -595,7 +648,8 @@ trulang/
 ├── crates/
 │   ├── syntax/         # Lexer, recursive descent parser, AST, and recursion depth limits
 │   ├── compiler/       # Static analysis, borrow checker, auto-promotion pass, module resolver, & bytecode emitter
-│   ├── vm/             # Stack VM, dual-region allocators (A/B), ServiceActor, and instruction limits
+│   ├── vm/             # Stack VM, dual-region allocators (A/B), ServiceActor, profiler, and instruction limits
+│   ├── dap/            # Debug Adapter Protocol (DAP) server for VS Code and standard IDE debuggers
 │   ├── supervisor/     # Out-of-process shared memory supervisor with atomic seqlock protocol
 │   ├── lsp/            # Language Server Protocol (JSON-RPC), live diagnostics, hover, definition jump, & formatter
 │   ├── ffi/            # Hybrid thread-pooled Rust/C FFI bridge, RAII handles, and standard library (JSON, HTTP, SQL)
@@ -603,10 +657,11 @@ trulang/
 │   ├── codegen/        # Native AOT compiler backend and JIT engine producing standalone native binaries
 │   ├── net/            # Zero-copy async HTTP engine (trulang/http) backed by kqueue/epoll
 │   ├── pkg/            # Decentralized package manager (tpm), Tru.toml parser, Tru.lock SHA-256 verifier, & installer
-│   └── cli/            # Standalone CLI binary (trulang new, add, install, publish, serve, run, test, bench)
+│   └── cli/            # Standalone CLI binary (trulang new, add, install, publish, serve, run, test, bench, profile, dap)
+├── editors/            # Editor integrations (VS Code extension with LSP and DAP debugger)
 ├── examples/           # Sample TruLang services, HTTP gateways, loops, arrays, and budget overflow demonstrations
 ├── benchmarks/         # Direct empirical benchmark scripts for Node.js, Go, Python, and TruLang
-├── docs/               # Interactive HTML Specification, Playground, and Visual Benchmark Dashboard
+├── docs/               # Interactive HTML Specification, RFCs, Playground, and Visual Benchmark Dashboard
 └── tests/              # Multi-threaded load, leakage, and backpressure integration tests
 ```
 
@@ -626,7 +681,7 @@ open docs/index.html
 ## 🧪 Running the Test Suite
 
 ```bash
-# Run all 88 unit and integration tests across the workspace
+# Run all 95 unit and integration tests across the 12 workspace crates
 cargo test
 
 # Run sustained load and zero-leakage test suite (100,000 iterations)

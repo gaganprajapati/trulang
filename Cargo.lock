@@ -603,13 +603,15 @@ checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
 name = "trulang_cli"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "clap",
  "libc",
+ "serde_json",
  "trulang_codegen",
  "trulang_compiler",
+ "trulang_dap",
  "trulang_ffi",
  "trulang_lsp",
  "trulang_net",
@@ -621,7 +623,7 @@ dependencies = [
 
 [[package]]
 name = "trulang_codegen"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "libc",
@@ -632,7 +634,7 @@ dependencies = [
 
 [[package]]
 name = "trulang_compiler"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "thiserror 2.0.21",
@@ -641,8 +643,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "trulang_dap"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "trulang_compiler",
+ "trulang_lsp",
+ "trulang_syntax",
+ "trulang_vm",
+]
+
+[[package]]
 name = "trulang_db"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -653,7 +669,7 @@ dependencies = [
 
 [[package]]
 name = "trulang_ffi"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -665,7 +681,7 @@ dependencies = [
 
 [[package]]
 name = "trulang_lsp"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -676,7 +692,7 @@ dependencies = [
 
 [[package]]
 name = "trulang_net"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "libc",
@@ -692,7 +708,7 @@ dependencies = [
 
 [[package]]
 name = "trulang_pkg"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "serde",
@@ -705,7 +721,7 @@ dependencies = [
 
 [[package]]
 name = "trulang_supervisor"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "libc",
@@ -718,7 +734,7 @@ dependencies = [
 
 [[package]]
 name = "trulang_syntax"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "logos",
  "serde",
@@ -727,10 +743,12 @@ dependencies = [
 
 [[package]]
 name = "trulang_vm"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "libc",
+ "serde",
+ "serde_json",
  "thiserror 2.0.21",
  "trulang_compiler",
  "trulang_db",

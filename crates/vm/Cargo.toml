@@ -9,6 +9,8 @@ trulang_syntax = { path = "../syntax" }
 trulang_compiler = { path = "../compiler" }
 trulang_supervisor = { path = "../supervisor" }
 trulang_ffi = { path = "../ffi" }
+serde = { workspace = true }
+serde_json = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }

@@ -7,7 +7,7 @@ use trulang_supervisor::{MemorySupervisor, SharedTelemetryRegion};
 
 #[derive(Parser)]
 #[command(name = "trulang")]
-#[command(version = "0.1.0")]
+#[command(version = "1.0.0")]
 #[command(about = "Memory-Safe Language Compiler and Runtime", long_about = None)]
 struct Cli {
     #[command(subcommand)]
@@ -147,6 +147,32 @@ enum Commands {
         #[arg(short, long)]
         project_dir: Option<PathBuf>,
     },
+    /// Launch the Debug Adapter Protocol (DAP) daemon for VS Code interactive debugging
+    Dap {
+        /// Run DAP server over standard input and output (default mode)
+        #[arg(long, default_value_t = true)]
+        stdio: bool,
+    },
+    /// Run visual memory profiler and generate dual-region interactive flamegraphs
+    Profile {
+        /// Source file to execute and profile
+        file: PathBuf,
+        /// Output file path (defaults to flamegraph.svg)
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// Output format: "svg" (default), "json", or "text" (folded stacks)
+        #[arg(short, long, default_value = "svg")]
+        format: String,
+        /// Request memory budget in bytes (default 16 MB)
+        #[arg(long, default_value_t = 16 * 1024 * 1024)]
+        budget: usize,
+        /// Max elastic burst budget in bytes (default 64 MB)
+        #[arg(long, default_value_t = 64 * 1024 * 1024)]
+        max_budget: usize,
+        /// Persistent memory budget in bytes (default 512 MB)
+        #[arg(long, default_value_t = 512 * 1024 * 1024)]
+        persistent_budget: usize,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -164,7 +190,7 @@ fn main() -> anyhow::Result<()> {
 
     match command {
         Commands::Version => {
-            println!("trulang 0.1.0");
+            println!("trulang 1.0.0");
             return Ok(());
         }
         Commands::Check { file } => {
@@ -1003,6 +1029,75 @@ fn main() -> anyhow::Result<()> {
             );
             println!("  Source Files: {} validated", pub_res.file_count);
             println!("  Cryptographic Integrity (SHA-256): {}", pub_res.checksum);
+        }
+        Commands::Dap { stdio } => {
+            if stdio {
+                let mut server = trulang_dap::DapServer::new();
+                let stdin = std::io::stdin();
+                let mut reader = stdin.lock();
+                let mut stdout = std::io::stdout();
+                server.run(&mut reader, &mut stdout)?;
+            }
+        }
+        Commands::Profile {
+            file,
+            output,
+            format,
+            budget,
+            max_budget,
+            persistent_budget,
+        } => {
+            let source = fs::read_to_string(&file)?;
+            let ast = trulang_syntax::parse(&source)
+                .map_err(|e| anyhow::anyhow!("Syntax error in '{}': {}", file.display(), e))?;
+            let project_dir = find_project_root(&file);
+            let chunk = trulang_compiler::compile_with_project_dir(&ast, &project_dir)
+                .map_err(|e| anyhow::anyhow!("Compilation error in '{}': {}", file.display(), e))?;
+
+            let mut vm = trulang_vm::VirtualMachine::with_elastic_budgets(
+                budget,
+                Some(max_budget),
+                persistent_budget,
+            );
+            vm.attach_profiler(trulang_vm::MemoryProfiler::new());
+
+            println!("🔥 Profiling '{}'...", file.display());
+            let result = vm.execute(&chunk)?;
+            println!("✓ Execution completed with output: {}", result);
+
+            let profiler = vm.take_profiler().unwrap_or_default();
+            println!("\n📊 Dual-Region Memory Profiling Summary:");
+            println!(
+                "  • Region A (Transient Bump):   {} bytes",
+                profiler.total_region_a_bytes
+            );
+            println!(
+                "  • Region B (Persistent DAG):   {} bytes",
+                profiler.total_region_b_promoted
+            );
+            println!(
+                "  • Elastic Burst Expansions:    {} events ({} bytes)",
+                profiler.burst_allocations_count, profiler.burst_bytes
+            );
+            println!("  • O(1) Bulk Resets:            {}", profiler.resets_count);
+
+            let rendered = match format.to_lowercase().as_str() {
+                "json" => profiler.render_json(),
+                "text" | "folded" => profiler.render_folded_text(),
+                _ => profiler.render_svg(),
+            };
+
+            let out_path = output.unwrap_or_else(|| match format.to_lowercase().as_str() {
+                "json" => PathBuf::from("flamegraph.json"),
+                "text" | "folded" => PathBuf::from("flamegraph.txt"),
+                _ => PathBuf::from("flamegraph.svg"),
+            });
+
+            fs::write(&out_path, &rendered)?;
+            println!(
+                "✓ Generated interactive memory profile: {}",
+                out_path.display()
+            );
         }
     }
 

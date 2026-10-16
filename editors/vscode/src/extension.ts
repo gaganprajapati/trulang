@@ -96,6 +96,42 @@ export async function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand('trulang.openDocs', () => {
       vscode.env.openExternal(vscode.Uri.parse('https://gagn.dev/trulang/'));
+    }),
+
+    vscode.commands.registerCommand('trulang.debugFile', () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'trulang') {
+        vscode.window.showWarningMessage('No active TruLang (.tr) file open.');
+        return;
+      }
+      const filePath = editor.document.uri.fsPath;
+      vscode.debug.startDebugging(undefined, {
+        type: 'trulang',
+        name: 'Debug TruLang File',
+        request: 'launch',
+        program: filePath,
+        stopOnEntry: false
+      });
+    }),
+
+    vscode.commands.registerCommand('trulang.profileFile', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'trulang') {
+        vscode.window.showWarningMessage('No active TruLang (.tr) file open.');
+        return;
+      }
+      const filePath = editor.document.uri.fsPath;
+      const svgPath = filePath.replace(/\.tr$/, '.svg');
+      const term = vscode.window.activeTerminal || vscode.window.createTerminal('TruLang Profile');
+      term.show();
+      term.sendText(`${lspPath} profile "${filePath}" -o "${svgPath}"`);
+      vscode.window.showInformationMessage(`Visual memory flamegraph will be emitted to ${path.basename(svgPath)}`);
+    }),
+
+    vscode.debug.registerDebugAdapterDescriptorFactory('trulang', {
+      createDebugAdapterDescriptor(_session: vscode.DebugSession): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+        return new vscode.DebugAdapterExecutable(lspPath, ['dap']);
+      }
     })
   );
 }

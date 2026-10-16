@@ -18,8 +18,10 @@ trulang_ffi = { path = "../ffi" }
 trulang_codegen = { path = "../codegen" }
 trulang_net = { path = "../net" }
 trulang_pkg = { path = "../pkg" }
+trulang_dap = { path = "../dap" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }
 
 [dev-dependencies]
+serde_json = { workspace = true }

@@ -1,0 +1,15 @@
+[package]
+name = "trulang_dap"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+trulang_syntax = { path = "../syntax" }
+trulang_compiler = { path = "../compiler" }
+trulang_vm = { path = "../vm" }
+trulang_lsp = { path = "../lsp" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }

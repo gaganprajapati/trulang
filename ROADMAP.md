@@ -219,7 +219,7 @@ Incoming DB Wire Bytes
 | **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, decentralized Git resolver, and `new`/`add`/`install`/`publish` CLI commands. | ✅ Complete |
 | **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | ✅ Complete |
 | **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | ✅ Complete |
-| **Phase 6** | **DAP Debugger & TruLang 1.0 GA** | Interactive VS Code breakpoints, memory flamegraphs, and backward-compatible 1.0 RFC. | Immediate Next |
+| **Phase 6** | **DAP Debugger & TruLang 1.0 GA** | Interactive VS Code breakpoints, memory flamegraphs, and backward-compatible 1.0 RFC. | ✅ Complete |
 
 ---
 
@@ -269,6 +269,15 @@ When ready to implement any phase, use this checklist as your starting blueprint
 - [x] OpenTelemetry (OTel) distributed tracing with W3C `traceparent` context propagation, span hierarchy, and header injection
 - [x] Multi-stage minimal production `deploy/Dockerfile` (Alpine Linux non-root UID 10001, <15 MB runtime footprint)
 - [x] Complete Kubernetes manifests in `deploy/k8s/`: `deployment.yaml` (probes, limits, preStop hook), `service.yaml`, and `servicemonitor.yaml`
+
+### Phase 6: DAP Debugger & TruLang 1.0 GA (Completed)
+- [x] Debug Adapter Protocol (DAP) daemon in dedicated `crates/dap` (`trulang_dap`) implementing standard JSON-RPC DAP specification over stdio
+- [x] Set breakpoints in `.tr` files, verified source line tracking, step over (`next`), step into (`stepIn`), and step out (`stepOut`)
+- [x] Dual-region memory scope inspection in VS Code debug pane: separate `Region A (Execution / Bump Arena)` and `Region B (Persistent DAG)` scopes exposing live bytes, budgets, and burst states
+- [x] Visual Memory Profiler (`trulang profile`) recording Region A bump allocations, Region B promotions (`persist()`), and elastic burst expansions
+- [x] Multi-format memory profile exporters: interactive SVG flamegraph (`flamegraph.svg`) with dark-mode styling and tooltips, structured JSON (`flamegraph.json`), and folded stack text (`flamegraph.txt`)
+- [x] TruLang 1.0 GA Stability Specification ratified in `docs/RFC-0001-STABILITY-1.0.md` with SemVer 2.0.0 guarantee
+- [x] VS Code Extension 1.0.0 (`editors/vscode/trulang-1.0.0.vsix`) registering `trulang` debugger adapter, launch configurations, and `profileFile` / `debugFile` commands
 
 ---
 

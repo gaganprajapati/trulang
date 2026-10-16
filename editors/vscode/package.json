@@ -2,7 +2,7 @@
   "name": "trulang",
   "displayName": "TruLang",
   "description": "Rich Language Support, Syntax Highlighting, and Language Server Protocol for TruLang (.tr)",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "publisher": "gaganprajapati",
   "author": {
     "name": "Gagan Prajapati",
@@ -77,6 +77,63 @@
         "command": "trulang.openDocs",
         "title": "TruLang: Open Documentation",
         "category": "TruLang"
+      },
+      {
+        "command": "trulang.debugFile",
+        "title": "TruLang: Debug Current File",
+        "category": "TruLang"
+      },
+      {
+        "command": "trulang.profileFile",
+        "title": "TruLang: Profile Memory & Generate Flamegraph",
+        "category": "TruLang"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "trulang",
+        "label": "TruLang Debugger",
+        "languages": ["trulang"],
+        "configurationSnippets": [
+          {
+            "label": "TruLang: Debug Current File",
+            "description": "Initialize interactive debug session with TruLang DAP",
+            "body": {
+              "type": "trulang",
+              "request": "launch",
+              "name": "Debug TruLang File",
+              "program": "^\"\\${file}\"",
+              "stopOnEntry": false
+            }
+          }
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": ["program"],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the .tr file to execute and debug.",
+                "default": "${file}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launching the program.",
+                "default": false
+              },
+              "requestBudget": {
+                "type": "number",
+                "description": "Region A transient request memory budget in bytes.",
+                "default": 16777216
+              },
+              "persistentBudget": {
+                "type": "number",
+                "description": "Region B persistent DAG memory budget in bytes.",
+                "default": 536870912
+              }
+            }
+          }
+        }
       }
     ],
     "configuration": {

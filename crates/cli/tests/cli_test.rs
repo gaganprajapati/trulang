@@ -20,7 +20,7 @@ fn test_cli_version() {
         .expect("Failed to run trulang version");
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
-    assert!(stdout.contains("trulang 0.1.0"));
+    assert!(stdout.contains("trulang 1.0.0"));
 }
 
 #[test]
@@ -403,4 +403,143 @@ fn test_cli_check_database_demo() {
     assert!(out.status.success());
     let stdout = String::from_utf8_lossy(&out.stdout);
     assert!(stdout.contains("Check passed"));
+}
+
+#[test]
+fn test_cli_profile_command() {
+    let fib_path = get_example_fibonacci_path();
+    let temp_dir = std::env::temp_dir();
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+
+    let svg_out = temp_dir.join(format!("profile_test_{}.svg", nanos));
+    let json_out = temp_dir.join(format!("profile_test_{}.json", nanos));
+    let text_out = temp_dir.join(format!("profile_test_{}.txt", nanos));
+
+    // 1. Profile in SVG format (default)
+    let out_svg = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args([
+            "profile",
+            fib_path.to_str().unwrap(),
+            "-o",
+            svg_out.to_str().unwrap(),
+            "-f",
+            "svg",
+        ])
+        .output()
+        .expect("Failed to run trulang profile svg");
+    assert!(out_svg.status.success());
+    assert!(svg_out.exists());
+    let svg_content = fs::read_to_string(&svg_out).expect("Read svg failed");
+    assert!(svg_content.contains("<svg"));
+    assert!(svg_content.contains("TruLang 1.0 Visual Memory Flamegraph"));
+    assert!(svg_content.contains("REGION A (BUMP)"));
+
+    // 2. Profile in JSON format
+    let out_json = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args([
+            "profile",
+            fib_path.to_str().unwrap(),
+            "-o",
+            json_out.to_str().unwrap(),
+            "-f",
+            "json",
+        ])
+        .output()
+        .expect("Failed to run trulang profile json");
+    assert!(out_json.status.success());
+    assert!(json_out.exists());
+    let json_content = fs::read_to_string(&json_out).expect("Read json failed");
+    assert!(json_content.contains("\"total_region_a_bytes\""));
+
+    // 3. Profile in folded text format
+    let out_txt = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args([
+            "profile",
+            fib_path.to_str().unwrap(),
+            "-o",
+            text_out.to_str().unwrap(),
+            "-f",
+            "text",
+        ])
+        .output()
+        .expect("Failed to run trulang profile text");
+    assert!(out_txt.status.success());
+    assert!(text_out.exists());
+
+    let _ = fs::remove_file(svg_out);
+    let _ = fs::remove_file(json_out);
+    let _ = fs::remove_file(text_out);
+}
+
+#[test]
+fn test_cli_dap_command() {
+    use std::io::{BufRead, BufReader, Write};
+    use std::process::Stdio;
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .arg("dap")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Failed to spawn trulang dap");
+
+    let mut stdin = child.stdin.take().expect("Child stdin");
+    let stdout = child.stdout.take().expect("Child stdout");
+    let mut reader = BufReader::new(stdout);
+
+    // Send initialize request
+    let init_req = serde_json::json!({
+        "seq": 1,
+        "type": "request",
+        "command": "initialize",
+        "arguments": {
+            "clientID": "vscode",
+            "adapterID": "trulang"
+        }
+    })
+    .to_string();
+    let init_framed = format!("Content-Length: {}\r\n\r\n{}", init_req.len(), init_req);
+    stdin
+        .write_all(init_framed.as_bytes())
+        .expect("Write init failed");
+    stdin.flush().expect("Flush init failed");
+
+    // Read initialize response
+    let mut line = String::new();
+    let mut content_len = 0;
+    while reader.read_line(&mut line).unwrap() > 0 {
+        let trimmed = line.trim();
+        if trimmed.is_empty() {
+            break;
+        }
+        if let Some(rest) = trimmed.strip_prefix("Content-Length:") {
+            content_len = rest.trim().parse::<usize>().unwrap();
+        }
+        line.clear();
+    }
+    assert!(content_len > 0);
+    let mut body = vec![0u8; content_len];
+    std::io::Read::read_exact(&mut reader, &mut body).unwrap();
+    let resp_str = String::from_utf8(body).unwrap();
+    assert!(resp_str.contains("\"command\":\"initialize\""));
+    assert!(resp_str.contains("\"success\":true"));
+
+    // Send disconnect request
+    let disc_req = serde_json::json!({
+        "seq": 2,
+        "type": "request",
+        "command": "disconnect"
+    })
+    .to_string();
+    let disc_framed = format!("Content-Length: {}\r\n\r\n{}", disc_req.len(), disc_req);
+    stdin
+        .write_all(disc_framed.as_bytes())
+        .expect("Write disc failed");
+    stdin.flush().expect("Flush disc failed");
+
+    let status = child.wait().expect("Child wait failed");
+    assert!(status.success());
 }
