@@ -16,6 +16,7 @@ trulang_supervisor = { path = "../supervisor" }
 trulang_lsp = { path = "../lsp" }
 trulang_ffi = { path = "../ffi" }
 trulang_codegen = { path = "../codegen" }
+trulang_net = { path = "../net" }
 clap = { workspace = true }
 anyhow = { workspace = true }
 libc = { workspace = true }

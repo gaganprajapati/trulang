@@ -1,0 +1,19 @@
+[package]
+name = "trulang_net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Native non-blocking asynchronous network and HTTP/1.1 engine for TruLang"
+[dependencies]
+trulang_syntax = { path = "../syntax" }
+trulang_compiler = { path = "../compiler" }
+trulang_vm = { path = "../vm" }
+trulang_supervisor = { path = "../supervisor" }
+trulang_ffi = { path = "../ffi" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+libc = { workspace = true }
+
+[dev-dependencies]

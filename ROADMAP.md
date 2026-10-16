@@ -215,8 +215,8 @@ Incoming DB Wire Bytes
 | Phase | Milestone | Primary Deliverable | Target Timeline |
 | :---: | :--- | :--- | :--- |
 | **Phase 1** | **`trulang test` CLI Harness** | Built-in test runner subcommand, assertion opcodes, colored diffs, and test reporting. | ✅ Complete |
-| **Phase 2** | **Native Async HTTP Engine** | `trulang/http` standard library, non-blocking socket loop, and Region A zero-copy request lifecycle. | Immediate Next |
-| **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, and Git-based module resolution. | Milestone 3 |
+| **Phase 2** | **Native Async HTTP Engine** | `trulang/http` standard library, non-blocking socket loop, and Region A zero-copy request lifecycle. | ✅ Complete |
+| **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, and Git-based module resolution. | Immediate Next |
 | **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | Milestone 4 |
 | **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | Milestone 5 |
 | **Phase 6** | **DAP Debugger & TruLang 1.0 GA** | Interactive VS Code breakpoints, memory flamegraphs, and backward-compatible 1.0 RFC. | TruLang 1.0 GA |
@@ -235,11 +235,13 @@ When ready to implement any phase, use this checklist as your starting blueprint
 - [x] Add colored terminal reporting with pass/fail counts, duration, and formatted failure diagnostics
 - [x] Update VS Code extension syntax highlighting for `test` and `assert_eq`
 
-### Phase 2: Native Async HTTP Engine
-- [ ] Add non-blocking socket abstraction in `crates/ffi` or new `crates/net`
-- [ ] Implement zero-copy HTTP/1.1 parser streaming into Region A
-- [ ] Expose `http::Request` and `http::Response` stdlib types
-- [ ] Build high-throughput REST API benchmark vs Go/Node.js
+### Phase 2: Native Async HTTP Engine (Completed)
+- [x] Add non-blocking socket abstraction in dedicated `crates/net` (`kqueue` on macOS, `epoll` on Linux)
+- [x] Implement zero-copy HTTP/1.1 parser streaming into Region A with $O(1)$ per-request bulk reset
+- [x] Expose `http::Request` and `http::Response` stdlib types with `import "trulang/http" as http;`
+- [x] Implement `trulang serve <file> [--port <port>]` CLI subcommand with graceful signal shutdown
+- [x] Add object/map literal syntax `{ key: val, ... }` for inline response and JSON payloads
+- [x] Build high-throughput REST API benchmark vs Go/Node.js with comprehensive latency and GC comparison
 
 ### Phase 3: Package Manager (`tpm`)
 - [ ] Implement `Tru.toml` parser and `Tru.lock` generator in `crates/cli`

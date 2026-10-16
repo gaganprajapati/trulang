@@ -386,6 +386,17 @@ impl CodeGenerator {
                         self.chunk.emit(Opcode::NewMap, line);
                         return Ok(());
                     }
+                    if segments.len() >= 2 {
+                        let method = segments.last().unwrap().clone();
+                        let target_path = segments[..segments.len() - 1].join("::");
+                        for arg in args {
+                            self.compile_expr(arg)?;
+                        }
+                        let const_idx = self.chunk.add_constant(Value::String(Arc::new(target_path)));
+                        self.chunk.emit(Opcode::LoadConst(const_idx), line);
+                        self.chunk.emit(Opcode::CallMethod(method, args.len()), line);
+                        return Ok(());
+                    }
                 }
 
                 // If builtin print/println
@@ -481,6 +492,14 @@ impl CodeGenerator {
                 let joined = segments.join("::");
                 let const_idx = self.chunk.add_constant(Value::String(Arc::new(joined)));
                 self.chunk.emit(Opcode::LoadConst(const_idx), line);
+            }
+            Expr::Object(entries) => {
+                for (k, v) in entries {
+                    self.compile_expr(v)?;
+                    let k_idx = self.chunk.add_constant(Value::String(Arc::new(k.clone())));
+                    self.chunk.emit(Opcode::LoadConst(k_idx), line);
+                }
+                self.chunk.emit(Opcode::NewObject(entries.len()), line);
             }
         }
         Ok(())

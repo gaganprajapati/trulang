@@ -327,6 +327,25 @@ impl VirtualMachine {
                 Opcode::NewMap => {
                     self.stack.push(Value::new_map());
                 }
+                Opcode::NewObject(count) => {
+                    let obj = Value::new_object();
+                    let mut approx_bytes = 64;
+                    if let Value::Object(ref o) = obj {
+                        let mut guard = o.lock().unwrap();
+                        for _ in 0..*count {
+                            let key_val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                            let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                            let key = match key_val {
+                                Value::String(s) => (*s).clone(),
+                                other => format!("{}", other),
+                            };
+                            approx_bytes += key.len() + trulang_ffi::estimate_value_size(&val);
+                            guard.insert(key, val);
+                        }
+                    }
+                    self.allocate_region_a(approx_bytes)?;
+                    self.stack.push(obj);
+                }
                 Opcode::GetFieldNamed(field) => {
                     let target = self.stack.pop().ok_or(VmError::StackUnderflow)?;
                     match target {
@@ -404,6 +423,76 @@ impl VirtualMachine {
                                     if !args.is_empty() {
                                         let key = format!("{}", args[0]);
                                         self.stack.push(Value::Bool(m.lock().unwrap().contains_key(&key)));
+                                    } else {
+                                        self.stack.push(Value::Bool(false));
+                                    }
+                                }
+                                _ => self.stack.push(Value::Null),
+                            }
+                        }
+                        Value::Object(obj) => {
+                            match method.as_str() {
+                                "param" | "query" => {
+                                    let key = args.first().map(|a| format!("{}", a)).unwrap_or_default();
+                                    let guard = obj.lock().unwrap();
+                                    let val = if let Some(Value::Map(ref params)) = guard.get("params") {
+                                        params.lock().unwrap().get(&key).cloned().unwrap_or(Value::Null)
+                                    } else {
+                                        guard.get(&key).cloned().unwrap_or(Value::Null)
+                                    };
+                                    self.stack.push(val);
+                                }
+                                "header" => {
+                                    let key = args.first().map(|a| format!("{}", a).to_ascii_lowercase()).unwrap_or_default();
+                                    let guard = obj.lock().unwrap();
+                                    let val = if let Some(Value::Map(ref headers)) = guard.get("headers") {
+                                        headers.lock().unwrap().get(&key).cloned().unwrap_or(Value::Null)
+                                    } else {
+                                        Value::Null
+                                    };
+                                    self.stack.push(val);
+                                }
+                                "json" => {
+                                    let guard = obj.lock().unwrap();
+                                    let val = guard.get("json_data").cloned().unwrap_or(Value::Null);
+                                    self.stack.push(val);
+                                }
+                                "path" => {
+                                    let guard = obj.lock().unwrap();
+                                    let val = guard.get("path").cloned().unwrap_or(Value::Null);
+                                    self.stack.push(val);
+                                }
+                                "method" => {
+                                    let guard = obj.lock().unwrap();
+                                    let val = guard.get("method").cloned().unwrap_or(Value::Null);
+                                    self.stack.push(val);
+                                }
+                                "body" => {
+                                    let guard = obj.lock().unwrap();
+                                    let val = guard.get("body").cloned().unwrap_or(Value::Null);
+                                    self.stack.push(val);
+                                }
+                                "get" => {
+                                    if !args.is_empty() {
+                                        let key = format!("{}", args[0]);
+                                        let val = obj.lock().unwrap().get(&key).cloned().unwrap_or(Value::Null);
+                                        self.stack.push(val);
+                                    } else {
+                                        self.stack.push(Value::Null);
+                                    }
+                                }
+                                "insert" | "set" => {
+                                    if args.len() >= 2 {
+                                        let key = format!("{}", args[0]);
+                                        let val = args[1].clone();
+                                        obj.lock().unwrap().insert(key, val);
+                                    }
+                                    self.stack.push(Value::Null);
+                                }
+                                "contains" => {
+                                    if !args.is_empty() {
+                                        let key = format!("{}", args[0]);
+                                        self.stack.push(Value::Bool(obj.lock().unwrap().contains_key(&key)));
                                     } else {
                                         self.stack.push(Value::Bool(false));
                                     }

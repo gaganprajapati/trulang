@@ -146,3 +146,65 @@ fn test_cli_test_filter() {
     assert!(stdout.contains("test factorial computation"));
     assert!(stdout.contains("1 passed; 0 failed"));
 }
+
+#[test]
+fn test_cli_serve_command() {
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+
+    let gateway_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("examples")
+        .join("http_api_gateway.tr");
+
+    // Pick an available port
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    drop(listener);
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args([
+            "serve",
+            gateway_path.to_str().unwrap(),
+            "--port",
+            &port.to_string(),
+            "--host",
+            "127.0.0.1",
+        ])
+        .spawn()
+        .expect("Failed to start trulang serve");
+
+    // Allow time for server to bind and start listening
+    let mut connected = false;
+    let mut client = None;
+    for _ in 0..30 {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        if let Ok(c) = TcpStream::connect(format!("127.0.0.1:{}", port)) {
+            client = Some(c);
+            connected = true;
+            break;
+        }
+    }
+
+    assert!(connected, "Failed to connect to trulang serve on port {}", port);
+    let mut stream = client.unwrap();
+
+    stream
+        .write_all(b"GET /api/v1/users?id=cli_test_user HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        .expect("Write to trulang serve failed");
+
+    let mut response_buf = Vec::new();
+    stream.read_to_end(&mut response_buf).expect("Read from trulang serve failed");
+    let resp = String::from_utf8(response_buf).expect("Valid UTF-8 response");
+
+    assert!(resp.starts_with("HTTP/1.1 200 OK\r\n"));
+    assert!(resp.contains(r#""status":"success""#));
+    assert!(resp.contains(r#""user":"cli_test_user""#));
+
+    // Terminate child process
+    let _ = child.kill();
+    let _ = child.wait();
+}

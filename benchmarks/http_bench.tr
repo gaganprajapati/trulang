@@ -1,0 +1,24 @@
+import "trulang/http" as http;
+
+service BenchmarkGateway {
+    memory_budget request = 16 MB max 64 MB;
+    memory_budget persistent = 128 MB;
+
+    fn handle_request(req: http::Request) -> http::Response {
+        let route = req.path();
+        let user_id = req.param("id");
+
+        if route == "/ping" {
+            return http::Response::text(200, "pong");
+        }
+
+        // JSON payload bump-allocated in Region A
+        return http::Response::json({
+            "status": "success",
+            "server": "trulang-http",
+            "user": user_id,
+            "region_a_reset": "O(1)"
+        });
+        // 0.0 ms GC Pause: Request memory reclaimed instantly on dispatch!
+    }
+}

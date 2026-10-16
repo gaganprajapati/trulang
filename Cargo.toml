@@ -8,6 +8,7 @@ members = [
     "crates/lsp",
     "crates/ffi",
     "crates/codegen",
+    "crates/net",
     "crates/cli",
 ]
 

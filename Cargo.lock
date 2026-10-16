@@ -481,6 +481,7 @@ dependencies = [
  "trulang_compiler",
  "trulang_ffi",
  "trulang_lsp",
+ "trulang_net",
  "trulang_supervisor",
  "trulang_syntax",
  "trulang_vm",
@@ -526,6 +527,22 @@ dependencies = [
  "serde_json",
  "trulang_compiler",
  "trulang_syntax",
+]
+
+[[package]]
+name = "trulang_net"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "libc",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "trulang_compiler",
+ "trulang_ffi",
+ "trulang_supervisor",
+ "trulang_syntax",
+ "trulang_vm",
 ]
 
 [[package]]

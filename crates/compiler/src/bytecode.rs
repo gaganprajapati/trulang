@@ -156,6 +156,7 @@ pub enum Opcode {
     GetFieldNamed(String),
     SetFieldNamed(String),
     NewMap,
+    NewObject(usize), // pair count (key-value count)
     CallMethod(String, usize), // method name, arg count
 
     Add,

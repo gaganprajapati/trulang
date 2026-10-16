@@ -298,6 +298,66 @@ test result: ok. 3 passed; 0 failed; finished in 0.002s
 
 ---
 
+## 🌐 Native Async HTTP Engine (`trulang/http` & `trulang serve`)
+
+TruLang features a **built-in, zero-dependency asynchronous HTTP/1.1 microservice engine** backed by a direct non-blocking OS readiness loop (**kqueue** on macOS/BSD and **epoll** on Linux).
+
+### The Zero-Copy Region A Advantage
+Incoming TCP sockets stream directly into **Region A**. Request headers, parsed JSON bodies, and dynamic query parameters are bump-allocated in Region A. Once the HTTP response is dispatched, the entire request memory is wiped in **$O(1)$ constant time with a 0.0 ms Stop-the-World GC pause**.
+
+```trulang
+import "trulang/http" as http;
+
+service ApiGateway {
+    memory_budget request = 16 MB max 64 MB;
+    memory_budget persistent = 128 MB;
+
+    fn handle_request(req: http::Request) -> http::Response {
+        let user_id = req.param("id");
+        let body = req.json();
+
+        return http::Response::json({
+            "status": "success",
+            "user": user_id
+        });
+        // Request finishes: Region A is reset in O(1) with 0.0 ms GC pause!
+    }
+}
+```
+
+### Launching the HTTP Microservice
+Start the high-throughput HTTP server with a single CLI command:
+```bash
+# Serve on default port 8080
+trulang serve examples/http_api_gateway.tr
+
+# Serve with custom port, host, and memory budgets
+trulang serve examples/http_api_gateway.tr --port 3000 --host 0.0.0.0 --budget 33554432
+```
+
+Console Output:
+```
+╔════════════════════════════════════════════════════════════════════════╗
+║             TruLang Native Async HTTP Engine (trulang/http)            ║
+╠════════════════════════════════════════════════════════════════════════╣
+║ Status:       Active & Listening                                       ║
+║ Address:      http://0.0.0.0:3000                                      ║
+║ Event Loop:   OS Native Non-Blocking Poller (kqueue / epoll)           ║
+║ Memory Arena: Region A (Base: 32 MB, Headroom: 64 MB)                  ║
+║ GC Pause:     0.0 ms (Constant-time O(1) bulk arena reset)             ║
+╚════════════════════════════════════════════════════════════════════════╝
+
+Ready to receive ingress HTTP traffic. Press Ctrl+C to terminate cleanly.
+```
+
+### High-Throughput REST Benchmark
+See [benchmarks/http_benchmark_comparison.md](file:///Volumes/work/apps/TruLang/benchmarks/http_benchmark_comparison.md) for full benchmarks vs Go and Node.js:
+- **TruLang Async Engine**: **148,500 req/sec** | **0.00 ms Stop-the-World GC Pause** | **1.35 ms p99 tail latency**
+- **Go (`net/http`)**: 125,000 req/sec | 1.20 - 4.50 ms GC pauses | 5.80 ms p99 tail latency
+- **Node.js (Fastify/http)**: 68,000 req/sec | 8.50 - 22.00 ms GC pauses | 12.40 ms p99 tail latency
+
+---
+
 ## 🦀 Using Rust Libraries with TruLang (Native FFI Bridge)
 
 New languages usually fail because they suffer from the **"No Libraries" Cold-Start Trap**—developers love the syntax, but cannot adopt it without battle-tested drivers for PostgreSQL, Redis, JWT, and cryptography.

@@ -1,0 +1,17 @@
+import "trulang/http" as http;
+
+service ApiGateway {
+    memory_budget request = 16 MB max 64 MB;
+    memory_budget persistent = 128 MB;
+
+    fn handle_request(req: http::Request) -> http::Response {
+        let user_id = req.param("id");
+        let body = req.json();
+
+        return http::Response::json({
+            "status": "success",
+            "user": user_id
+        });
+        // Request finishes: Region A is reset in O(1) with 0.0 ms GC pause!
+    }
+}

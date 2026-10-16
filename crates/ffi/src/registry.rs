@@ -22,6 +22,7 @@ impl FfiRegistry {
         // Register default aliases
         registry.register_alias("json", "std::json");
         registry.register_alias("http", "std::http");
+        registry.register_alias("trulang/http", "std::http");
         registry.register_alias("sql", "std::sql");
 
         registry
@@ -77,6 +78,37 @@ impl FfiRegistry {
             "std::http" => match method {
                 "get" => http::get(args, pool),
                 "post" => http::post(args, pool),
+                "json" => {
+                    let resp = Value::new_object();
+                    if let Value::Object(ref o) = resp {
+                        let mut g = o.lock().unwrap();
+                        g.insert("status".to_string(), Value::Int(200));
+                        g.insert("data".to_string(), args.first().cloned().unwrap_or(Value::Null));
+                    }
+                    Ok(resp)
+                }
+                "text" => {
+                    let resp = Value::new_object();
+                    if let Value::Object(ref o) = resp {
+                        let mut g = o.lock().unwrap();
+                        let status = args.first().cloned().unwrap_or(Value::Int(200));
+                        let body = args.get(1).cloned().unwrap_or(Value::Null);
+                        g.insert("status".to_string(), status);
+                        g.insert("body".to_string(), body);
+                    }
+                    Ok(resp)
+                }
+                "error" => {
+                    let resp = Value::new_object();
+                    if let Value::Object(ref o) = resp {
+                        let mut g = o.lock().unwrap();
+                        let status = args.first().cloned().unwrap_or(Value::Int(500));
+                        let msg = args.get(1).cloned().unwrap_or(Value::Null);
+                        g.insert("status".to_string(), status);
+                        g.insert("error".to_string(), msg);
+                    }
+                    Ok(resp)
+                }
                 _ => Err(FfiError::MethodNotFound {
                     module: resolved,
                     method: method.to_string(),

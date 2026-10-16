@@ -367,6 +367,12 @@ impl TypeChecker {
             Expr::Path(segments) => {
                 Ok(SemType::Named(segments.join("::")))
             }
+            Expr::Object(entries) => {
+                for (_k, v) in entries {
+                    self.check_expr(v)?;
+                }
+                Ok(SemType::Any)
+            }
         }
     }
 }

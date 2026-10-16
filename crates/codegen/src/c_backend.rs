@@ -141,6 +141,9 @@ impl CBackend {
                 Opcode::NewMap => {
                     out.push_str("    stack[sp++] = trulang_val_map(false);\n");
                 }
+                Opcode::NewObject(_count) => {
+                    out.push_str("    stack[sp++] = trulang_val_map(false);\n");
+                }
                 Opcode::CallMethod(name, arity) => {
                     if name == "json" {
                         // Response.json(arg) -> sets up response object

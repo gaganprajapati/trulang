@@ -398,9 +398,13 @@ impl Parser {
             body,
         })
     }
-
     fn parse_type(&mut self) -> Result<Type, SyntaxError> {
-        let (base_name, _span) = self.expect_ident()?;
+        let (mut base_name, _span) = self.expect_ident()?;
+        while self.match_token(&TokenKind::ColonColon) {
+            let (next_seg, _) = self.expect_ident()?;
+            base_name.push_str("::");
+            base_name.push_str(&next_seg);
+        }
         let mut base_ty = match base_name.as_str() {
             "i64" | "I64" | "int" | "Int" => Type::I64,
             "f64" | "F64" | "float" | "Float" => Type::F64,
@@ -840,6 +844,38 @@ impl Parser {
                 let inner = self.parse_expr()?;
                 self.expect(TokenKind::CloseParen)?;
                 Ok(inner)
+            }
+            TokenKind::OpenBrace => {
+                self.advance();
+                let mut entries = Vec::new();
+                while self.peek() != &TokenKind::CloseBrace && self.peek() != &TokenKind::Eof {
+                    let key = match self.peek().clone() {
+                        TokenKind::StringLit(s) => {
+                            self.advance();
+                            s
+                        }
+                        TokenKind::Ident(s) => {
+                            self.advance();
+                            s
+                        }
+                        other => {
+                            return Err(SyntaxError::new(
+                                format!("Expected string or identifier key in object literal, found '{}'", other),
+                                self.current_span(),
+                            ));
+                        }
+                    };
+                    self.expect(TokenKind::Colon)?;
+                    let val_expr = self.parse_expr()?;
+                    entries.push((key, val_expr));
+
+                    if !self.match_token(&TokenKind::Comma) {
+                        break;
+                    }
+                }
+                self.expect(TokenKind::CloseBrace)?;
+                let full_span = span.merge(self.previous_span());
+                Ok(Spanned::new(Expr::Object(entries), full_span))
             }
             other => Err(SyntaxError::new(
                 format!("Unexpected token in expression: '{}'", other),

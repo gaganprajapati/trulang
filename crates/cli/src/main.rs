@@ -96,6 +96,23 @@ enum Commands {
         #[arg(short, long)]
         filter: Option<String>,
     },
+    /// Launch the native asynchronous HTTP microservice engine (trulang/http)
+    Serve {
+        /// Source file defining the service actor to serve
+        file: PathBuf,
+        /// Port to bind the HTTP server to
+        #[arg(short, long, default_value_t = 8080)]
+        port: u16,
+        /// Host interface to bind
+        #[arg(long, default_value = "0.0.0.0")]
+        host: String,
+        /// Request memory budget in bytes (default 16 MB)
+        #[arg(long, default_value_t = 16 * 1024 * 1024)]
+        budget: usize,
+        /// Max elastic burst budget in bytes (default 64 MB)
+        #[arg(long, default_value_t = 64 * 1024 * 1024)]
+        max_budget: usize,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -666,6 +683,75 @@ fn main() -> anyhow::Result<()> {
             println!("=============================================================================");
 
             let _ = fs::remove_file(&shm_path);
+        }
+
+        Commands::Serve { file, port, host, budget, max_budget } => {
+            let content = fs::read_to_string(&file)?;
+            let file_str = file.to_str().unwrap_or("unknown");
+
+            let program = match trulang_syntax::parse(&content) {
+                Ok(prog) => prog,
+                Err(err) => {
+                    eprintln!("{}", err.format_with_source(&content, file_str));
+                    std::process::exit(1);
+                }
+            };
+
+            let mut checker = trulang_compiler::type_checker::TypeChecker::new();
+            if let Err(err) = checker.check_program(&program) {
+                eprintln!("{}", err.format_with_source(&content, file_str));
+                std::process::exit(1);
+            }
+
+            let chunk = match trulang_compiler::compile(&program) {
+                Ok(c) => c,
+                Err(err) => {
+                    eprintln!("{}", err.format_with_source(&content, file_str));
+                    std::process::exit(1);
+                }
+            };
+
+            let bind_addr: std::net::SocketAddr = format!("{}:{}", host, port).parse()?;
+            let pid = std::process::id();
+            let shm_path = trulang_supervisor::shm::default_shm_path(pid);
+            let shm = SharedTelemetryRegion::create_or_open(&shm_path, pid).ok().map(Arc::new);
+
+            let mut server = trulang_net::HttpServer::new(bind_addr, chunk)
+                .with_request_budget(budget, Some(max_budget));
+
+            if let Some(ref s) = shm {
+                server = server.with_telemetry(Arc::clone(s));
+            }
+
+            println!("╔════════════════════════════════════════════════════════════════════════╗");
+            println!("║             TruLang Native Async HTTP Engine (trulang/http)            ║");
+            println!("╠════════════════════════════════════════════════════════════════════════╣");
+            println!("║ Status:       \x1b[32mActive & Listening\x1b[0m                                       ║");
+            println!("║ Address:      http://{:<49} ║", format!("{}:{}", host, port));
+            println!("║ Event Loop:   OS Native Non-Blocking Poller (kqueue / epoll)           ║");
+            println!("║ Memory Arena: Region A (Base: {} MB, Headroom: {} MB)                     ║", budget / (1024 * 1024), max_budget / (1024 * 1024));
+            println!("║ GC Pause:     \x1b[32m0.0 ms\x1b[0m (Constant-time O(1) bulk arena reset)             ║");
+            println!("╚════════════════════════════════════════════════════════════════════════╝");
+            println!("\nReady to receive ingress HTTP traffic. Press Ctrl+C to terminate cleanly.\n");
+
+            let stop_flag = server.stop_handle();
+            let stop_flag_clone = Arc::clone(&stop_flag);
+            unsafe {
+                static mut SHUTDOWN_FLAG: Option<Arc<std::sync::atomic::AtomicBool>> = None;
+                SHUTDOWN_FLAG = Some(stop_flag_clone);
+                extern "C" fn sig_handler(_sig: libc::c_int) {
+                    unsafe {
+                        if let Some(ref flag) = SHUTDOWN_FLAG {
+                            flag.store(false, Ordering::SeqCst);
+                        }
+                    }
+                }
+                libc::signal(libc::SIGINT, sig_handler as *const () as libc::sighandler_t);
+                libc::signal(libc::SIGTERM, sig_handler as *const () as libc::sighandler_t);
+            }
+
+            server.run()?;
+            println!("HTTP Engine stopped cleanly. Goodbye!");
         }
     }
 
