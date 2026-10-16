@@ -957,6 +957,7 @@ fn main() -> anyhow::Result<()> {
 
             let drain_flag = server.drain_handle();
             let drain_clone = Arc::clone(&drain_flag);
+            #[cfg(unix)]
             unsafe {
                 static mut DRAIN_TRIGGER: Option<Arc<std::sync::atomic::AtomicBool>> = None;
                 DRAIN_TRIGGER = Some(drain_clone);
@@ -972,6 +973,10 @@ fn main() -> anyhow::Result<()> {
                     libc::SIGTERM,
                     sig_handler as *const () as libc::sighandler_t,
                 );
+            }
+            #[cfg(not(unix))]
+            {
+                let _ = drain_clone;
             }
 
             server.run()?;

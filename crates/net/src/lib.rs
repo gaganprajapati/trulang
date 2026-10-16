@@ -26,7 +26,7 @@ mod tests {
     fn test_poller_creation_and_registration() {
         let poller = Poller::new().expect("Failed to initialize OS poller");
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("Failed to bind listener");
-        let fd = std::os::unix::io::AsRawFd::as_raw_fd(&listener);
+        let fd = poller::get_socket_handle(&listener);
 
         poller::set_nonblocking(fd).expect("Set nonblocking failed");
         poller

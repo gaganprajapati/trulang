@@ -4,11 +4,10 @@
 //! Region A per-request lifecycle, and bounded Service Actor backpressure.
 
 use crate::http::{HttpParser, HttpRequest, HttpResponse, ParseResult};
-use crate::poller::{set_nodelay, set_nonblocking, set_reuseaddr, Event, Interest, Poller};
+use crate::poller::{get_socket_handle, set_reuseaddr, Event, Interest, Poller};
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -45,16 +44,16 @@ impl Default for ServerMetrics {
 }
 
 struct Connection {
-    fd: RawFd,
+    stream: TcpStream,
     read_buf: Vec<u8>,
     write_buf: Vec<u8>,
     keep_alive: bool,
 }
 
 impl Connection {
-    fn new(fd: RawFd) -> Self {
+    fn new(stream: TcpStream) -> Self {
         Self {
-            fd,
+            stream,
             read_buf: Vec::with_capacity(4096),
             write_buf: Vec::with_capacity(4096),
             keep_alive: true,
@@ -257,9 +256,9 @@ impl HttpServer {
     /// Runs the HTTP event loop on the current thread, blocking until stopped.
     pub fn run(&self) -> io::Result<()> {
         let listener = TcpListener::bind(self.bind_addr)?;
-        let server_fd = listener.as_raw_fd();
-        set_nonblocking(server_fd)?;
-        set_reuseaddr(server_fd)?;
+        listener.set_nonblocking(true)?;
+        let server_fd = get_socket_handle(&listener);
+        let _ = set_reuseaddr(server_fd);
 
         let poller = Poller::new()?;
         const LISTENER_TOKEN: usize = 0;
@@ -286,9 +285,8 @@ impl HttpServer {
                     loop {
                         match listener.accept() {
                             Ok((stream, _peer_addr)) => {
-                                let client_fd = stream.into_raw_fd();
-                                let _ = set_nonblocking(client_fd);
-                                let _ = set_nodelay(client_fd);
+                                let _ = stream.set_nonblocking(true);
+                                let _ = stream.set_nodelay(true);
 
                                 let token = next_token;
                                 next_token += 1;
@@ -296,15 +294,12 @@ impl HttpServer {
                                     next_token = 1;
                                 }
 
-                                if poller.register(client_fd, token, Interest::Both).is_ok() {
-                                    connections.insert(token, Connection::new(client_fd));
+                                let sock_handle = get_socket_handle(&stream);
+                                if poller.register(sock_handle, token, Interest::Both).is_ok() {
+                                    connections.insert(token, Connection::new(stream));
                                     self.metrics
                                         .active_connections
                                         .fetch_add(1, Ordering::Relaxed);
-                                } else {
-                                    unsafe {
-                                        libc::close(client_fd);
-                                    }
                                 }
                             }
                             Err(_) => break,
@@ -343,9 +338,8 @@ impl HttpServer {
                     loop {
                         match listener.accept() {
                             Ok((stream, _peer_addr)) => {
-                                let client_fd = stream.into_raw_fd();
-                                let _ = set_nonblocking(client_fd);
-                                let _ = set_nodelay(client_fd);
+                                let _ = stream.set_nonblocking(true);
+                                let _ = stream.set_nodelay(true);
 
                                 let token = next_token;
                                 next_token += 1;
@@ -353,15 +347,12 @@ impl HttpServer {
                                     next_token = 1;
                                 }
 
-                                if poller.register(client_fd, token, Interest::Both).is_ok() {
-                                    connections.insert(token, Connection::new(client_fd));
+                                let sock_handle = get_socket_handle(&stream);
+                                if poller.register(sock_handle, token, Interest::Both).is_ok() {
+                                    connections.insert(token, Connection::new(stream));
                                     self.metrics
                                         .active_connections
                                         .fetch_add(1, Ordering::Relaxed);
-                                } else {
-                                    unsafe {
-                                        libc::close(client_fd);
-                                    }
                                 }
                             }
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
@@ -372,7 +363,7 @@ impl HttpServer {
                     }
                 } else if let Some(conn) = connections.get_mut(&ev.token) {
                     if ev.is_closed || ev.is_error {
-                        close_connection(&poller, conn.fd);
+                        close_connection(&poller, &conn.stream);
                         connections.remove(&ev.token);
                         self.metrics
                             .active_connections
@@ -386,11 +377,7 @@ impl HttpServer {
                         let mut closed = false;
 
                         loop {
-                            let mut stream = unsafe { TcpStream::from_raw_fd(conn.fd) };
-                            let read_res = stream.read(&mut buf);
-                            let _ = stream.into_raw_fd(); // Avoid closing fd on drop
-
-                            match read_res {
+                            match conn.stream.read(&mut buf) {
                                 Ok(0) => {
                                     closed = true;
                                     break;
@@ -409,7 +396,7 @@ impl HttpServer {
                         }
 
                         if closed {
-                            close_connection(&poller, conn.fd);
+                            close_connection(&poller, &conn.stream);
                             connections.remove(&ev.token);
                             self.metrics
                                 .active_connections
@@ -524,17 +511,13 @@ impl HttpServer {
 
                     // Handle Write readiness
                     if !conn.write_buf.is_empty() {
-                        let mut stream = unsafe { TcpStream::from_raw_fd(conn.fd) };
-                        let write_res = stream.write(&conn.write_buf);
-                        let _ = stream.into_raw_fd();
-
-                        match write_res {
+                        match conn.stream.write(&conn.write_buf) {
                             Ok(n) => {
                                 conn.write_buf.drain(0..n);
                             }
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
                             Err(_) => {
-                                close_connection(&poller, conn.fd);
+                                close_connection(&poller, &conn.stream);
                                 connections.remove(&ev.token);
                                 self.metrics
                                     .active_connections
@@ -546,7 +529,7 @@ impl HttpServer {
 
                     // If all outgoing bytes written and not keep-alive, close connection
                     if conn.write_buf.is_empty() && !conn.keep_alive {
-                        close_connection(&poller, conn.fd);
+                        close_connection(&poller, &conn.stream);
                         connections.remove(&ev.token);
                         self.metrics
                             .active_connections
@@ -558,7 +541,7 @@ impl HttpServer {
 
         // Clean up remaining open connections on shutdown
         for (_, conn) in connections {
-            close_connection(&poller, conn.fd);
+            close_connection(&poller, &conn.stream);
         }
 
         Ok(())
@@ -646,9 +629,7 @@ impl HttpServer {
     }
 }
 
-fn close_connection(poller: &Poller, fd: RawFd) {
-    let _ = poller.deregister(fd);
-    unsafe {
-        libc::close(fd);
-    }
+fn close_connection(poller: &Poller, stream: &TcpStream) {
+    let handle = get_socket_handle(stream);
+    let _ = poller.deregister(handle);
 }
