@@ -67,7 +67,11 @@ impl WorkerPool {
 
         let mut workers = Vec::with_capacity(size);
         for id in 0..size {
-            workers.push(Worker::new(id, Arc::clone(&receiver), Arc::clone(&is_shutdown)));
+            workers.push(Worker::new(
+                id,
+                Arc::clone(&receiver),
+                Arc::clone(&is_shutdown),
+            ));
         }
 
         Self {
@@ -117,18 +121,18 @@ impl WorkerPool {
             let _ = resp_tx.send(res);
         });
 
-        sender
-            .send(job)
-            .map_err(|e| FfiError::WorkerPoolError(format!("Failed to dispatch task to worker pool: {}", e)))?;
+        sender.send(job).map_err(|e| {
+            FfiError::WorkerPoolError(format!("Failed to dispatch task to worker pool: {}", e))
+        })?;
 
         match resp_rx.recv_timeout(Self::DEFAULT_TIMEOUT) {
             Ok(result) => result,
-            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                Err(FfiError::WorkerPoolError("Blocking FFI task timed out".into()))
-            }
-            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                Err(FfiError::WorkerPoolError("Worker thread died during foreign task execution".into()))
-            }
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => Err(FfiError::WorkerPoolError(
+                "Blocking FFI task timed out".into(),
+            )),
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => Err(FfiError::WorkerPoolError(
+                "Worker thread died during foreign task execution".into(),
+            )),
         }
     }
 }

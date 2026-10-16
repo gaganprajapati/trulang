@@ -34,7 +34,9 @@ impl std::fmt::Display for VmError {
             VmError::StackOverflow(s) => write!(f, "Stack overflow: {}", s),
             VmError::ArithmeticOverflow(s) => write!(f, "Arithmetic overflow: {}", s),
             VmError::TimeLimitExceeded(s) => write!(f, "Execution limit exceeded: {}", s),
-            VmError::CyclicPersistentData(s) => write!(f, "Cycle detected in persistent data: {}", s),
+            VmError::CyclicPersistentData(s) => {
+                write!(f, "Cycle detected in persistent data: {}", s)
+            }
             VmError::InvalidOperand(s) => write!(f, "Invalid operand: {}", s),
             VmError::DivisionByZero => write!(f, "Division by zero"),
             VmError::MemoryExceeded(mem) => write!(f, "Memory limit exceeded: {}", mem),
@@ -43,13 +45,26 @@ impl std::fmt::Display for VmError {
             VmError::AssertionFailure { message, line } => {
                 write!(f, "Assertion failed: {} (at line {})", message, line)
             }
-            VmError::AssertionEqFailure { left, right, message, line } => {
-                write!(f, "Assertion failed: assert_eq (at line {})
+            VmError::AssertionEqFailure {
+                left,
+                right,
+                message,
+                line,
+            } => {
+                write!(
+                    f,
+                    "Assertion failed: assert_eq (at line {})
   left:  {}
-  right: {}", line, left, right)?;
+  right: {}",
+                    line, left, right
+                )?;
                 if let Some(msg) = message {
-                    write!(f, "
-  message: {}", msg)?;
+                    write!(
+                        f,
+                        "
+  message: {}",
+                        msg
+                    )?;
                 }
                 Ok(())
             }
@@ -201,9 +216,10 @@ impl VirtualMachine {
         }
 
         if let Some(shm) = &self.telemetry {
-            shm.header()
-                .region_a_used_bytes
-                .store(self.region_a.used_bytes as u64, std::sync::atomic::Ordering::Relaxed);
+            shm.header().region_a_used_bytes.store(
+                self.region_a.used_bytes as u64,
+                std::sync::atomic::Ordering::Relaxed,
+            );
         }
 
         Ok(())
@@ -239,8 +255,14 @@ impl VirtualMachine {
 
     pub fn attach_telemetry(&mut self, shm: Arc<trulang_supervisor::SharedTelemetryRegion>) {
         let header = shm.header();
-        header.region_a_budget_bytes.store(self.region_a.budget_bytes as u64, std::sync::atomic::Ordering::Relaxed);
-        header.region_b_budget_bytes.store(self.region_b.budget_bytes as u64, std::sync::atomic::Ordering::Relaxed);
+        header.region_a_budget_bytes.store(
+            self.region_a.budget_bytes as u64,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+        header.region_b_budget_bytes.store(
+            self.region_b.budget_bytes as u64,
+            std::sync::atomic::Ordering::Relaxed,
+        );
         self.telemetry = Some(shm);
     }
 
@@ -249,7 +271,8 @@ impl VirtualMachine {
             self.ffi_registry.register_alias(alias, path);
         }
 
-        self.frames.push(CallFrame::new(0, 0));
+        let start_ip = chunk.functions.get("main").copied().unwrap_or(0);
+        self.frames.push(CallFrame::new(start_ip, 0));
 
         while let Some(frame) = self.frames.last_mut() {
             if frame.ip >= chunk.code.len() {
@@ -350,7 +373,12 @@ impl VirtualMachine {
                     let target = self.stack.pop().ok_or(VmError::StackUnderflow)?;
                     match target {
                         Value::Object(obj) => {
-                            let val = obj.lock().unwrap().get(field).cloned().unwrap_or(Value::Null);
+                            let val = obj
+                                .lock()
+                                .unwrap()
+                                .get(field)
+                                .cloned()
+                                .unwrap_or(Value::Null);
                             self.stack.push(val);
                         }
                         Value::Map(m) => {
@@ -361,7 +389,8 @@ impl VirtualMachine {
                             if field == "user_id" {
                                 self.stack.push(Value::Int(42));
                             } else if field == "id" {
-                                self.stack.push(Value::String(Arc::new("req_1001".to_string())));
+                                self.stack
+                                    .push(Value::String(Arc::new("req_1001".to_string())));
                             } else {
                                 self.stack.push(Value::Null);
                             }
@@ -400,149 +429,220 @@ impl VirtualMachine {
                             self.allocate_region_a(bytes)?;
                             self.stack.push(res);
                         }
-                        Value::Map(m) => {
-                            match method.as_str() {
-                                "insert" => {
-                                    if args.len() >= 2 {
-                                        let key = format!("{}", args[0]);
-                                        let val = args[1].clone();
-                                        m.lock().unwrap().insert(key, val);
-                                    }
+                        Value::Map(m) => match method.as_str() {
+                            "insert" => {
+                                if args.len() >= 2 {
+                                    let key = format!("{}", args[0]);
+                                    let val = args[1].clone();
+                                    m.lock().unwrap().insert(key, val);
+                                }
+                                self.stack.push(Value::Null);
+                            }
+                            "get" => {
+                                if !args.is_empty() {
+                                    let key = format!("{}", args[0]);
+                                    let val =
+                                        m.lock().unwrap().get(&key).cloned().unwrap_or(Value::Null);
+                                    self.stack.push(val);
+                                } else {
                                     self.stack.push(Value::Null);
                                 }
-                                "get" => {
-                                    if !args.is_empty() {
-                                        let key = format!("{}", args[0]);
-                                        let val = m.lock().unwrap().get(&key).cloned().unwrap_or(Value::Null);
-                                        self.stack.push(val);
-                                    } else {
-                                        self.stack.push(Value::Null);
-                                    }
-                                }
-                                "contains" => {
-                                    if !args.is_empty() {
-                                        let key = format!("{}", args[0]);
-                                        self.stack.push(Value::Bool(m.lock().unwrap().contains_key(&key)));
-                                    } else {
-                                        self.stack.push(Value::Bool(false));
-                                    }
-                                }
-                                _ => self.stack.push(Value::Null),
                             }
-                        }
-                        Value::Object(obj) => {
-                            match method.as_str() {
-                                "param" | "query" => {
-                                    let key = args.first().map(|a| format!("{}", a)).unwrap_or_default();
-                                    let guard = obj.lock().unwrap();
-                                    let val = if let Some(Value::Map(ref params)) = guard.get("params") {
-                                        params.lock().unwrap().get(&key).cloned().unwrap_or(Value::Null)
-                                    } else {
-                                        guard.get(&key).cloned().unwrap_or(Value::Null)
-                                    };
-                                    self.stack.push(val);
+                            "contains" => {
+                                if !args.is_empty() {
+                                    let key = format!("{}", args[0]);
+                                    self.stack
+                                        .push(Value::Bool(m.lock().unwrap().contains_key(&key)));
+                                } else {
+                                    self.stack.push(Value::Bool(false));
                                 }
-                                "header" => {
-                                    let key = args.first().map(|a| format!("{}", a).to_ascii_lowercase()).unwrap_or_default();
-                                    let guard = obj.lock().unwrap();
-                                    let val = if let Some(Value::Map(ref headers)) = guard.get("headers") {
-                                        headers.lock().unwrap().get(&key).cloned().unwrap_or(Value::Null)
+                            }
+                            _ => self.stack.push(Value::Null),
+                        },
+                        Value::Object(obj) => match method.as_str() {
+                            "param" | "query" => {
+                                let key =
+                                    args.first().map(|a| format!("{}", a)).unwrap_or_default();
+                                let guard = obj.lock().unwrap();
+                                let val = if let Some(Value::Map(ref params)) = guard.get("params")
+                                {
+                                    params
+                                        .lock()
+                                        .unwrap()
+                                        .get(&key)
+                                        .cloned()
+                                        .unwrap_or(Value::Null)
+                                } else {
+                                    guard.get(&key).cloned().unwrap_or(Value::Null)
+                                };
+                                self.stack.push(val);
+                            }
+                            "header" => {
+                                let key = args
+                                    .first()
+                                    .map(|a| format!("{}", a).to_ascii_lowercase())
+                                    .unwrap_or_default();
+                                let guard = obj.lock().unwrap();
+                                let val =
+                                    if let Some(Value::Map(ref headers)) = guard.get("headers") {
+                                        headers
+                                            .lock()
+                                            .unwrap()
+                                            .get(&key)
+                                            .cloned()
+                                            .unwrap_or(Value::Null)
                                     } else {
                                         Value::Null
                                     };
+                                self.stack.push(val);
+                            }
+                            "json" => {
+                                let guard = obj.lock().unwrap();
+                                let val = guard.get("json_data").cloned().unwrap_or(Value::Null);
+                                self.stack.push(val);
+                            }
+                            "path" => {
+                                let guard = obj.lock().unwrap();
+                                let val = guard.get("path").cloned().unwrap_or(Value::Null);
+                                self.stack.push(val);
+                            }
+                            "method" => {
+                                let guard = obj.lock().unwrap();
+                                let val = guard.get("method").cloned().unwrap_or(Value::Null);
+                                self.stack.push(val);
+                            }
+                            "body" => {
+                                let guard = obj.lock().unwrap();
+                                let val = guard.get("body").cloned().unwrap_or(Value::Null);
+                                self.stack.push(val);
+                            }
+                            "get" => {
+                                if !args.is_empty() {
+                                    let key = format!("{}", args[0]);
+                                    let val = obj
+                                        .lock()
+                                        .unwrap()
+                                        .get(&key)
+                                        .cloned()
+                                        .unwrap_or(Value::Null);
                                     self.stack.push(val);
-                                }
-                                "json" => {
-                                    let guard = obj.lock().unwrap();
-                                    let val = guard.get("json_data").cloned().unwrap_or(Value::Null);
-                                    self.stack.push(val);
-                                }
-                                "path" => {
-                                    let guard = obj.lock().unwrap();
-                                    let val = guard.get("path").cloned().unwrap_or(Value::Null);
-                                    self.stack.push(val);
-                                }
-                                "method" => {
-                                    let guard = obj.lock().unwrap();
-                                    let val = guard.get("method").cloned().unwrap_or(Value::Null);
-                                    self.stack.push(val);
-                                }
-                                "body" => {
-                                    let guard = obj.lock().unwrap();
-                                    let val = guard.get("body").cloned().unwrap_or(Value::Null);
-                                    self.stack.push(val);
-                                }
-                                "get" => {
-                                    if !args.is_empty() {
-                                        let key = format!("{}", args[0]);
-                                        let val = obj.lock().unwrap().get(&key).cloned().unwrap_or(Value::Null);
-                                        self.stack.push(val);
-                                    } else {
-                                        self.stack.push(Value::Null);
-                                    }
-                                }
-                                "insert" | "set" => {
-                                    if args.len() >= 2 {
-                                        let key = format!("{}", args[0]);
-                                        let val = args[1].clone();
-                                        obj.lock().unwrap().insert(key, val);
-                                    }
+                                } else {
                                     self.stack.push(Value::Null);
                                 }
-                                "contains" => {
-                                    if !args.is_empty() {
-                                        let key = format!("{}", args[0]);
-                                        self.stack.push(Value::Bool(obj.lock().unwrap().contains_key(&key)));
-                                    } else {
-                                        self.stack.push(Value::Bool(false));
+                            }
+                            "insert" | "set" => {
+                                if args.len() >= 2 {
+                                    let key = format!("{}", args[0]);
+                                    let val = args[1].clone();
+                                    obj.lock().unwrap().insert(key, val);
+                                }
+                                self.stack.push(Value::Null);
+                            }
+                            "contains" => {
+                                if !args.is_empty() {
+                                    let key = format!("{}", args[0]);
+                                    self.stack
+                                        .push(Value::Bool(obj.lock().unwrap().contains_key(&key)));
+                                } else {
+                                    self.stack.push(Value::Bool(false));
+                                }
+                            }
+                            _ => self.stack.push(Value::Null),
+                        },
+                        Value::String(ref s) => {
+                            let namespaced = format!("{}::{}", s, method);
+                            let dotted = format!("{}.{}", s, method);
+                            if let Some(&target_ip) = chunk
+                                .functions
+                                .get(&namespaced)
+                                .or_else(|| chunk.functions.get(&dotted))
+                            {
+                                if self.frames.len() >= Self::MAX_CALL_FRAMES {
+                                    return Err(VmError::StackOverflow(format!(
+                                        "Call frame depth limit ({}) exceeded",
+                                        Self::MAX_CALL_FRAMES
+                                    )));
+                                }
+                                if target_ip >= chunk.code.len() {
+                                    return Err(VmError::InvalidOperand(format!(
+                                        "Invalid function address: {}",
+                                        target_ip
+                                    )));
+                                }
+                                let slots_offset = self.stack.len();
+                                for arg in args {
+                                    self.stack.push(arg);
+                                }
+                                self.frames.push(CallFrame::new(target_ip, slots_offset));
+                            } else if self.ffi_registry.has_module(s) {
+                                let res = self
+                                    .ffi_registry
+                                    .invoke(s, method, &args, Some(&self.worker_pool))
+                                    .map_err(|e| VmError::InvalidOperand(e.to_string()))?;
+                                let bytes = trulang_ffi::estimate_value_size(&res);
+                                self.allocate_region_a(bytes)?;
+                                self.stack.push(res);
+                            } else {
+                                // Mock services / builtins: database.find_user, Response.json, Response.error
+                                match method.as_str() {
+                                    "find_user" => {
+                                        let user_obj = Value::new_object();
+                                        if let Value::Object(ref o) = user_obj {
+                                            let mut g = o.lock().unwrap();
+                                            g.insert(
+                                                "id".to_string(),
+                                                args.first().cloned().unwrap_or(Value::Int(1)),
+                                            );
+                                            g.insert(
+                                                "name".to_string(),
+                                                Value::String(Arc::new("Alice Smith".to_string())),
+                                            );
+                                            g.insert(
+                                                "email".to_string(),
+                                                Value::String(Arc::new(
+                                                    "alice@example.com".to_string(),
+                                                )),
+                                            );
+                                        }
+                                        self.stack.push(user_obj);
+                                    }
+                                    "json" => {
+                                        let resp = Value::new_object();
+                                        if let Value::Object(ref o) = resp {
+                                            let mut g = o.lock().unwrap();
+                                            g.insert("status".to_string(), Value::Int(200));
+                                            g.insert(
+                                                "data".to_string(),
+                                                args.first().cloned().unwrap_or(Value::Null),
+                                            );
+                                        }
+                                        self.stack.push(resp);
+                                    }
+                                    "error" => {
+                                        let resp = Value::new_object();
+                                        if let Value::Object(ref o) = resp {
+                                            let mut g = o.lock().unwrap();
+                                            g.insert(
+                                                "status".to_string(),
+                                                args.first().cloned().unwrap_or(Value::Int(500)),
+                                            );
+                                            g.insert(
+                                                "error".to_string(),
+                                                args.get(1).cloned().unwrap_or(Value::Null),
+                                            );
+                                        }
+                                        self.stack.push(resp);
+                                    }
+                                    _ => {
+                                        return Err(VmError::InvalidOperand(format!(
+                                            "Undefined method '{}' on string or module '{}'",
+                                            method, s
+                                        )))
                                     }
                                 }
-                                _ => self.stack.push(Value::Null),
                             }
                         }
-                        Value::String(ref s) if self.ffi_registry.has_module(s) => {
-                            let res = self
-                                .ffi_registry
-                                .invoke(s, method, &args, Some(&self.worker_pool))
-                                .map_err(|e| VmError::InvalidOperand(e.to_string()))?;
-                            let bytes = trulang_ffi::estimate_value_size(&res);
-                            self.allocate_region_a(bytes)?;
-                            self.stack.push(res);
-                        }
-                        _ => {
-                            // Mock services / builtins: database.find_user, Response.json, Response.error
-                            match method.as_str() {
-                                "find_user" => {
-                                    let user_obj = Value::new_object();
-                                    if let Value::Object(ref o) = user_obj {
-                                        let mut g = o.lock().unwrap();
-                                        g.insert("id".to_string(), args.first().cloned().unwrap_or(Value::Int(1)));
-                                        g.insert("name".to_string(), Value::String(Arc::new("Alice Smith".to_string())));
-                                        g.insert("email".to_string(), Value::String(Arc::new("alice@example.com".to_string())));
-                                    }
-                                    self.stack.push(user_obj);
-                                }
-                                "json" => {
-                                    let resp = Value::new_object();
-                                    if let Value::Object(ref o) = resp {
-                                        let mut g = o.lock().unwrap();
-                                        g.insert("status".to_string(), Value::Int(200));
-                                        g.insert("data".to_string(), args.first().cloned().unwrap_or(Value::Null));
-                                    }
-                                    self.stack.push(resp);
-                                }
-                                "error" => {
-                                    let resp = Value::new_object();
-                                    if let Value::Object(ref o) = resp {
-                                        let mut g = o.lock().unwrap();
-                                        g.insert("status".to_string(), args.first().cloned().unwrap_or(Value::Int(500)));
-                                        g.insert("error".to_string(), args.get(1).cloned().unwrap_or(Value::Null));
-                                    }
-                                    self.stack.push(resp);
-                                }
-                                _ => self.stack.push(Value::Null),
-                            }
-                        }
+                        _ => self.stack.push(Value::Null),
                     }
                 }
                 Opcode::Add => {
@@ -551,7 +651,11 @@ impl VirtualMachine {
                     let res = match (a, b) {
                         (Value::Int(x), Value::Int(y)) => match x.checked_add(y) {
                             Some(v) => Value::Int(v),
-                            None => return Err(VmError::ArithmeticOverflow("Integer addition overflow".into())),
+                            None => {
+                                return Err(VmError::ArithmeticOverflow(
+                                    "Integer addition overflow".into(),
+                                ))
+                            }
                         },
                         (Value::Float(x), Value::Float(y)) => Value::Float(x + y),
                         (Value::String(x), Value::String(y)) => {
@@ -560,7 +664,12 @@ impl VirtualMachine {
                             self.allocate_region_a(combined.len())?;
                             Value::String(Arc::new(combined))
                         }
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot add {} and {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot add {} and {}",
+                                a, b
+                            )))
+                        }
                     };
                     self.stack.push(res);
                 }
@@ -570,10 +679,19 @@ impl VirtualMachine {
                     let res = match (a, b) {
                         (Value::Int(x), Value::Int(y)) => match x.checked_sub(y) {
                             Some(v) => Value::Int(v),
-                            None => return Err(VmError::ArithmeticOverflow("Integer subtraction overflow".into())),
+                            None => {
+                                return Err(VmError::ArithmeticOverflow(
+                                    "Integer subtraction overflow".into(),
+                                ))
+                            }
                         },
                         (Value::Float(x), Value::Float(y)) => Value::Float(x - y),
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot subtract {} and {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot subtract {} and {}",
+                                a, b
+                            )))
+                        }
                     };
                     self.stack.push(res);
                 }
@@ -583,10 +701,19 @@ impl VirtualMachine {
                     let res = match (a, b) {
                         (Value::Int(x), Value::Int(y)) => match x.checked_mul(y) {
                             Some(v) => Value::Int(v),
-                            None => return Err(VmError::ArithmeticOverflow("Integer multiplication overflow".into())),
+                            None => {
+                                return Err(VmError::ArithmeticOverflow(
+                                    "Integer multiplication overflow".into(),
+                                ))
+                            }
                         },
                         (Value::Float(x), Value::Float(y)) => Value::Float(x * y),
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot multiply {} and {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot multiply {} and {}",
+                                a, b
+                            )))
+                        }
                     };
                     self.stack.push(res);
                 }
@@ -597,11 +724,22 @@ impl VirtualMachine {
                         (Value::Int(_), Value::Int(0)) => return Err(VmError::DivisionByZero),
                         (Value::Int(x), Value::Int(y)) => match x.checked_div(y) {
                             Some(v) => Value::Int(v),
-                            None => return Err(VmError::ArithmeticOverflow("Integer division overflow".into())),
+                            None => {
+                                return Err(VmError::ArithmeticOverflow(
+                                    "Integer division overflow".into(),
+                                ))
+                            }
                         },
-                        (Value::Float(_), Value::Float(0.0)) => return Err(VmError::DivisionByZero),
+                        (Value::Float(_), Value::Float(0.0)) => {
+                            return Err(VmError::DivisionByZero)
+                        }
                         (Value::Float(x), Value::Float(y)) => Value::Float(x / y),
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot divide {} by {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot divide {} by {}",
+                                a, b
+                            )))
+                        }
                     };
                     self.stack.push(res);
                 }
@@ -612,9 +750,18 @@ impl VirtualMachine {
                         (Value::Int(_), Value::Int(0)) => return Err(VmError::DivisionByZero),
                         (Value::Int(x), Value::Int(y)) => match x.checked_rem(y) {
                             Some(v) => self.stack.push(Value::Int(v)),
-                            None => return Err(VmError::ArithmeticOverflow("Integer modulo overflow".into())),
+                            None => {
+                                return Err(VmError::ArithmeticOverflow(
+                                    "Integer modulo overflow".into(),
+                                ))
+                            }
                         },
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot modulo {} by {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot modulo {} by {}",
+                                a, b
+                            )))
+                        }
                     }
                 }
                 Opcode::Neg => {
@@ -622,10 +769,16 @@ impl VirtualMachine {
                     match val {
                         Value::Int(x) => match x.checked_neg() {
                             Some(v) => self.stack.push(Value::Int(v)),
-                            None => return Err(VmError::ArithmeticOverflow("Integer negation overflow".into())),
+                            None => {
+                                return Err(VmError::ArithmeticOverflow(
+                                    "Integer negation overflow".into(),
+                                ))
+                            }
                         },
                         Value::Float(x) => self.stack.push(Value::Float(-x)),
-                        other => return Err(VmError::InvalidOperand(format!("Cannot negate {}", other))),
+                        other => {
+                            return Err(VmError::InvalidOperand(format!("Cannot negate {}", other)))
+                        }
                     }
                 }
                 Opcode::Not => {
@@ -648,7 +801,12 @@ impl VirtualMachine {
                     match (a, b) {
                         (Value::Int(x), Value::Int(y)) => self.stack.push(Value::Bool(x < y)),
                         (Value::Float(x), Value::Float(y)) => self.stack.push(Value::Bool(x < y)),
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot compare {} and {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot compare {} and {}",
+                                a, b
+                            )))
+                        }
                     }
                 }
                 Opcode::LtEq => {
@@ -657,7 +815,12 @@ impl VirtualMachine {
                     match (a, b) {
                         (Value::Int(x), Value::Int(y)) => self.stack.push(Value::Bool(x <= y)),
                         (Value::Float(x), Value::Float(y)) => self.stack.push(Value::Bool(x <= y)),
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot compare {} and {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot compare {} and {}",
+                                a, b
+                            )))
+                        }
                     }
                 }
                 Opcode::Gt => {
@@ -666,7 +829,12 @@ impl VirtualMachine {
                     match (a, b) {
                         (Value::Int(x), Value::Int(y)) => self.stack.push(Value::Bool(x > y)),
                         (Value::Float(x), Value::Float(y)) => self.stack.push(Value::Bool(x > y)),
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot compare {} and {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot compare {} and {}",
+                                a, b
+                            )))
+                        }
                     }
                 }
                 Opcode::GtEq => {
@@ -675,7 +843,12 @@ impl VirtualMachine {
                     match (a, b) {
                         (Value::Int(x), Value::Int(y)) => self.stack.push(Value::Bool(x >= y)),
                         (Value::Float(x), Value::Float(y)) => self.stack.push(Value::Bool(x >= y)),
-                        (a, b) => return Err(VmError::InvalidOperand(format!("Cannot compare {} and {}", a, b))),
+                        (a, b) => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot compare {} and {}",
+                                a, b
+                            )))
+                        }
                     }
                 }
                 Opcode::Jump(target) => {
@@ -732,17 +905,28 @@ impl VirtualMachine {
                     }
                     let callee = self.stack.pop().ok_or(VmError::StackUnderflow)?;
                     let target_ip = match callee {
-                        Value::String(ref name) => {
-                            match chunk.functions.get(name.as_str()) {
-                                Some(&ip) => ip,
-                                None => return Err(VmError::InvalidOperand(format!("Undefined function: {}", name))),
+                        Value::String(ref name) => match chunk.functions.get(name.as_str()) {
+                            Some(&ip) => ip,
+                            None => {
+                                return Err(VmError::InvalidOperand(format!(
+                                    "Undefined function: {}",
+                                    name
+                                )))
                             }
-                        }
+                        },
                         Value::Int(ip) => ip as usize,
-                        other => return Err(VmError::InvalidOperand(format!("Cannot call non-function value: {}", other))),
+                        other => {
+                            return Err(VmError::InvalidOperand(format!(
+                                "Cannot call non-function value: {}",
+                                other
+                            )))
+                        }
                     };
                     if target_ip >= chunk.code.len() {
-                        return Err(VmError::InvalidOperand(format!("Invalid function address: {}", target_ip)));
+                        return Err(VmError::InvalidOperand(format!(
+                            "Invalid function address: {}",
+                            target_ip
+                        )));
                     }
                     if self.stack.len() < *arity {
                         return Err(VmError::StackUnderflow);
@@ -768,16 +952,32 @@ impl VirtualMachine {
                     self.region_a.reset();
                     if let Some(shm) = &self.telemetry {
                         let h = shm.header();
-                        h.region_a_budget_bytes.store(*bytes as u64, std::sync::atomic::Ordering::Relaxed);
-                        h.region_a_used_bytes.store(0, std::sync::atomic::Ordering::Relaxed);
-                        shm.push_event(trulang_supervisor::TelemetryEventType::AllocRegionA, *bytes as u32, 0, 0, "request_arena");
+                        h.region_a_budget_bytes
+                            .store(*bytes as u64, std::sync::atomic::Ordering::Relaxed);
+                        h.region_a_used_bytes
+                            .store(0, std::sync::atomic::Ordering::Relaxed);
+                        shm.push_event(
+                            trulang_supervisor::TelemetryEventType::AllocRegionA,
+                            *bytes as u32,
+                            0,
+                            0,
+                            "request_arena",
+                        );
                     }
                 }
                 Opcode::FreeRegionA => {
                     self.region_a.reset();
                     if let Some(shm) = &self.telemetry {
-                        shm.header().region_a_used_bytes.store(0, std::sync::atomic::Ordering::Relaxed);
-                        shm.push_event(trulang_supervisor::TelemetryEventType::FreeRegionA, 0, 0, 0, "reset_arena");
+                        shm.header()
+                            .region_a_used_bytes
+                            .store(0, std::sync::atomic::Ordering::Relaxed);
+                        shm.push_event(
+                            trulang_supervisor::TelemetryEventType::FreeRegionA,
+                            0,
+                            0,
+                            0,
+                            "reset_arena",
+                        );
                     }
                 }
                 Opcode::Persist => {
@@ -801,15 +1001,39 @@ impl VirtualMachine {
                     };
                     self.region_b.allocate(size).map_err(|e| {
                         if let Some(shm) = &self.telemetry {
-                            shm.push_event(trulang_supervisor::TelemetryEventType::BudgetExceeded, size as u32, 0, 0, "persist_overflow");
+                            shm.push_event(
+                                trulang_supervisor::TelemetryEventType::BudgetExceeded,
+                                size as u32,
+                                0,
+                                0,
+                                "persist_overflow",
+                            );
                         }
                         VmError::MemoryExceeded(e)
                     })?;
                     if let Some(shm) = &self.telemetry {
                         let h = shm.header();
-                        h.region_b_live_bytes.store(self.region_b.live_bytes.load(std::sync::atomic::Ordering::Relaxed) as u64, std::sync::atomic::Ordering::Relaxed);
-                        h.region_b_live_objects.store(self.region_b.live_objects.load(std::sync::atomic::Ordering::Relaxed) as u64, std::sync::atomic::Ordering::Relaxed);
-                        shm.push_event(trulang_supervisor::TelemetryEventType::PersistToRegionB, size as u32, 0, 0, "persist_object");
+                        h.region_b_live_bytes.store(
+                            self.region_b
+                                .live_bytes
+                                .load(std::sync::atomic::Ordering::Relaxed)
+                                as u64,
+                            std::sync::atomic::Ordering::Relaxed,
+                        );
+                        h.region_b_live_objects.store(
+                            self.region_b
+                                .live_objects
+                                .load(std::sync::atomic::Ordering::Relaxed)
+                                as u64,
+                            std::sync::atomic::Ordering::Relaxed,
+                        );
+                        shm.push_event(
+                            trulang_supervisor::TelemetryEventType::PersistToRegionB,
+                            size as u32,
+                            0,
+                            0,
+                            "persist_object",
+                        );
                     }
                 }
                 Opcode::Print => {
@@ -838,7 +1062,9 @@ impl VirtualMachine {
                     };
                     if !is_truthy {
                         let line = chunk.lines.get(current_ip).copied().unwrap_or(1);
-                        let message = msg.clone().unwrap_or_else(|| format!("Expected truthy value, found {}", val));
+                        let message = msg
+                            .clone()
+                            .unwrap_or_else(|| format!("Expected truthy value, found {}", val));
                         return Err(VmError::AssertionFailure { message, line });
                     }
                 }

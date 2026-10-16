@@ -32,7 +32,10 @@ mod tests {
         assert_eq!(resp["id"], 1);
         assert_eq!(resp["result"]["capabilities"]["hoverProvider"], true);
         assert_eq!(resp["result"]["capabilities"]["definitionProvider"], true);
-        assert_eq!(resp["result"]["capabilities"]["documentFormattingProvider"], true);
+        assert_eq!(
+            resp["result"]["capabilities"]["documentFormattingProvider"],
+            true
+        );
     }
 
     #[test]
@@ -95,7 +98,10 @@ service TestSvc {
         let diags = notif_val["params"]["diagnostics"].as_array().unwrap();
         assert_eq!(diags.len(), 1);
         assert_eq!(diags[0]["severity"], 1);
-        assert!(diags[0]["message"].as_str().unwrap().contains("Unexpected token in expression"));
+        assert!(diags[0]["message"]
+            .as_str()
+            .unwrap()
+            .contains("Unexpected token in expression"));
     }
 
     #[test]
@@ -147,18 +153,21 @@ service PaymentService {
 }
 "#;
         // Open document first
-        server.handle_message(&json!({
-            "jsonrpc": "2.0",
-            "method": "textDocument/didOpen",
-            "params": {
-                "textDocument": {
-                    "uri": "file:///payment.tr",
-                    "languageId": "trulang",
-                    "version": 1,
-                    "text": doc
+        server.handle_message(
+            &json!({
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {
+                    "textDocument": {
+                        "uri": "file:///payment.tr",
+                        "languageId": "trulang",
+                        "version": 1,
+                        "text": doc
+                    }
                 }
-            }
-        }).to_string());
+            })
+            .to_string(),
+        );
 
         // Hover over PaymentService (line 1, char 10)
         let hover_req = json!({
@@ -191,18 +200,21 @@ service AuthService {
     }
 }
 "#;
-        server.handle_message(&json!({
-            "jsonrpc": "2.0",
-            "method": "textDocument/didOpen",
-            "params": {
-                "textDocument": {
-                    "uri": "file:///auth.tr",
-                    "languageId": "trulang",
-                    "version": 1,
-                    "text": doc
+        server.handle_message(
+            &json!({
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {
+                    "textDocument": {
+                        "uri": "file:///auth.tr",
+                        "languageId": "trulang",
+                        "version": 1,
+                        "text": doc
+                    }
                 }
-            }
-        }).to_string());
+            })
+            .to_string(),
+        );
 
         // Definition jump on verify
         let def_req = json!({
@@ -224,19 +236,23 @@ service AuthService {
     #[test]
     fn test_lsp_document_formatting() {
         let mut server = LanguageServer::new();
-        let unformatted = "service UnformattedService{\nlet x = 10;\nfn handle(){\nreturn x;\n}\n}\n";
-        server.handle_message(&json!({
-            "jsonrpc": "2.0",
-            "method": "textDocument/didOpen",
-            "params": {
-                "textDocument": {
-                    "uri": "file:///unformatted.tr",
-                    "languageId": "trulang",
-                    "version": 1,
-                    "text": unformatted
+        let unformatted =
+            "service UnformattedService{\nlet x = 10;\nfn handle(){\nreturn x;\n}\n}\n";
+        server.handle_message(
+            &json!({
+                "jsonrpc": "2.0",
+                "method": "textDocument/didOpen",
+                "params": {
+                    "textDocument": {
+                        "uri": "file:///unformatted.tr",
+                        "languageId": "trulang",
+                        "version": 1,
+                        "text": unformatted
+                    }
                 }
-            }
-        }).to_string());
+            })
+            .to_string(),
+        );
 
         let fmt_req = json!({
             "jsonrpc": "2.0",

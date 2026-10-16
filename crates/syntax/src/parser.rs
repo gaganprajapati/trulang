@@ -22,16 +22,25 @@ impl Parser {
     }
 
     fn peek(&self) -> &TokenKind {
-        self.tokens.get(self.cursor).map(|t| &t.kind).unwrap_or(&TokenKind::Eof)
+        self.tokens
+            .get(self.cursor)
+            .map(|t| &t.kind)
+            .unwrap_or(&TokenKind::Eof)
     }
 
     fn current_span(&self) -> Span {
-        self.tokens.get(self.cursor).map(|t| t.span).unwrap_or_default()
+        self.tokens
+            .get(self.cursor)
+            .map(|t| t.span)
+            .unwrap_or_default()
     }
 
     fn previous_span(&self) -> Span {
         if self.cursor > 0 {
-            self.tokens.get(self.cursor - 1).map(|t| t.span).unwrap_or_default()
+            self.tokens
+                .get(self.cursor - 1)
+                .map(|t| t.span)
+                .unwrap_or_default()
         } else {
             self.current_span()
         }
@@ -130,7 +139,10 @@ impl Parser {
                 Ok(Spanned::new(Declaration::Test(test_decl), span))
             }
             _ => Err(SyntaxError::new(
-                format!("Expected declaration (service, fn, import), found '{}'", self.peek()),
+                format!(
+                    "Expected declaration (service, fn, import), found '{}'",
+                    self.peek()
+                ),
                 start_span,
             )),
         }
@@ -169,7 +181,10 @@ impl Parser {
             }
             found => {
                 return Err(SyntaxError::new(
-                    format!("Expected import path string or identifier, found '{}'", found),
+                    format!(
+                        "Expected import path string or identifier, found '{}'",
+                        found
+                    ),
                     self.current_span(),
                 ));
             }
@@ -238,7 +253,10 @@ impl Parser {
             }
             other => {
                 return Err(SyntaxError::new(
-                    format!("Expected 'request' or 'persistent' memory region, found '{}'", other),
+                    format!(
+                        "Expected 'request' or 'persistent' memory region, found '{}'",
+                        other
+                    ),
                     self.current_span(),
                 ));
             }
@@ -284,7 +302,10 @@ impl Parser {
                 }
                 other => {
                     return Err(SyntaxError::new(
-                        format!("Expected numeric ceiling value after 'max', found '{}'", other),
+                        format!(
+                            "Expected numeric ceiling value after 'max', found '{}'",
+                            other
+                        ),
                         self.current_span(),
                     ));
                 }
@@ -355,7 +376,12 @@ impl Parser {
         self.expect(TokenKind::Semicolon)?;
         let span = start_span.merge(self.previous_span());
         Ok(Spanned::new(
-            FieldDecl { name, is_mut, ty, init },
+            FieldDecl {
+                name,
+                is_mut,
+                ty,
+                init,
+            },
             span,
         ))
     }
@@ -482,7 +508,15 @@ impl Parser {
                 let init = self.parse_expr()?;
                 self.expect(TokenKind::Semicolon)?;
                 let span = start_span.merge(self.previous_span());
-                Ok(Spanned::new(Statement::Let { name, is_mut, ty, init }, span))
+                Ok(Spanned::new(
+                    Statement::Let {
+                        name,
+                        is_mut,
+                        ty,
+                        init,
+                    },
+                    span,
+                ))
             }
             TokenKind::Return => {
                 self.advance();
@@ -509,7 +543,9 @@ impl Parser {
                 let else_branch = if self.match_token(&TokenKind::Else) {
                     if self.peek() == &TokenKind::If {
                         let nested_if = self.parse_statement()?;
-                        Some(Block { statements: vec![nested_if] })
+                        Some(Block {
+                            statements: vec![nested_if],
+                        })
                     } else {
                         Some(self.parse_block()?)
                     }
@@ -517,7 +553,14 @@ impl Parser {
                     None
                 };
                 let span = start_span.merge(self.previous_span());
-                Ok(Spanned::new(Statement::If { condition, then_branch, else_branch }, span))
+                Ok(Spanned::new(
+                    Statement::If {
+                        condition,
+                        then_branch,
+                        else_branch,
+                    },
+                    span,
+                ))
             }
             TokenKind::While => {
                 self.advance();
@@ -540,7 +583,15 @@ impl Parser {
                 self.expect(TokenKind::CloseParen)?;
                 let catch_block = self.parse_block()?;
                 let span = start_span.merge(self.previous_span());
-                Ok(Spanned::new(Statement::TryCatch { try_block, error_name, error_type, catch_block }, span))
+                Ok(Spanned::new(
+                    Statement::TryCatch {
+                        try_block,
+                        error_name,
+                        error_type,
+                        catch_block,
+                    },
+                    span,
+                ))
             }
             TokenKind::OpenBrace => {
                 let block = self.parse_block()?;
@@ -554,7 +605,13 @@ impl Parser {
                     let value = self.parse_expr()?;
                     self.expect(TokenKind::Semicolon)?;
                     let span = start_span.merge(self.previous_span());
-                    Ok(Spanned::new(Statement::Assign { target: expr, value }, span))
+                    Ok(Spanned::new(
+                        Statement::Assign {
+                            target: expr,
+                            value,
+                        },
+                        span,
+                    ))
                 } else {
                     self.expect(TokenKind::Semicolon)?;
                     let span = start_span.merge(self.previous_span());
@@ -721,12 +778,24 @@ impl Parser {
         if self.match_token(&TokenKind::Bang) {
             let expr = self.parse_unary()?;
             let span = start_span.merge(expr.span);
-            return Ok(Spanned::new(Expr::Unary { op: UnaryOp::Not, expr: Box::new(expr) }, span));
+            return Ok(Spanned::new(
+                Expr::Unary {
+                    op: UnaryOp::Not,
+                    expr: Box::new(expr),
+                },
+                span,
+            ));
         }
         if self.match_token(&TokenKind::Minus) {
             let expr = self.parse_unary()?;
             let span = start_span.merge(expr.span);
-            return Ok(Spanned::new(Expr::Unary { op: UnaryOp::Neg, expr: Box::new(expr) }, span));
+            return Ok(Spanned::new(
+                Expr::Unary {
+                    op: UnaryOp::Neg,
+                    expr: Box::new(expr),
+                },
+                span,
+            ));
         }
         self.parse_postfix()
     }
@@ -746,7 +815,13 @@ impl Parser {
                 }
                 self.expect(TokenKind::CloseParen)?;
                 let span = expr.span.merge(self.previous_span());
-                expr = Spanned::new(Expr::Call { callee: Box::new(expr), args }, span);
+                expr = Spanned::new(
+                    Expr::Call {
+                        callee: Box::new(expr),
+                        args,
+                    },
+                    span,
+                );
             } else if self.match_token(&TokenKind::Dot) {
                 // Member access or method call
                 let (member, _) = self.expect_ident()?;
@@ -760,16 +835,37 @@ impl Parser {
                     }
                     self.expect(TokenKind::CloseParen)?;
                     let span = expr.span.merge(self.previous_span());
-                    expr = Spanned::new(Expr::MethodCall { receiver: Box::new(expr), method: member, args }, span);
+                    expr = Spanned::new(
+                        Expr::MethodCall {
+                            receiver: Box::new(expr),
+                            method: member,
+                            args,
+                        },
+                        span,
+                    );
                 } else {
                     let span = expr.span.merge(self.previous_span());
-                    expr = Spanned::new(Expr::MemberAccess { target: Box::new(expr), field: member, is_optional: false }, span);
+                    expr = Spanned::new(
+                        Expr::MemberAccess {
+                            target: Box::new(expr),
+                            field: member,
+                            is_optional: false,
+                        },
+                        span,
+                    );
                 }
             } else if self.match_token(&TokenKind::QuestionDot) {
                 // Optional chaining ?.
                 let (member, _) = self.expect_ident()?;
                 let span = expr.span.merge(self.previous_span());
-                expr = Spanned::new(Expr::MemberAccess { target: Box::new(expr), field: member, is_optional: true }, span);
+                expr = Spanned::new(
+                    Expr::MemberAccess {
+                        target: Box::new(expr),
+                        field: member,
+                        is_optional: true,
+                    },
+                    span,
+                );
             } else {
                 break;
             }

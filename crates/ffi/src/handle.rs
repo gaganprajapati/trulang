@@ -49,8 +49,14 @@ impl ExternalResource for PgPoolResource {
                 if let Value::Object(ref o) = user_obj {
                     let mut g = o.lock().unwrap();
                     g.insert("id".to_string(), user_id);
-                    g.insert("name".to_string(), Value::String(Arc::new("Alice Smith".to_string())));
-                    g.insert("email".to_string(), Value::String(Arc::new("alice@example.com".to_string())));
+                    g.insert(
+                        "name".to_string(),
+                        Value::String(Arc::new("Alice Smith".to_string())),
+                    );
+                    g.insert(
+                        "email".to_string(),
+                        Value::String(Arc::new("alice@example.com".to_string())),
+                    );
                     g.insert("verified".to_string(), Value::Bool(true));
                 }
                 Ok(user_obj)

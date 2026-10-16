@@ -3,9 +3,9 @@
 //! Translates TruLang compiled bytecode chunks into ANSI C99 source code
 //! that compiles with clang, gcc, or MSVC cl.exe to produce standalone native binaries.
 
+use crate::runtime::TRULANG_RUNTIME_C;
 use std::fmt::Write;
 use trulang_compiler::bytecode::{Chunk, Opcode, Value};
-use crate::runtime::TRULANG_RUNTIME_C;
 
 pub struct CBackend;
 
@@ -51,14 +51,24 @@ impl CBackend {
         let stack_size = 4096;
 
         // 3. Emit Main Entrypoint Function
-        out.push_str("/* ========================================================================= */\n");
-        out.push_str("/*                         Generated TruLang Entrypoint                        */\n");
-        out.push_str("/* ========================================================================= */\n\n");
+        out.push_str(
+            "/* ========================================================================= */\n",
+        );
+        out.push_str(
+            "/*                         Generated TruLang Entrypoint                        */\n",
+        );
+        out.push_str(
+            "/* ========================================================================= */\n\n",
+        );
         out.push_str("int main(int argc, char** argv) {\n");
         out.push_str("    (void)argc; (void)argv;\n\n");
 
         // Initialize Region A arena
-        let _ = writeln!(out, "    trulang_region_a_init({}, {});", init_budget, init_max_budget);
+        let _ = writeln!(
+            out,
+            "    trulang_region_a_init({}, {});",
+            init_budget, init_max_budget
+        );
         let _ = writeln!(out, "    TruLangVal locals[{}] = {{0}};", locals_size);
         let _ = writeln!(out, "    TruLangVal fields[{}] = {{0}};", fields_size);
         let _ = writeln!(out, "    TruLangVal stack[{}];", stack_size);
@@ -78,11 +88,20 @@ impl CBackend {
                         let _ = writeln!(out, "    consts[{}] = trulang_val_float({});", i, f);
                     }
                     Value::Bool(b) => {
-                        let _ = writeln!(out, "    consts[{}] = trulang_val_bool({});", i, if *b { "true" } else { "false" });
+                        let _ = writeln!(
+                            out,
+                            "    consts[{}] = trulang_val_bool({});",
+                            i,
+                            if *b { "true" } else { "false" }
+                        );
                     }
                     Value::String(s) => {
                         let escaped = escape_c_string(s);
-                        let _ = writeln!(out, "    consts[{}] = trulang_val_string(\"{}\", false);", i, escaped);
+                        let _ = writeln!(
+                            out,
+                            "    consts[{}] = trulang_val_string(\"{}\", false);",
+                            i, escaped
+                        );
                     }
                     Value::Null => {
                         let _ = writeln!(out, "    consts[{}] = trulang_val_null();", i);
@@ -109,7 +128,11 @@ impl CBackend {
                     let _ = writeln!(out, "    stack[sp++] = trulang_val_float({});", f);
                 }
                 Opcode::LoadBool(b) => {
-                    let _ = writeln!(out, "    stack[sp++] = trulang_val_bool({});", if *b { "true" } else { "false" });
+                    let _ = writeln!(
+                        out,
+                        "    stack[sp++] = trulang_val_bool({});",
+                        if *b { "true" } else { "false" }
+                    );
                 }
                 Opcode::LoadNull => {
                     out.push_str("    stack[sp++] = trulang_val_null();\n");
@@ -133,10 +156,18 @@ impl CBackend {
                     let _ = writeln!(out, "    fields[{}] = stack[--sp];", idx);
                 }
                 Opcode::GetFieldNamed(name) => {
-                    let _ = writeln!(out, "    stack[sp - 1] = trulang_map_get(stack[sp - 1], \"{}\");", escape_c_string(name));
+                    let _ = writeln!(
+                        out,
+                        "    stack[sp - 1] = trulang_map_get(stack[sp - 1], \"{}\");",
+                        escape_c_string(name)
+                    );
                 }
                 Opcode::SetFieldNamed(name) => {
-                    let _ = writeln!(out, "    trulang_map_set(stack[sp - 2], \"{}\", stack[sp - 1]); sp -= 2;", escape_c_string(name));
+                    let _ = writeln!(
+                        out,
+                        "    trulang_map_set(stack[sp - 2], \"{}\", stack[sp - 1]); sp -= 2;",
+                        escape_c_string(name)
+                    );
                 }
                 Opcode::NewMap => {
                     out.push_str("    stack[sp++] = trulang_val_map(false);\n");
@@ -154,19 +185,29 @@ impl CBackend {
                     }
                 }
                 Opcode::Add => {
-                    out.push_str("    stack[sp - 2] = trulang_op_add(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_add(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::Sub => {
-                    out.push_str("    stack[sp - 2] = trulang_op_sub(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_sub(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::Mul => {
-                    out.push_str("    stack[sp - 2] = trulang_op_mul(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_mul(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::Div => {
-                    out.push_str("    stack[sp - 2] = trulang_op_div(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_div(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::Mod => {
-                    out.push_str("    stack[sp - 2] = trulang_op_mod(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_mod(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::Neg => {
                     out.push_str("    stack[sp - 1] = trulang_op_neg(stack[sp - 1]);\n");
@@ -175,28 +216,44 @@ impl CBackend {
                     out.push_str("    stack[sp - 1] = trulang_op_not(stack[sp - 1]);\n");
                 }
                 Opcode::Eq => {
-                    out.push_str("    stack[sp - 2] = trulang_op_eq(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_eq(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::NotEq => {
-                    out.push_str("    stack[sp - 2] = trulang_op_ne(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_ne(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::Lt => {
-                    out.push_str("    stack[sp - 2] = trulang_op_lt(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_lt(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::LtEq => {
-                    out.push_str("    stack[sp - 2] = trulang_op_le(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_le(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::Gt => {
-                    out.push_str("    stack[sp - 2] = trulang_op_gt(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_gt(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::GtEq => {
-                    out.push_str("    stack[sp - 2] = trulang_op_ge(stack[sp - 2], stack[sp - 1]); sp--;\n");
+                    out.push_str(
+                        "    stack[sp - 2] = trulang_op_ge(stack[sp - 2], stack[sp - 1]); sp--;\n",
+                    );
                 }
                 Opcode::Jump(target) => {
                     let _ = writeln!(out, "    goto label_{:04};", target);
                 }
                 Opcode::JumpIfFalse(target) => {
-                    let _ = writeln!(out, "    if (!trulang_is_truthy(stack[--sp])) goto label_{:04};", target);
+                    let _ = writeln!(
+                        out,
+                        "    if (!trulang_is_truthy(stack[--sp])) goto label_{:04};",
+                        target
+                    );
                 }
                 Opcode::Call(_arity) => {
                     // Function calls
@@ -207,13 +264,19 @@ impl CBackend {
                     out.push_str("    goto trulang_exit;\n");
                 }
                 Opcode::PushTry(catch_addr) => {
-                    let _ = writeln!(out, "    // PushTry -> target catch at label_{:04}", catch_addr);
+                    let _ = writeln!(
+                        out,
+                        "    // PushTry -> target catch at label_{:04}",
+                        catch_addr
+                    );
                 }
                 Opcode::PopTry => {
                     out.push_str("    // PopTry\n");
                 }
                 Opcode::Throw => {
-                    out.push_str("    fprintf(stderr, \"\\nVM Runtime Error: Exception thrown\\n\");\n");
+                    out.push_str(
+                        "    fprintf(stderr, \"\\nVM Runtime Error: Exception thrown\\n\");\n",
+                    );
                     out.push_str("    exit(1);\n");
                 }
                 Opcode::PushDefer(addr) => {

@@ -185,11 +185,7 @@ impl Poller {
         Ok(())
     }
 
-    pub fn poll(
-        &self,
-        events: &mut Vec<Event>,
-        timeout: Option<Duration>,
-    ) -> io::Result<usize> {
+    pub fn poll(&self, events: &mut Vec<Event>, timeout: Option<Duration>) -> io::Result<usize> {
         events.clear();
         const MAX_KEVENTS: usize = 128;
         let mut raw_events: [libc::kevent; MAX_KEVENTS] = unsafe { std::mem::zeroed() };
@@ -309,12 +305,7 @@ impl Poller {
 
     pub fn deregister(&self, fd: RawFd) -> io::Result<()> {
         let ret = unsafe {
-            libc::epoll_ctl(
-                self.epoll_fd,
-                libc::EPOLL_CTL_DEL,
-                fd,
-                std::ptr::null_mut(),
-            )
+            libc::epoll_ctl(self.epoll_fd, libc::EPOLL_CTL_DEL, fd, std::ptr::null_mut())
         };
         // Silently tolerate already-deleted or closed fds
         if ret < 0 {
@@ -326,11 +317,7 @@ impl Poller {
         Ok(())
     }
 
-    pub fn poll(
-        &self,
-        events: &mut Vec<Event>,
-        timeout: Option<Duration>,
-    ) -> io::Result<usize> {
+    pub fn poll(&self, events: &mut Vec<Event>, timeout: Option<Duration>) -> io::Result<usize> {
         events.clear();
         const MAX_EVENTS: usize = 128;
         let mut raw_events: [libc::epoll_event; MAX_EVENTS] = unsafe { std::mem::zeroed() };

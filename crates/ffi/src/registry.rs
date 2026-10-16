@@ -5,7 +5,8 @@ use std::collections::HashMap;
 use std::sync::RwLock;
 use trulang_compiler::bytecode::Value;
 
-pub type FfiFn = Box<dyn Fn(&[Value], Option<&WorkerPool>) -> Result<Value, FfiError> + Send + Sync>;
+pub type FfiFn =
+    Box<dyn Fn(&[Value], Option<&WorkerPool>) -> Result<Value, FfiError> + Send + Sync>;
 
 pub struct FfiRegistry {
     aliases: RwLock<HashMap<String, String>>,
@@ -35,7 +36,10 @@ impl FfiRegistry {
 
     pub fn resolve_module(&self, name_or_alias: &str) -> String {
         let guard = self.aliases.read().unwrap();
-        guard.get(name_or_alias).cloned().unwrap_or_else(|| name_or_alias.to_string())
+        guard
+            .get(name_or_alias)
+            .cloned()
+            .unwrap_or_else(|| name_or_alias.to_string())
     }
 
     pub fn has_module(&self, name_or_alias: &str) -> bool {
@@ -83,7 +87,10 @@ impl FfiRegistry {
                     if let Value::Object(ref o) = resp {
                         let mut g = o.lock().unwrap();
                         g.insert("status".to_string(), Value::Int(200));
-                        g.insert("data".to_string(), args.first().cloned().unwrap_or(Value::Null));
+                        g.insert(
+                            "data".to_string(),
+                            args.first().cloned().unwrap_or(Value::Null),
+                        );
                     }
                     Ok(resp)
                 }

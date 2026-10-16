@@ -59,7 +59,11 @@ impl Analyzer {
                             match b.node.region {
                                 BudgetRegion::Request => {
                                     if let Some(max) = b.node.max_size_bytes {
-                                        req_budget = format!("{} MB (burst up to {} MB)", mb, max / (1024 * 1024));
+                                        req_budget = format!(
+                                            "{} MB (burst up to {} MB)",
+                                            mb,
+                                            max / (1024 * 1024)
+                                        );
                                     } else {
                                         req_budget = format!("{} MB (strict)", mb);
                                     }
@@ -91,7 +95,11 @@ impl Analyzer {
                     for field in &svc.fields {
                         if field.node.name == target_word {
                             let mutability = if field.node.is_mut { "mut " } else { "" };
-                            let ty_str = field.node.ty.as_ref().map_or("inferred".into(), |t| format!("{:?}", t));
+                            let ty_str = field
+                                .node
+                                .ty
+                                .as_ref()
+                                .map_or("inferred".into(), |t| format!("{:?}", t));
                             let doc = format!(
                                 "```trulang\nlet {}{}: {}\n```\n\n\
                                 **Persistent Actor Field (Region B)**\n\n\
@@ -111,11 +119,20 @@ impl Analyzer {
                     // Search service methods
                     for method in &svc.methods {
                         if method.node.name == target_word {
-                            let params_str: Vec<String> = method.node.params.iter().map(|p| {
-                                let m = if p.is_mut { "mut " } else { "" };
-                                format!("{}{}: {:?}", m, p.name, p.ty)
-                            }).collect();
-                            let ret_str = method.node.return_type.as_ref().map_or("void".into(), |t| format!("{:?}", t));
+                            let params_str: Vec<String> = method
+                                .node
+                                .params
+                                .iter()
+                                .map(|p| {
+                                    let m = if p.is_mut { "mut " } else { "" };
+                                    format!("{}{}: {:?}", m, p.name, p.ty)
+                                })
+                                .collect();
+                            let ret_str = method
+                                .node
+                                .return_type
+                                .as_ref()
+                                .map_or("void".into(), |t| format!("{:?}", t));
 
                             let doc = format!(
                                 "```trulang\nfn {}({}) -> {}\n```\n\n\
@@ -134,16 +151,25 @@ impl Analyzer {
                     }
                 }
                 Declaration::Function(func) if func.name == target_word => {
-                    let params_str: Vec<String> = func.params.iter().map(|p| {
-                        let m = if p.is_mut { "mut " } else { "" };
-                        format!("{}{}: {:?}", m, p.name, p.ty)
-                    }).collect();
-                    let ret_str = func.return_type.as_ref().map_or("void".into(), |t| format!("{:?}", t));
+                    let params_str: Vec<String> = func
+                        .params
+                        .iter()
+                        .map(|p| {
+                            let m = if p.is_mut { "mut " } else { "" };
+                            format!("{}{}: {:?}", m, p.name, p.ty)
+                        })
+                        .collect();
+                    let ret_str = func
+                        .return_type
+                        .as_ref()
+                        .map_or("void".into(), |t| format!("{:?}", t));
 
                     let doc = format!(
                         "```trulang\nfn {}({}) -> {}\n```\n\n\
                         **Standard Function**",
-                        func.name, params_str.join(", "), ret_str
+                        func.name,
+                        params_str.join(", "),
+                        ret_str
                     );
                     return Some(Hover {
                         contents: MarkupContent {
@@ -251,7 +277,7 @@ impl Analyzer {
 fn span_to_range(span: &Span, content: &str) -> Range {
     let line = span.line.saturating_sub(1) as u32;
     let col = span.col.saturating_sub(1) as u32;
-    
+
     // Calculate approximate length from byte delta
     let delta = if span.end > span.start {
         (span.end - span.start) as u32
@@ -260,7 +286,10 @@ fn span_to_range(span: &Span, content: &str) -> Range {
     };
 
     // Make sure we don't overflow the line
-    let line_len = content.lines().nth(line as usize).map_or(col + delta, |l| l.len() as u32);
+    let line_len = content
+        .lines()
+        .nth(line as usize)
+        .map_or(col + delta, |l| l.len() as u32);
     let end_col = (col + delta).min(line_len);
 
     Range::new(

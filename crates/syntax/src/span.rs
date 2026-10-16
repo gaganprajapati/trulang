@@ -10,7 +10,12 @@ pub struct Span {
 
 impl Span {
     pub fn new(start: usize, end: usize, line: usize, col: usize) -> Self {
-        Self { start, end, line, col }
+        Self {
+            start,
+            end,
+            line,
+            col,
+        }
     }
 
     pub fn merge(self, other: Span) -> Self {
@@ -18,7 +23,11 @@ impl Span {
             start: self.start.min(other.start),
             end: self.end.max(other.end),
             line: self.line.min(other.line),
-            col: if self.start <= other.start { self.col } else { other.col },
+            col: if self.start <= other.start {
+                self.col
+            } else {
+                other.col
+            },
         }
     }
 }

@@ -47,7 +47,14 @@ impl SymbolTable {
         }
     }
 
-    pub fn define(&mut self, name: &str, ty: SemType, is_mut: bool, is_field: bool, span: Span) -> Result<(), CompileError> {
+    pub fn define(
+        &mut self,
+        name: &str,
+        ty: SemType,
+        is_mut: bool,
+        is_field: bool,
+        span: Span,
+    ) -> Result<(), CompileError> {
         if let Some(scope) = self.scopes.last_mut() {
             if scope.contains_key(name) {
                 return Err(CompileError::new(
@@ -81,15 +88,16 @@ impl SymbolTable {
     }
 
     pub fn check_mutation_allowed(&self, name: &str, span: Span) -> Result<(), CompileError> {
-        let sym = self.resolve(name).ok_or_else(|| {
-            CompileError::new(format!("Undefined variable '{}'", name), span)
-        })?;
+        let sym = self
+            .resolve(name)
+            .ok_or_else(|| CompileError::new(format!("Undefined variable '{}'", name), span))?;
 
         if !sym.is_mut {
             return Err(CompileError::new(
                 format!("Cannot reassign immutable variable '{}'", name),
                 span,
-            ).with_hint("Declare as 'let mut' to permit reassignment"));
+            )
+            .with_hint("Declare as 'let mut' to permit reassignment"));
         }
 
         // Rule 2.2: Nested functions cannot modify variables belonging to enclosing scopes
@@ -100,7 +108,10 @@ impl SymbolTable {
                     name
                 ),
                 span,
-            ).with_hint("Functions must return updated values instead of mutating outer variables"));
+            )
+            .with_hint(
+                "Functions must return updated values instead of mutating outer variables",
+            ));
         }
 
         Ok(())

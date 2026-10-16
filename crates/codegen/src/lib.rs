@@ -40,7 +40,12 @@ mod tests {
             .as_nanos();
         static E2E_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let count = E2E_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        let temp_bin = std::env::temp_dir().join(format!("trulang_e2e_test_{}_{}_{}", std::process::id(), nanos, count));
+        let temp_bin = std::env::temp_dir().join(format!(
+            "trulang_e2e_test_{}_{}_{}",
+            std::process::id(),
+            nanos,
+            count
+        ));
         let config = CodegenConfig {
             release: true,
             output_path: Some(temp_bin.clone()),

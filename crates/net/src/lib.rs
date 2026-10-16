@@ -26,7 +26,9 @@ mod tests {
         let fd = std::os::unix::io::AsRawFd::as_raw_fd(&listener);
 
         poller::set_nonblocking(fd).expect("Set nonblocking failed");
-        poller.register(fd, 42, Interest::Readable).expect("Failed to register fd");
+        poller
+            .register(fd, 42, Interest::Readable)
+            .expect("Failed to register fd");
         poller.deregister(fd).expect("Failed to deregister fd");
     }
 
@@ -39,7 +41,10 @@ mod tests {
         if let Value::Object(ref o) = resp_obj {
             let mut g = o.lock().unwrap();
             g.insert("status".to_string(), Value::Int(200));
-            g.insert("message".to_string(), Value::String(std::sync::Arc::new("Hello from TruLang!".to_string())));
+            g.insert(
+                "message".to_string(),
+                Value::String(std::sync::Arc::new("Hello from TruLang!".to_string())),
+            );
         }
         let const_idx = chunk.add_constant(resp_obj);
         chunk.code.push(Opcode::LoadConst(const_idx));
@@ -51,11 +56,16 @@ mod tests {
 
         // Send an HTTP GET request
         let mut client = TcpStream::connect(addr).expect("Failed to connect to server");
-        client.write_all(b"GET /api/v1/test?id=99 HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        client
+            .write_all(
+                b"GET /api/v1/test?id=99 HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n",
+            )
             .expect("Failed to write request");
 
         let mut response_buf = Vec::new();
-        client.read_to_end(&mut response_buf).expect("Failed to read response");
+        client
+            .read_to_end(&mut response_buf)
+            .expect("Failed to read response");
         let response_str = String::from_utf8(response_buf).expect("Valid UTF-8 response");
 
         assert!(response_str.starts_with("HTTP/1.1 200 OK\r\n"));
@@ -65,7 +75,12 @@ mod tests {
         // Verify that Region A was bulk reset
         assert_eq!(metrics.total_requests.load(Ordering::Relaxed), 1);
         assert_eq!(metrics.total_region_a_resets.load(Ordering::Relaxed), 1);
-        assert!(metrics.total_bytes_allocated_region_a.load(Ordering::Relaxed) > 0);
+        assert!(
+            metrics
+                .total_bytes_allocated_region_a
+                .load(Ordering::Relaxed)
+                > 0
+        );
 
         // Stop server
         is_running.store(false, Ordering::SeqCst);
@@ -139,8 +154,13 @@ service ApiGateway {
         let mut client = TcpStream::connect(addr).expect("Connect failed");
 
         for i in 1..=5 {
-            let req = format!("GET /ping?seq={} HTTP/1.1\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n", i);
-            client.write_all(req.as_bytes()).expect("Write request failed");
+            let req = format!(
+                "GET /ping?seq={} HTTP/1.1\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n",
+                i
+            );
+            client
+                .write_all(req.as_bytes())
+                .expect("Write request failed");
 
             let mut buf = [0u8; 1024];
             let n = client.read(&mut buf).expect("Read response failed");

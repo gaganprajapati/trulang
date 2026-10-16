@@ -237,10 +237,7 @@ impl SharedTelemetryRegion {
         let path = path.as_ref().to_path_buf();
         let size = Self::total_size();
 
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(&path)?;
+        let file = OpenOptions::new().read(true).write(true).open(&path)?;
 
         let mmap = unsafe { memmap2::MmapMut::map_mut(&file)? };
 
@@ -276,7 +273,10 @@ impl SharedTelemetryRegion {
     }
 
     pub fn records_ptr(&self) -> *mut TelemetryRecord {
-        unsafe { (self.mmap.as_ptr() as *mut u8).add(std::mem::size_of::<ShmHeader>()) as *mut TelemetryRecord }
+        unsafe {
+            (self.mmap.as_ptr() as *mut u8).add(std::mem::size_of::<ShmHeader>())
+                as *mut TelemetryRecord
+        }
     }
 
     pub fn push_event(
@@ -319,8 +319,14 @@ impl SharedTelemetryRegion {
             // 2. Barrier before writing record payload
             std::sync::atomic::fence(Ordering::Release);
 
-            std::ptr::write_volatile(std::ptr::addr_of_mut!((*slot).timestamp_ns), record.timestamp_ns);
-            std::ptr::write_volatile(std::ptr::addr_of_mut!((*slot).event_type), record.event_type);
+            std::ptr::write_volatile(
+                std::ptr::addr_of_mut!((*slot).timestamp_ns),
+                record.timestamp_ns,
+            );
+            std::ptr::write_volatile(
+                std::ptr::addr_of_mut!((*slot).event_type),
+                record.event_type,
+            );
             std::ptr::write_volatile(std::ptr::addr_of_mut!((*slot)._reserved), record._reserved);
             std::ptr::write_volatile(std::ptr::addr_of_mut!((*slot).bytes), record.bytes);
             std::ptr::write_volatile(std::ptr::addr_of_mut!((*slot).line), record.line);

@@ -216,8 +216,8 @@ Incoming DB Wire Bytes
 | :---: | :--- | :--- | :--- |
 | **Phase 1** | **`trulang test` CLI Harness** | Built-in test runner subcommand, assertion opcodes, colored diffs, and test reporting. | ✅ Complete |
 | **Phase 2** | **Native Async HTTP Engine** | `trulang/http` standard library, non-blocking socket loop, and Region A zero-copy request lifecycle. | ✅ Complete |
-| **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, and Git-based module resolution. | Immediate Next |
-| **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | Milestone 4 |
+| **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, decentralized Git resolver, and `new`/`add`/`install`/`publish` CLI commands. | ✅ Complete |
+| **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | Immediate Next |
 | **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | Milestone 5 |
 | **Phase 6** | **DAP Debugger & TruLang 1.0 GA** | Interactive VS Code breakpoints, memory flamegraphs, and backward-compatible 1.0 RFC. | TruLang 1.0 GA |
 
@@ -243,10 +243,15 @@ When ready to implement any phase, use this checklist as your starting blueprint
 - [x] Add object/map literal syntax `{ key: val, ... }` for inline response and JSON payloads
 - [x] Build high-throughput REST API benchmark vs Go/Node.js with comprehensive latency and GC comparison
 
-### Phase 3: Package Manager (`tpm`)
-- [ ] Implement `Tru.toml` parser and `Tru.lock` generator in `crates/cli`
-- [ ] Add `trulang add <git-url>` submodule / cache resolver in `~/.trulang/pkg/`
-- [ ] Integrate package imports into `crates/compiler` module resolution
+### Phase 3: Package Manager (`tpm`) (Completed)
+- [x] Implement `Tru.toml` package manifest parser and serializer (`[package]`, `[dependencies]`)
+- [x] Implement `Tru.lock` deterministic SHA-256 cryptographic lockfile verifier and generator
+- [x] Add project scaffolding command `trulang new <name>` generating `Tru.toml`, `src/main.tr`, `src/main_test.tr`, `.gitignore`, `README.md`
+- [x] Implement `trulang add <pkg>` supporting Git URLs, semver tags, and local path dependencies
+- [x] Implement `trulang install` verifying and vendoring dependencies with bit-for-bit checksum validation
+- [x] Implement `trulang publish` validating package integrity and generating release artifacts
+- [x] Integrate module resolution into `crates/compiler` and `crates/vm` for package imports and method invocations
+- [x] Add end-to-end integration tests verifying complete package lifecycle and multi-module compilation
 
 ---
 

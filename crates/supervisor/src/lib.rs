@@ -20,7 +20,13 @@ mod tests {
             .expect("Create shm failed");
 
         region.push_event(TelemetryEventType::AllocRegionA, 128, 10, 5, "user_token");
-        region.push_event(TelemetryEventType::PersistToRegionB, 512, 15, 2, "cache_entry");
+        region.push_event(
+            TelemetryEventType::PersistToRegionB,
+            512,
+            15,
+            2,
+            "cache_entry",
+        );
 
         let supervisor = MemorySupervisor::attach(region);
         let snap = supervisor.snapshot();
@@ -37,15 +43,18 @@ mod tests {
         let path = shm::default_shm_path(pid);
         let _ = std::fs::remove_file(&path);
 
-        let region = SharedTelemetryRegion::create_or_open(&path, pid)
-            .expect("Failed to create secure SHM");
-        
+        let region =
+            SharedTelemetryRegion::create_or_open(&path, pid).expect("Failed to create secure SHM");
+
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
             let meta = std::fs::metadata(&path).expect("SHM metadata failed");
             let mode = meta.permissions().mode() & 0o777;
-            assert_eq!(mode, 0o600, "SHM file permissions must be exactly 0600 (owner read/write only)");
+            assert_eq!(
+                mode, 0o600,
+                "SHM file permissions must be exactly 0600 (owner read/write only)"
+            );
         }
 
         let records = region.read_recent_records(10);
@@ -78,7 +87,11 @@ mod tests {
 
         // Verify that every read record has an even sequence number (consistent, not torn)
         for r in &records {
-            assert_eq!(r.seq % 2, 0, "Record sequence must be even, indicating committed write");
+            assert_eq!(
+                r.seq % 2,
+                0,
+                "Record sequence must be even, indicating committed write"
+            );
         }
 
         let _ = std::fs::remove_file(&shm_path);
@@ -98,11 +111,13 @@ mod tests {
         let records = region.read_recent_records(1);
         assert_eq!(records.len(), 1);
         assert_eq!(records[0].event_type, TelemetryEventType::ArenaBurst as u8);
-        assert_eq!(TelemetryEventType::from(records[0].event_type), TelemetryEventType::ArenaBurst);
+        assert_eq!(
+            TelemetryEventType::from(records[0].event_type),
+            TelemetryEventType::ArenaBurst
+        );
         assert_eq!(records[0].bytes, 4096);
         assert_eq!(records[0].get_label(), "arena_burst");
 
         let _ = std::fs::remove_file(&shm_path);
     }
 }
-

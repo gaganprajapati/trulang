@@ -37,7 +37,10 @@ impl<'a> Lexer<'a> {
     }
 
     fn current_byte_pos(&self) -> usize {
-        self.chars.get(self.cursor).map(|(pos, _)| *pos).unwrap_or(self.source.len())
+        self.chars
+            .get(self.cursor)
+            .map(|(pos, _)| *pos)
+            .unwrap_or(self.source.len())
     }
 
     fn advance(&mut self) -> Option<char> {
@@ -75,17 +78,50 @@ impl<'a> Lexer<'a> {
             };
 
             let kind = match c {
-                '(' => { self.advance(); TokenKind::OpenParen }
-                ')' => { self.advance(); TokenKind::CloseParen }
-                '{' => { self.advance(); TokenKind::OpenBrace }
-                '}' => { self.advance(); TokenKind::CloseBrace }
-                '[' => { self.advance(); TokenKind::OpenBracket }
-                ']' => { self.advance(); TokenKind::CloseBracket }
-                ';' => { self.advance(); TokenKind::Semicolon }
-                ',' => { self.advance(); TokenKind::Comma }
-                '+' => { self.advance(); TokenKind::Plus }
-                '*' => { self.advance(); TokenKind::Star }
-                '%' => { self.advance(); TokenKind::Percent }
+                '(' => {
+                    self.advance();
+                    TokenKind::OpenParen
+                }
+                ')' => {
+                    self.advance();
+                    TokenKind::CloseParen
+                }
+                '{' => {
+                    self.advance();
+                    TokenKind::OpenBrace
+                }
+                '}' => {
+                    self.advance();
+                    TokenKind::CloseBrace
+                }
+                '[' => {
+                    self.advance();
+                    TokenKind::OpenBracket
+                }
+                ']' => {
+                    self.advance();
+                    TokenKind::CloseBracket
+                }
+                ';' => {
+                    self.advance();
+                    TokenKind::Semicolon
+                }
+                ',' => {
+                    self.advance();
+                    TokenKind::Comma
+                }
+                '+' => {
+                    self.advance();
+                    TokenKind::Plus
+                }
+                '*' => {
+                    self.advance();
+                    TokenKind::Star
+                }
+                '%' => {
+                    self.advance();
+                    TokenKind::Percent
+                }
                 '-' => {
                     self.advance();
                     if self.peek() == Some('>') {
@@ -137,7 +173,10 @@ impl<'a> Lexer<'a> {
                         self.advance();
                         TokenKind::AmpAmp
                     } else {
-                        return Err(SyntaxError::new("Unexpected single '&', did you mean '&&'?", Span::new(start_pos, self.current_byte_pos(), start_line, start_col)));
+                        return Err(SyntaxError::new(
+                            "Unexpected single '&', did you mean '&&'?",
+                            Span::new(start_pos, self.current_byte_pos(), start_line, start_col),
+                        ));
                     }
                 }
                 '|' => {
@@ -146,7 +185,10 @@ impl<'a> Lexer<'a> {
                         self.advance();
                         TokenKind::PipePipe
                     } else {
-                        return Err(SyntaxError::new("Unexpected single '|', did you mean '||'?", Span::new(start_pos, self.current_byte_pos(), start_line, start_col)));
+                        return Err(SyntaxError::new(
+                            "Unexpected single '|', did you mean '||'?",
+                            Span::new(start_pos, self.current_byte_pos(), start_line, start_col),
+                        ));
                     }
                 }
                 ':' => {
@@ -181,7 +223,12 @@ impl<'a> Lexer<'a> {
                 unknown => {
                     return Err(SyntaxError::new(
                         format!("Unexpected character '{}'", unknown),
-                        Span::new(start_pos, start_pos + unknown.len_utf8(), start_line, start_col),
+                        Span::new(
+                            start_pos,
+                            start_pos + unknown.len_utf8(),
+                            start_line,
+                            start_col,
+                        ),
                     ));
                 }
             };
@@ -231,7 +278,12 @@ impl<'a> Lexer<'a> {
                         if !closed {
                             return Err(SyntaxError::new(
                                 "Unterminated block comment",
-                                Span::new(start_pos, self.current_byte_pos(), start_line, start_col),
+                                Span::new(
+                                    start_pos,
+                                    self.current_byte_pos(),
+                                    start_line,
+                                    start_col,
+                                ),
                             ));
                         }
                     } else {
@@ -288,7 +340,12 @@ impl<'a> Lexer<'a> {
         Ok(kind)
     }
 
-    fn lex_number(&mut self, start_pos: usize, start_line: usize, start_col: usize) -> Result<TokenKind, SyntaxError> {
+    fn lex_number(
+        &mut self,
+        start_pos: usize,
+        start_line: usize,
+        start_col: usize,
+    ) -> Result<TokenKind, SyntaxError> {
         let mut is_float = false;
 
         while let Some(c) = self.peek() {
@@ -324,7 +381,12 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn lex_string(&mut self, start_pos: usize, start_line: usize, start_col: usize) -> Result<TokenKind, SyntaxError> {
+    fn lex_string(
+        &mut self,
+        start_pos: usize,
+        start_line: usize,
+        start_col: usize,
+    ) -> Result<TokenKind, SyntaxError> {
         self.advance(); // consume opening quote '"'
         let mut content = String::new();
 
@@ -333,7 +395,10 @@ impl<'a> Lexer<'a> {
                 '"' => return Ok(TokenKind::StringLit(content)),
                 '\\' => {
                     let esc = self.advance().ok_or_else(|| {
-                        SyntaxError::new("Unterminated escape sequence in string", Span::new(start_pos, self.current_byte_pos(), start_line, start_col))
+                        SyntaxError::new(
+                            "Unterminated escape sequence in string",
+                            Span::new(start_pos, self.current_byte_pos(), start_line, start_col),
+                        )
                     })?;
                     match esc {
                         'n' => content.push('\n'),
@@ -345,7 +410,12 @@ impl<'a> Lexer<'a> {
                         other => {
                             return Err(SyntaxError::new(
                                 format!("Invalid escape character '\\{}'", other),
-                                Span::new(start_pos, self.current_byte_pos(), start_line, start_col),
+                                Span::new(
+                                    start_pos,
+                                    self.current_byte_pos(),
+                                    start_line,
+                                    start_col,
+                                ),
                             ));
                         }
                     }

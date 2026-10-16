@@ -15,14 +15,24 @@ pub struct CodeGenerator {
     pub chunk: Chunk,
     scopes: Vec<ScopeContext>,
     persistent_fields: HashSet<String>,
+    pub project_dir: Option<std::path::PathBuf>,
+    imported_paths: HashSet<std::path::PathBuf>,
 }
 
 impl CodeGenerator {
     pub fn new() -> Self {
+        Self::with_project_dir(
+            std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")),
+        )
+    }
+
+    pub fn with_project_dir(dir: std::path::PathBuf) -> Self {
         Self {
             chunk: Chunk::new(),
             scopes: vec![ScopeContext::default()],
             persistent_fields: HashSet::new(),
+            project_dir: Some(dir),
+            imported_paths: HashSet::new(),
         }
     }
 
@@ -85,7 +95,7 @@ impl CodeGenerator {
                 }
                 Declaration::Struct(_) => {}
                 Declaration::Import(imp) => {
-                    self.chunk.imports.insert(imp.alias.clone(), imp.path.clone());
+                    self.resolve_and_compile_import(imp, decl.span)?;
                 }
                 Declaration::Test(t) => {
                     self.compile_test(t, decl.span.line, program)?;
@@ -95,20 +105,120 @@ impl CodeGenerator {
         Ok(())
     }
 
-    pub fn compile_test(&mut self, test_decl: &trulang_syntax::ast::TestDecl, line: usize, program: &Program) -> Result<(), CompileError> {
+    pub fn resolve_and_compile_import(
+        &mut self,
+        imp: &ImportDecl,
+        span: trulang_syntax::span::Span,
+    ) -> Result<(), CompileError> {
+        self.chunk
+            .imports
+            .insert(imp.alias.clone(), imp.path.clone());
+
+        // Built-in FFI modules (e.g. "rust:...", "c:...", "std::...", "trulang/...") are resolved by runtime FFI registry
+        if imp.path.starts_with("trulang/")
+            || imp.path.starts_with("rust:")
+            || imp.path.starts_with("c:")
+            || imp.path.starts_with("std:")
+            || imp.path.starts_with("std/")
+            || imp.path.contains("::")
+        {
+            return Ok(());
+        }
+
+        if self.project_dir.is_none() {
+            return Ok(());
+        }
+
+        let resolved_module =
+            match trulang_pkg::ModuleResolver::resolve(&imp.path, self.project_dir.as_deref()) {
+                Ok(m) => m,
+                Err(e) => {
+                    return Err(CompileError::new(
+                        format!("Failed to resolve import '{}': {}", imp.path, e),
+                        span,
+                    ));
+                }
+            };
+
+        let resolved_file = resolved_module.entry_file;
+        let canonical = resolved_file
+            .canonicalize()
+            .unwrap_or_else(|_| resolved_file.clone());
+        if self.imported_paths.contains(&canonical) {
+            return Ok(());
+        }
+        self.imported_paths.insert(canonical.clone());
+
+        let source = std::fs::read_to_string(&resolved_file).map_err(|e| {
+            CompileError::new(
+                format!(
+                    "Failed to read imported module '{}' at {}: {}",
+                    imp.path,
+                    resolved_file.display(),
+                    e
+                ),
+                span,
+            )
+        })?;
+
+        let imported_program = trulang_syntax::parse(&source).map_err(|e| {
+            CompileError::new(
+                format!("Syntax error in imported module '{}': {}", imp.path, e),
+                span,
+            )
+        })?;
+
+        // Recursively compile nested imports
+        for decl in &imported_program.declarations {
+            if let Declaration::Import(nested_imp) = &decl.node {
+                self.resolve_and_compile_import(nested_imp, decl.span)?;
+            }
+        }
+
+        // Compile functions from the imported module under namespaced aliases
+        for decl in &imported_program.declarations {
+            if let Declaration::Function(func) = &decl.node {
+                let entry_ip = self.chunk.code.len();
+                let namespaced = format!("{}::{}", imp.alias, func.name);
+                let dotted = format!("{}.{}", imp.alias, func.name);
+                self.chunk.functions.insert(namespaced, entry_ip);
+                self.chunk.functions.insert(dotted, entry_ip);
+                self.compile_function(func)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn compile_test(
+        &mut self,
+        test_decl: &trulang_syntax::ast::TestDecl,
+        line: usize,
+        program: &Program,
+    ) -> Result<(), CompileError> {
         use crate::bytecode::CompiledTest;
-        let mut test_gen = CodeGenerator::new();
+        let mut test_gen = if let Some(ref dir) = self.project_dir {
+            CodeGenerator::with_project_dir(dir.clone())
+        } else {
+            CodeGenerator::new()
+        };
         test_gen.chunk.imports = self.chunk.imports.clone();
 
         // Jump over function declarations to test body
         let test_entry_jump = test_gen.chunk.emit(Opcode::Jump(0), line);
 
-        // Compile functions declared in the file into this test chunk
+        // Compile imports and functions declared in the file into this test chunk
         for decl in &program.declarations {
-            if let Declaration::Function(func) = &decl.node {
-                let fn_entry = test_gen.chunk.code.len();
-                test_gen.chunk.functions.insert(func.name.clone(), fn_entry);
-                test_gen.compile_function(func)?;
+            match &decl.node {
+                Declaration::Import(imp) => {
+                    test_gen.resolve_and_compile_import(imp, decl.span)?;
+                }
+                Declaration::Function(func) => {
+                    let fn_entry = test_gen.chunk.code.len();
+                    test_gen.chunk.functions.insert(func.name.clone(), fn_entry);
+                    test_gen.compile_function(func)?;
+                }
+                _ => {}
             }
         }
 
@@ -175,8 +285,22 @@ impl CodeGenerator {
         }
 
         // Implicit return null if not ending with return
-        self.chunk.emit(Opcode::LoadNull, func.body.statements.last().map(|s| s.span.line).unwrap_or(1));
-        self.chunk.emit(Opcode::Return, func.body.statements.last().map(|s| s.span.line).unwrap_or(1));
+        self.chunk.emit(
+            Opcode::LoadNull,
+            func.body
+                .statements
+                .last()
+                .map(|s| s.span.line)
+                .unwrap_or(1),
+        );
+        self.chunk.emit(
+            Opcode::Return,
+            func.body
+                .statements
+                .last()
+                .map(|s| s.span.line)
+                .unwrap_or(1),
+        );
 
         self.exit_scope();
         Ok(())
@@ -196,17 +320,22 @@ impl CodeGenerator {
                     Expr::Ident(name) => {
                         self.compile_expr(value)?;
                         // Auto-promotion: promote transient data to Region B when written to actor persistent field
-                        if self.is_persistent_field(name) && !matches!(value.node, Expr::Persist(_)) {
+                        if self.is_persistent_field(name) && !matches!(value.node, Expr::Persist(_))
+                        {
                             self.chunk.emit(Opcode::Persist, line);
                         }
                         if let Some(slot) = self.resolve_local(name) {
                             self.chunk.emit(Opcode::SetLocal(slot), line);
                         }
                     }
-                    Expr::MemberAccess { target: obj, field, .. } => {
+                    Expr::MemberAccess {
+                        target: obj, field, ..
+                    } => {
                         self.compile_expr(value)?;
                         // Auto-promotion: promote transient data when written to actor persistent state or member
-                        if (self.is_persistent_expr(obj) || self.is_persistent_field(field)) && !matches!(value.node, Expr::Persist(_)) {
+                        if (self.is_persistent_expr(obj) || self.is_persistent_field(field))
+                            && !matches!(value.node, Expr::Persist(_))
+                        {
                             self.chunk.emit(Opcode::Persist, line);
                         }
                         self.compile_expr(obj)?;
@@ -238,7 +367,11 @@ impl CodeGenerator {
 
                 self.chunk.emit(Opcode::PushDefer(defer_start), line);
             }
-            Statement::If { condition, then_branch, else_branch } => {
+            Statement::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
                 self.compile_expr(condition)?;
                 let jump_false = self.chunk.emit(Opcode::JumpIfFalse(0), line);
 
@@ -281,7 +414,12 @@ impl CodeGenerator {
                 let exit_pos = self.chunk.code.len();
                 self.chunk.patch_jump(jump_exit, exit_pos);
             }
-            Statement::TryCatch { try_block, error_name, catch_block, .. } => {
+            Statement::TryCatch {
+                try_block,
+                error_name,
+                catch_block,
+                ..
+            } => {
                 let push_try = self.chunk.emit(Opcode::PushTry(0), line);
 
                 self.enter_scope();
@@ -349,7 +487,9 @@ impl CodeGenerator {
                 if let Some(slot) = self.resolve_local(name) {
                     self.chunk.emit(Opcode::GetLocal(slot), line);
                 } else {
-                    let const_idx = self.chunk.add_constant(Value::String(Arc::new(name.clone())));
+                    let const_idx = self
+                        .chunk
+                        .add_constant(Value::String(Arc::new(name.clone())));
                     self.chunk.emit(Opcode::LoadConst(const_idx), line);
                 }
             }
@@ -392,9 +532,12 @@ impl CodeGenerator {
                         for arg in args {
                             self.compile_expr(arg)?;
                         }
-                        let const_idx = self.chunk.add_constant(Value::String(Arc::new(target_path)));
+                        let const_idx = self
+                            .chunk
+                            .add_constant(Value::String(Arc::new(target_path)));
                         self.chunk.emit(Opcode::LoadConst(const_idx), line);
-                        self.chunk.emit(Opcode::CallMethod(method, args.len()), line);
+                        self.chunk
+                            .emit(Opcode::CallMethod(method, args.len()), line);
                         return Ok(());
                     }
                 }
@@ -424,7 +567,9 @@ impl CodeGenerator {
                         }
                         self.compile_expr(&args[0])?;
                         let msg = if args.len() == 2 {
-                            if let Expr::Literal(trulang_syntax::ast::Literal::String(s)) = &args[1].node {
+                            if let Expr::Literal(trulang_syntax::ast::Literal::String(s)) =
+                                &args[1].node
+                            {
                                 Some(s.clone())
                             } else {
                                 None
@@ -445,7 +590,9 @@ impl CodeGenerator {
                         self.compile_expr(&args[0])?; // actual
                         self.compile_expr(&args[1])?; // expected
                         let msg = if args.len() == 3 {
-                            if let Expr::Literal(trulang_syntax::ast::Literal::String(s)) = &args[2].node {
+                            if let Expr::Literal(trulang_syntax::ast::Literal::String(s)) =
+                                &args[2].node
+                            {
                                 Some(s.clone())
                             } else {
                                 None
@@ -465,7 +612,11 @@ impl CodeGenerator {
                 self.compile_expr(callee)?;
                 self.chunk.emit(Opcode::Call(args.len()), line);
             }
-            Expr::MethodCall { receiver, method, args } => {
+            Expr::MethodCall {
+                receiver,
+                method,
+                args,
+            } => {
                 let is_mutating_persistent_collection = self.is_persistent_expr(receiver)
                     && (method == "insert" || method == "set" || method == "push");
 
@@ -473,14 +624,22 @@ impl CodeGenerator {
                     self.compile_expr(arg)?;
                     let is_value_arg = (method == "push" && i == 0)
                         || ((method == "insert" || method == "set") && i == 1);
-                    if is_mutating_persistent_collection && is_value_arg && !matches!(arg.node, Expr::Persist(_)) {
+                    if is_mutating_persistent_collection
+                        && is_value_arg
+                        && !matches!(arg.node, Expr::Persist(_))
+                    {
                         self.chunk.emit(Opcode::Persist, line);
                     }
                 }
                 self.compile_expr(receiver)?;
-                self.chunk.emit(Opcode::CallMethod(method.clone(), args.len()), line);
+                self.chunk
+                    .emit(Opcode::CallMethod(method.clone(), args.len()), line);
             }
-            Expr::MemberAccess { target, field, is_optional: _ } => {
+            Expr::MemberAccess {
+                target,
+                field,
+                is_optional: _,
+            } => {
                 self.compile_expr(target)?;
                 self.chunk.emit(Opcode::GetFieldNamed(field.clone()), line);
             }

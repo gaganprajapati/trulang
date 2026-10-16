@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 trulang_syntax = { path = "../syntax" }
+trulang_pkg = { path = "../pkg" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 

@@ -145,10 +145,7 @@ impl ServiceActor {
 
 #[derive(Clone)]
 pub struct ActorMailbox {
-    tx: std::sync::mpsc::SyncSender<(
-        Value,
-        std::sync::mpsc::Sender<Result<Value, ActorError>>,
-    )>,
+    tx: std::sync::mpsc::SyncSender<(Value, std::sync::mpsc::Sender<Result<Value, ActorError>>)>,
     pub capacity: usize,
 }
 

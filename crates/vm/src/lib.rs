@@ -12,8 +12,8 @@ pub use vm::{VirtualMachine, VmError};
 #[cfg(test)]
 mod tests {
     use super::*;
-    use trulang_compiler::compile;
     use trulang_compiler::bytecode::{Opcode, Value};
+    use trulang_compiler::compile;
     use trulang_syntax::parse;
 
     #[test]
@@ -88,7 +88,10 @@ fn main() {
         let result = vm.execute(&chunk);
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(matches!(err, VmError::MemoryExceeded(MemoryError::RequestMemoryExceeded { .. })));
+        assert!(matches!(
+            err,
+            VmError::MemoryExceeded(MemoryError::RequestMemoryExceeded { .. })
+        ));
     }
 
     #[test]
@@ -103,7 +106,12 @@ fn main() {
         let chunk = compile(&prog).expect("Compile failed");
         let mut vm = VirtualMachine::new();
         vm.execute(&chunk).expect("VM execution failed");
-        assert!(vm.region_b.total_allocated_bytes.load(std::sync::atomic::Ordering::Relaxed) > 0);
+        assert!(
+            vm.region_b
+                .total_allocated_bytes
+                .load(std::sync::atomic::Ordering::Relaxed)
+                > 0
+        );
     }
 
     #[test]
@@ -211,8 +219,14 @@ fn main() -> i64 {
         let map_a = Arc::new(Mutex::new(HashMap::new()));
         let map_b = Arc::new(Mutex::new(HashMap::new()));
 
-        map_a.lock().unwrap().insert("b".to_string(), Value::Map(Arc::clone(&map_b)));
-        map_b.lock().unwrap().insert("a".to_string(), Value::Map(Arc::clone(&map_a)));
+        map_a
+            .lock()
+            .unwrap()
+            .insert("b".to_string(), Value::Map(Arc::clone(&map_b)));
+        map_b
+            .lock()
+            .unwrap()
+            .insert("a".to_string(), Value::Map(Arc::clone(&map_a)));
 
         let mut chunk = trulang_compiler::bytecode::Chunk::new();
         chunk.constants.push(Value::Map(map_a));
@@ -234,8 +248,8 @@ fn main() -> i64 {
         chunk.code.push(Opcode::Return);
 
         // Actor with 0 capacity reject queue
-        let mut actor = ServiceActor::new("SheddingWorker", 1024, 1024, chunk)
-            .with_mailbox_capacity(0);
+        let mut actor =
+            ServiceActor::new("SheddingWorker", 1024, 1024, chunk).with_mailbox_capacity(0);
 
         let res = actor.handle_request(Value::Null);
         assert!(res.is_err());
@@ -273,7 +287,9 @@ fn main() -> i64 {
 
         // Check telemetry record for ArenaBurst
         let records = shm.read_recent_records(10);
-        let has_burst = records.iter().any(|r| r.event_type == TelemetryEventType::ArenaBurst as u8);
+        let has_burst = records
+            .iter()
+            .any(|r| r.event_type == TelemetryEventType::ArenaBurst as u8);
         assert!(has_burst, "Expected ArenaBurst telemetry event in SHM");
 
         // Clean up
@@ -285,8 +301,9 @@ fn main() -> i64 {
         // Base 16 bytes, ceiling 32 bytes
         let mut vm = VirtualMachine::with_elastic_budgets(16, Some(32), 1024);
         vm.allocate_region_a(16).expect("Base allocation failed");
-        vm.allocate_region_a(16).expect("Ceiling-limit allocation failed");
-        
+        vm.allocate_region_a(16)
+            .expect("Ceiling-limit allocation failed");
+
         // Exceeding ceiling (32 + 8 = 40 bytes) must fail
         let res = vm.allocate_region_a(8);
         assert!(res.is_err());
@@ -321,9 +338,14 @@ service AutoPromoteService {
         let mut vm = VirtualMachine::new();
         // Execute service definition and methods
         let _ = vm.execute(&chunk).expect("Service execution failed");
-        
+
         // Check that Region B received the persistent cache allocation
-        assert!(vm.region_b.live_objects.load(std::sync::atomic::Ordering::Relaxed) > 0);
+        assert!(
+            vm.region_b
+                .live_objects
+                .load(std::sync::atomic::Ordering::Relaxed)
+                > 0
+        );
     }
 
     #[test]
@@ -350,8 +372,47 @@ fn main() -> string {
                 assert!(s.contains("\"name\":\"Alice Smith\""));
                 assert!(s.contains("\"email\":\"alice@example.com\""));
             }
-            other => panic!("Expected String result from json.stringify, got {:?}", other),
+            other => panic!(
+                "Expected String result from json.stringify, got {:?}",
+                other
+            ),
         }
+    }
+
+    #[test]
+    fn test_vm_executes_imported_package_function() {
+        let temp_dir = std::env::temp_dir().join(format!(
+            "trulang_vm_pkg_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let pkg_dir = temp_dir.join("packages").join("github.com/trulang/math");
+        std::fs::create_dir_all(&pkg_dir).unwrap();
+        std::fs::write(
+            pkg_dir.join("lib.tr"),
+            "fn multiply(x: i64, y: i64) -> i64 { return x * y; }",
+        )
+        .unwrap();
+
+        let source = r#"
+import "github.com/trulang/math" as math;
+
+fn main() -> i64 {
+    let result = math.multiply(6, 7);
+    return result;
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk =
+            trulang_compiler::compile_with_project_dir(&prog, &temp_dir).expect("Compile failed");
+
+        let mut vm = VirtualMachine::new();
+        let res = vm.execute(&chunk).expect("Execution failed");
+        assert_eq!(res, Value::Int(42));
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
     }
 
     #[test]

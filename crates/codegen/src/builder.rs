@@ -80,7 +80,12 @@ impl NativeBuilder {
 
         // Write C source to unique temporary file
         let temp_dir = std::env::temp_dir();
-        let temp_src = temp_dir.join(format!("trulang_src_{}_{}_{}.c", std::process::id(), count, nanos));
+        let temp_src = temp_dir.join(format!(
+            "trulang_src_{}_{}_{}.c",
+            std::process::id(),
+            count,
+            nanos
+        ));
         fs::write(&temp_src, c_source).map_err(CodegenError::IoError)?;
 
         let mut cmd = Command::new(&compiler);
@@ -141,7 +146,8 @@ int main(void) {
 }
 "#;
         let count = BUILD_COUNTER.fetch_add(1, Ordering::SeqCst);
-        let temp_bin = std::env::temp_dir().join(format!("test_bin_{}_{}", std::process::id(), count));
+        let temp_bin =
+            std::env::temp_dir().join(format!("test_bin_{}_{}", std::process::id(), count));
         let config = CodegenConfig {
             release: true,
             output_path: Some(temp_bin.clone()),
@@ -152,7 +158,9 @@ int main(void) {
         assert!(bin_path.exists());
 
         // Execute binary and verify output
-        let out = Command::new(&bin_path).output().expect("Failed to execute built binary");
+        let out = Command::new(&bin_path)
+            .output()
+            .expect("Failed to execute built binary");
         assert!(out.status.success());
         let stdout = String::from_utf8_lossy(&out.stdout);
         assert!(stdout.contains("Hello Native TruLang"));

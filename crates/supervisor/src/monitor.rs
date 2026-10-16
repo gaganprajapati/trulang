@@ -98,7 +98,8 @@ impl MemorySupervisor {
         println!("╠══════════════════════════════════════════════════════════════════════════╣");
         println!(
             "║ Worker Process PID: {:<6}       Heartbeat: {:<6.2}s ago                     ║",
-            snap.worker_pid, snap.time_since_heartbeat.as_secs_f64()
+            snap.worker_pid,
+            snap.time_since_heartbeat.as_secs_f64()
         );
 
         let status_str = match &snap.status {
@@ -106,7 +107,10 @@ impl MemorySupervisor {
             HealthStatus::PressureWarning(msg) => format!("🟡 WARNING: {}", msg),
             HealthStatus::Critical(msg) => format!("🔴 CRITICAL: {}", msg),
             HealthStatus::WorkerDead(d) => {
-                format!("💀 WORKER DEAD / OOM-KILLED (Heartbeat lost {:.1}s ago)", d.as_secs_f64())
+                format!(
+                    "💀 WORKER DEAD / OOM-KILLED (Heartbeat lost {:.1}s ago)",
+                    d.as_secs_f64()
+                )
             }
         };
         println!("║ Health Status: {:<58}║", status_str);
@@ -138,7 +142,9 @@ impl MemorySupervisor {
 
         let recs = self.shm.read_recent_records(8);
         if recs.is_empty() {
-            println!("║  (No recent telemetry events recorded)                                   ║");
+            println!(
+                "║  (No recent telemetry events recorded)                                   ║"
+            );
         } else {
             for rec in recs.iter().rev() {
                 let ev_name = match TelemetryEventType::from(rec.event_type) {

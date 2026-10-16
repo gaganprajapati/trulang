@@ -35,35 +35,35 @@ pub enum TokenKind {
     StringLit(String),
 
     // Symbols & Operators
-    Plus,          // +
-    Minus,         // -
-    Star,          // *
-    Slash,         // /
-    Percent,       // %
-    Bang,          // !
-    Eq,            // =
-    EqEq,          // ==
-    BangEq,        // !=
-    Lt,            // <
-    LtEq,          // <=
-    Gt,            // >
-    GtEq,          // >=
-    AmpAmp,        // &&
-    PipePipe,      // ||
-    Arrow,         // ->
-    QuestionDot,   // ?.
-    Question,      // ?
-    ColonColon,    // ::
-    Colon,         // :
-    Semicolon,     // ;
-    Comma,         // ,
-    Dot,           // .
-    OpenParen,     // (
-    CloseParen,    // )
-    OpenBrace,     // {
-    CloseBrace,    // }
-    OpenBracket,   // [
-    CloseBracket,  // ]
+    Plus,         // +
+    Minus,        // -
+    Star,         // *
+    Slash,        // /
+    Percent,      // %
+    Bang,         // !
+    Eq,           // =
+    EqEq,         // ==
+    BangEq,       // !=
+    Lt,           // <
+    LtEq,         // <=
+    Gt,           // >
+    GtEq,         // >=
+    AmpAmp,       // &&
+    PipePipe,     // ||
+    Arrow,        // ->
+    QuestionDot,  // ?.
+    Question,     // ?
+    ColonColon,   // ::
+    Colon,        // :
+    Semicolon,    // ;
+    Comma,        // ,
+    Dot,          // .
+    OpenParen,    // (
+    CloseParen,   // )
+    OpenBrace,    // {
+    CloseBrace,   // }
+    OpenBracket,  // [
+    CloseBracket, // ]
 
     // Memory unit suffixes for budget literals (e.g. 16 MB)
     ByteUnit(String), // B, KB, MB, GB

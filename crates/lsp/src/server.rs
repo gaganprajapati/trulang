@@ -26,7 +26,11 @@ impl LanguageServer {
     }
 
     /// Primary event loop for stdio or stream-based LSP execution
-    pub fn run<R: BufRead, W: Write>(&mut self, mut reader: R, mut writer: W) -> std::io::Result<()> {
+    pub fn run<R: BufRead, W: Write>(
+        &mut self,
+        mut reader: R,
+        mut writer: W,
+    ) -> std::io::Result<()> {
         while let Some(msg_text) = Transport::read_message(&mut reader)? {
             let (response, notifications) = self.handle_message(&msg_text);
 
@@ -93,7 +97,9 @@ impl LanguageServer {
             "textDocument/didOpen" => {
                 let mut notifications = Vec::new();
                 if let Some(params_val) = request.params {
-                    if let Ok(params) = serde_json::from_value::<DidOpenTextDocumentParams>(params_val) {
+                    if let Ok(params) =
+                        serde_json::from_value::<DidOpenTextDocumentParams>(params_val)
+                    {
                         let uri = params.text_document.uri;
                         let text = params.text_document.text;
                         let diagnostics = Analyzer::validate(&text);
@@ -115,7 +121,9 @@ impl LanguageServer {
             "textDocument/didChange" => {
                 let mut notifications = Vec::new();
                 if let Some(params_val) = request.params {
-                    if let Ok(params) = serde_json::from_value::<DidChangeTextDocumentParams>(params_val) {
+                    if let Ok(params) =
+                        serde_json::from_value::<DidChangeTextDocumentParams>(params_val)
+                    {
                         let uri = params.text_document.uri;
                         if let Some(change) = params.content_changes.into_iter().last() {
                             let diagnostics = Analyzer::validate(&change.text);
@@ -137,7 +145,11 @@ impl LanguageServer {
             }
             "textDocument/didClose" => {
                 if let Some(params_val) = request.params {
-                    if let Some(uri) = params_val.get("textDocument").and_then(|t| t.get("uri")).and_then(|u| u.as_str()) {
+                    if let Some(uri) = params_val
+                        .get("textDocument")
+                        .and_then(|t| t.get("uri"))
+                        .and_then(|u| u.as_str())
+                    {
                         self.documents.remove(uri);
                     }
                 }
@@ -146,7 +158,9 @@ impl LanguageServer {
             "textDocument/hover" => {
                 let mut hover_result: Option<Hover> = None;
                 if let Some(params_val) = request.params {
-                    if let Ok(params) = serde_json::from_value::<TextDocumentPositionParams>(params_val) {
+                    if let Ok(params) =
+                        serde_json::from_value::<TextDocumentPositionParams>(params_val)
+                    {
                         if let Some(doc) = self.documents.get(&params.text_document.uri) {
                             hover_result = Analyzer::hover(doc, params.position);
                         }
@@ -162,9 +176,15 @@ impl LanguageServer {
             "textDocument/definition" => {
                 let mut loc_result: Option<Location> = None;
                 if let Some(params_val) = request.params {
-                    if let Ok(params) = serde_json::from_value::<TextDocumentPositionParams>(params_val) {
+                    if let Ok(params) =
+                        serde_json::from_value::<TextDocumentPositionParams>(params_val)
+                    {
                         if let Some(doc) = self.documents.get(&params.text_document.uri) {
-                            loc_result = Analyzer::definition(doc, &params.text_document.uri, params.position);
+                            loc_result = Analyzer::definition(
+                                doc,
+                                &params.text_document.uri,
+                                params.position,
+                            );
                         }
                     }
                 }
@@ -178,7 +198,9 @@ impl LanguageServer {
             "textDocument/formatting" => {
                 let mut edits: Vec<TextEdit> = Vec::new();
                 if let Some(params_val) = request.params {
-                    if let Ok(params) = serde_json::from_value::<DocumentFormattingParams>(params_val) {
+                    if let Ok(params) =
+                        serde_json::from_value::<DocumentFormattingParams>(params_val)
+                    {
                         if let Some(doc) = self.documents.get(&params.text_document.uri) {
                             edits = Formatter::format_document(doc);
                         }

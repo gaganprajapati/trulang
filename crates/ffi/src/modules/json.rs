@@ -12,7 +12,11 @@ pub fn parse(args: &[Value]) -> Result<Value, FfiError> {
                 other
             )));
         }
-        None => return Err(FfiError::InvalidArgument("json.parse requires 1 argument".into())),
+        None => {
+            return Err(FfiError::InvalidArgument(
+                "json.parse requires 1 argument".into(),
+            ))
+        }
     };
 
     let parsed: serde_json::Value = serde_json::from_str(input)
@@ -24,7 +28,11 @@ pub fn parse(args: &[Value]) -> Result<Value, FfiError> {
 pub fn stringify(args: &[Value]) -> Result<Value, FfiError> {
     let input = match args.first() {
         Some(v) => v,
-        None => return Err(FfiError::InvalidArgument("json.stringify requires 1 argument".into())),
+        None => {
+            return Err(FfiError::InvalidArgument(
+                "json.stringify requires 1 argument".into(),
+            ))
+        }
     };
 
     let json_val = trulang_value_to_json(input);

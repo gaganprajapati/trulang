@@ -65,8 +65,8 @@ pub struct HttpServer {
 }
 
 impl HttpServer {
-    pub const DEFAULT_REQUEST_BUDGET: usize = 16 * 1024 * 1024;      // 16 MB
-    pub const DEFAULT_MAX_REQUEST_BUDGET: usize = 64 * 1024 * 1024;  // 64 MB
+    pub const DEFAULT_REQUEST_BUDGET: usize = 16 * 1024 * 1024; // 16 MB
+    pub const DEFAULT_MAX_REQUEST_BUDGET: usize = 64 * 1024 * 1024; // 64 MB
     pub const DEFAULT_PERSISTENT_BUDGET: usize = 512 * 1024 * 1024; // 512 MB
 
     pub fn new(bind_addr: SocketAddr, chunk: Chunk) -> Self {
@@ -120,7 +120,9 @@ impl HttpServer {
         let mut next_token: usize = 1;
         let mut events: Vec<Event> = Vec::with_capacity(128);
 
-        let shared_region_b = Arc::new(trulang_vm::RegionBAllocator::new(self.persistent_budget_bytes));
+        let shared_region_b = Arc::new(trulang_vm::RegionBAllocator::new(
+            self.persistent_budget_bytes,
+        ));
 
         while self.is_running.load(Ordering::Relaxed) {
             let timeout = Some(Duration::from_millis(50));
@@ -150,9 +152,13 @@ impl HttpServer {
 
                                 if poller.register(client_fd, token, Interest::Both).is_ok() {
                                     connections.insert(token, Connection::new(client_fd));
-                                    self.metrics.active_connections.fetch_add(1, Ordering::Relaxed);
+                                    self.metrics
+                                        .active_connections
+                                        .fetch_add(1, Ordering::Relaxed);
                                 } else {
-                                    unsafe { libc::close(client_fd); }
+                                    unsafe {
+                                        libc::close(client_fd);
+                                    }
                                 }
                             }
                             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
@@ -165,7 +171,9 @@ impl HttpServer {
                     if ev.is_closed || ev.is_error {
                         close_connection(&poller, conn.fd);
                         connections.remove(&ev.token);
-                        self.metrics.active_connections.fetch_sub(1, Ordering::Relaxed);
+                        self.metrics
+                            .active_connections
+                            .fetch_sub(1, Ordering::Relaxed);
                         continue;
                     }
 
@@ -200,7 +208,9 @@ impl HttpServer {
                         if closed {
                             close_connection(&poller, conn.fd);
                             connections.remove(&ev.token);
-                            self.metrics.active_connections.fetch_sub(1, Ordering::Relaxed);
+                            self.metrics
+                                .active_connections
+                                .fetch_sub(1, Ordering::Relaxed);
                             continue;
                         }
 
@@ -214,7 +224,8 @@ impl HttpServer {
                                     self.metrics.total_requests.fetch_add(1, Ordering::Relaxed);
 
                                     // Check actor mailbox backpressure
-                                    let active = self.metrics.active_connections.load(Ordering::Relaxed);
+                                    let active =
+                                        self.metrics.active_connections.load(Ordering::Relaxed);
                                     let response = if active > self.mailbox_capacity {
                                         HttpResponse::new(
                                             503,
@@ -233,8 +244,10 @@ impl HttpServer {
                                     break;
                                 }
                                 ParseResult::Invalid(err) => {
-                                    let err_res = HttpResponse::error(400, format!("Bad Request: {}", err));
-                                    conn.write_buf.extend_from_slice(&err_res.to_wire_bytes(false));
+                                    let err_res =
+                                        HttpResponse::error(400, format!("Bad Request: {}", err));
+                                    conn.write_buf
+                                        .extend_from_slice(&err_res.to_wire_bytes(false));
                                     conn.keep_alive = false;
                                     break;
                                 }
@@ -256,7 +269,9 @@ impl HttpServer {
                             Err(_) => {
                                 close_connection(&poller, conn.fd);
                                 connections.remove(&ev.token);
-                                self.metrics.active_connections.fetch_sub(1, Ordering::Relaxed);
+                                self.metrics
+                                    .active_connections
+                                    .fetch_sub(1, Ordering::Relaxed);
                                 continue;
                             }
                         }
@@ -266,7 +281,9 @@ impl HttpServer {
                     if conn.write_buf.is_empty() && !conn.keep_alive {
                         close_connection(&poller, conn.fd);
                         connections.remove(&ev.token);
-                        self.metrics.active_connections.fetch_sub(1, Ordering::Relaxed);
+                        self.metrics
+                            .active_connections
+                            .fetch_sub(1, Ordering::Relaxed);
                     }
                 }
             }
@@ -303,7 +320,10 @@ impl HttpServer {
             Err(e) => {
                 return HttpResponse::error(
                     500,
-                    format!("Memory budget exceeded while streaming request into Region A: {}", e),
+                    format!(
+                        "Memory budget exceeded while streaming request into Region A: {}",
+                        e
+                    ),
                 );
             }
         };
@@ -320,18 +340,28 @@ impl HttpServer {
 
         // Track metrics before reset
         let allocated_bytes = vm.region_a.used_bytes;
-        self.metrics.total_bytes_allocated_region_a.fetch_add(allocated_bytes as u64, Ordering::Relaxed);
+        self.metrics
+            .total_bytes_allocated_region_a
+            .fetch_add(allocated_bytes as u64, Ordering::Relaxed);
 
         // Core TruLang Advantage: Zero-Copy O(1) bulk reset of Region A!
         vm.region_a.reset();
-        self.metrics.total_region_a_resets.fetch_add(1, Ordering::Relaxed);
+        self.metrics
+            .total_region_a_resets
+            .fetch_add(1, Ordering::Relaxed);
 
         resp
     }
 
     /// Spawns the HTTP server on a dedicated background thread.
     /// Returns the bound local address and a shutdown trigger.
-    pub fn spawn(self) -> io::Result<(SocketAddr, Arc<AtomicBool>, std::thread::JoinHandle<io::Result<()>>)> {
+    pub fn spawn(
+        self,
+    ) -> io::Result<(
+        SocketAddr,
+        Arc<AtomicBool>,
+        std::thread::JoinHandle<io::Result<()>>,
+    )> {
         let listener = TcpListener::bind(self.bind_addr)?;
         let bound_addr = listener.local_addr()?;
         drop(listener); // Free for the server loop

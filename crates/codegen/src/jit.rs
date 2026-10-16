@@ -3,12 +3,12 @@
 //! Provides on-the-fly compilation and execution of TruLang chunks,
 //! delivering near-instant execution with native machine code speed.
 
+use crate::builder::{CodegenConfig, CodegenError, NativeBuilder};
+use crate::c_backend::CBackend;
 use std::fs;
 use std::process::Command;
 use std::time::{Duration, Instant};
 use trulang_compiler::bytecode::Chunk;
-use crate::builder::{CodegenConfig, CodegenError, NativeBuilder};
-use crate::c_backend::CBackend;
 
 #[derive(Debug, Clone)]
 pub struct JitResult {
@@ -32,7 +32,12 @@ impl JitEngine {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos();
-        let temp_bin = temp_dir.join(format!("trulang_jit_{}_{}_{}", std::process::id(), timestamp, count));
+        let temp_bin = temp_dir.join(format!(
+            "trulang_jit_{}_{}_{}",
+            std::process::id(),
+            timestamp,
+            count
+        ));
 
         let config = CodegenConfig {
             release: false,

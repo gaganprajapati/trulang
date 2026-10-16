@@ -26,7 +26,8 @@ impl TypeChecker {
                 Declaration::Function(func) => self.check_function(func, decl.span)?,
                 Declaration::Struct(_) => {}
                 Declaration::Import(imp) => {
-                    self.symbols.define(&imp.alias, SemType::Any, false, false, decl.span)?;
+                    self.symbols
+                        .define(&imp.alias, SemType::Any, false, false, decl.span)?;
                 }
                 Declaration::Test(t) => {
                     self.symbols.enter_scope();
@@ -63,13 +64,17 @@ impl TypeChecker {
                 (None, Some(init)) => self.check_expr(init)?,
                 (None, None) => {
                     return Err(CompileError::new(
-                        format!("Field '{}' must have a type annotation or initializer", field.node.name),
+                        format!(
+                            "Field '{}' must have a type annotation or initializer",
+                            field.node.name
+                        ),
                         field.span,
                     ));
                 }
             };
 
-            self.symbols.define(&field.node.name, ty, field.node.is_mut, true, field.span)?;
+            self.symbols
+                .define(&field.node.name, ty, field.node.is_mut, true, field.span)?;
         }
 
         // Check methods
@@ -85,12 +90,17 @@ impl TypeChecker {
     fn check_function(&mut self, func: &FunctionDecl, _span: Span) -> Result<(), CompileError> {
         self.symbols.enter_function_scope();
 
-        let ret_ty = func.return_type.as_ref().map(SemType::from_ast).unwrap_or(SemType::Void);
+        let ret_ty = func
+            .return_type
+            .as_ref()
+            .map(SemType::from_ast)
+            .unwrap_or(SemType::Void);
         let old_ret = self.current_return_type.replace(ret_ty.clone());
 
         for param in &func.params {
             let p_ty = SemType::from_ast(&param.ty);
-            self.symbols.define(&param.name, p_ty, param.is_mut, false, Span::default())?;
+            self.symbols
+                .define(&param.name, p_ty, param.is_mut, false, Span::default())?;
         }
 
         self.check_block(&func.body)?;
@@ -111,7 +121,12 @@ impl TypeChecker {
 
     fn check_statement(&mut self, stmt: &Spanned<Statement>) -> Result<(), CompileError> {
         match &stmt.node {
-            Statement::Let { name, is_mut, ty, init } => {
+            Statement::Let {
+                name,
+                is_mut,
+                ty,
+                init,
+            } => {
                 let init_ty = self.check_expr(init)?;
                 let final_ty = if let Some(ast_ty) = ty {
                     let declared = SemType::from_ast(ast_ty);
@@ -129,7 +144,8 @@ impl TypeChecker {
                     init_ty
                 };
 
-                self.symbols.define(name, final_ty, *is_mut, false, stmt.span)?;
+                self.symbols
+                    .define(name, final_ty, *is_mut, false, stmt.span)?;
             }
             Statement::Assign { target, value } => {
                 let val_ty = self.check_expr(value)?;
@@ -148,7 +164,11 @@ impl TypeChecker {
                             ));
                         }
                     }
-                    Expr::MemberAccess { target: obj, field: _, is_optional: _ } => {
+                    Expr::MemberAccess {
+                        target: obj,
+                        field: _,
+                        is_optional: _,
+                    } => {
                         let _obj_ty = self.check_expr(obj)?;
                     }
                     _ => {
@@ -178,7 +198,11 @@ impl TypeChecker {
             Statement::Defer(expr) => {
                 self.check_expr(expr)?;
             }
-            Statement::If { condition, then_branch, else_branch } => {
+            Statement::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
                 let cond_ty = self.check_expr(condition)?;
                 if cond_ty != SemType::Bool && cond_ty != SemType::Any {
                     return Err(CompileError::new(
@@ -201,11 +225,20 @@ impl TypeChecker {
                 }
                 self.check_block(body)?;
             }
-            Statement::TryCatch { try_block, error_name, error_type, catch_block } => {
+            Statement::TryCatch {
+                try_block,
+                error_name,
+                error_type,
+                catch_block,
+            } => {
                 self.check_block(try_block)?;
                 self.symbols.enter_scope();
-                let err_ty = error_type.as_ref().map(SemType::from_ast).unwrap_or(SemType::Named("Exception".to_string()));
-                self.symbols.define(error_name, err_ty, false, false, Span::default())?;
+                let err_ty = error_type
+                    .as_ref()
+                    .map(SemType::from_ast)
+                    .unwrap_or(SemType::Named("Exception".to_string()));
+                self.symbols
+                    .define(error_name, err_ty, false, false, Span::default())?;
                 self.check_block(catch_block)?;
                 self.symbols.exit_scope();
             }
@@ -252,23 +285,35 @@ impl TypeChecker {
                             Ok(SemType::I64)
                         } else if l_ty == SemType::F64 && r_ty == SemType::F64 {
                             Ok(SemType::F64)
-                        } else if *op == BinOp::Add && l_ty == SemType::String && r_ty == SemType::String {
+                        } else if *op == BinOp::Add
+                            && l_ty == SemType::String
+                            && r_ty == SemType::String
+                        {
                             Ok(SemType::String)
                         } else if l_ty == SemType::Any || r_ty == SemType::Any {
                             Ok(SemType::Any)
                         } else {
                             Err(CompileError::new(
-                                format!("Cannot apply arithmetic operator to '{}' and '{}'", l_ty, r_ty),
+                                format!(
+                                    "Cannot apply arithmetic operator to '{}' and '{}'",
+                                    l_ty, r_ty
+                                ),
                                 expr.span,
                             ))
                         }
                     }
                     BinOp::Eq | BinOp::NotEq => {
-                        if l_ty == r_ty || l_ty.is_assignable_to(&r_ty) || r_ty.is_assignable_to(&l_ty) {
+                        if l_ty == r_ty
+                            || l_ty.is_assignable_to(&r_ty)
+                            || r_ty.is_assignable_to(&l_ty)
+                        {
                             Ok(SemType::Bool)
                         } else {
                             Err(CompileError::new(
-                                format!("Cannot compare incompatible types '{}' and '{}'", l_ty, r_ty),
+                                format!(
+                                    "Cannot compare incompatible types '{}' and '{}'",
+                                    l_ty, r_ty
+                                ),
                                 expr.span,
                             ))
                         }
@@ -294,7 +339,10 @@ impl TypeChecker {
                             Ok(SemType::Bool)
                         } else {
                             Err(CompileError::new(
-                                format!("Logical operator requires bool operands, found '{}' and '{}'", l_ty, r_ty),
+                                format!(
+                                    "Logical operator requires bool operands, found '{}' and '{}'",
+                                    l_ty, r_ty
+                                ),
                                 expr.span,
                             ))
                         }
@@ -305,7 +353,10 @@ impl TypeChecker {
                 let inner_ty = self.check_expr(inner)?;
                 match op {
                     UnaryOp::Neg => {
-                        if inner_ty == SemType::I64 || inner_ty == SemType::F64 || inner_ty == SemType::Any {
+                        if inner_ty == SemType::I64
+                            || inner_ty == SemType::F64
+                            || inner_ty == SemType::Any
+                        {
                             Ok(inner_ty)
                         } else {
                             Err(CompileError::new(
@@ -332,7 +383,9 @@ impl TypeChecker {
                 }
                 match &callee.node {
                     Expr::Ident(name) => match name.as_str() {
-                        "log_request_completed" | "print" | "println" | "assert" | "assert_eq" => Ok(SemType::Void),
+                        "log_request_completed" | "print" | "println" | "assert" | "assert_eq" => {
+                            Ok(SemType::Void)
+                        }
                         _ => Ok(SemType::Any),
                     },
                     _ => {
@@ -341,14 +394,22 @@ impl TypeChecker {
                     }
                 }
             }
-            Expr::MethodCall { receiver, method: _, args } => {
+            Expr::MethodCall {
+                receiver,
+                method: _,
+                args,
+            } => {
                 let _recv_ty = self.check_expr(receiver)?;
                 for arg in args {
                     self.check_expr(arg)?;
                 }
                 Ok(SemType::Any)
             }
-            Expr::MemberAccess { target, field: _, is_optional } => {
+            Expr::MemberAccess {
+                target,
+                field: _,
+                is_optional,
+            } => {
                 let target_ty = self.check_expr(target)?;
                 if *is_optional {
                     Ok(SemType::Nullable(Box::new(SemType::Any)))
@@ -364,9 +425,7 @@ impl TypeChecker {
                 // PRD Section 8.2: 'persist(x)' relocates/deep-copies object to Region B
                 Ok(inner_ty)
             }
-            Expr::Path(segments) => {
-                Ok(SemType::Named(segments.join("::")))
-            }
+            Expr::Path(segments) => Ok(SemType::Named(segments.join("::"))),
             Expr::Object(entries) => {
                 for (_k, v) in entries {
                     self.check_expr(v)?;

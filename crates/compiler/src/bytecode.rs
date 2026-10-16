@@ -5,7 +5,11 @@ use std::sync::{Arc, Mutex};
 pub trait ExternalResource: Send + Sync + fmt::Debug + 'static {
     fn type_name(&self) -> &'static str;
     fn call_method(&self, method: &str, _args: &[Value]) -> Result<Value, String> {
-        Err(format!("Method '{}' not found on opaque handle '{}'", method, self.type_name()))
+        Err(format!(
+            "Method '{}' not found on opaque handle '{}'",
+            method,
+            self.type_name()
+        ))
     }
 }
 
@@ -17,7 +21,11 @@ pub struct ExternalHandle {
 
 impl fmt::Debug for ExternalHandle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ExternalHandle {{ id: {}, type_name: {:?}, resource: {:?} }}", self.id, self.type_name, self.resource)
+        write!(
+            f,
+            "ExternalHandle {{ id: {}, type_name: {:?}, resource: {:?} }}",
+            self.id, self.type_name, self.resource
+        )
     }
 }
 
@@ -80,7 +88,11 @@ impl Value {
         Value::Object(Arc::new(Mutex::new(HashMap::new())))
     }
 
-    pub fn new_handle<R: ExternalResource>(id: u64, type_name: impl Into<String>, resource: R) -> Self {
+    pub fn new_handle<R: ExternalResource>(
+        id: u64,
+        type_name: impl Into<String>,
+        resource: R,
+    ) -> Self {
         Value::Handle(Arc::new(ExternalHandle {
             id,
             type_name: type_name.into(),
@@ -156,7 +168,7 @@ pub enum Opcode {
     GetFieldNamed(String),
     SetFieldNamed(String),
     NewMap,
-    NewObject(usize), // pair count (key-value count)
+    NewObject(usize),          // pair count (key-value count)
     CallMethod(String, usize), // method name, arg count
 
     Add,
@@ -194,7 +206,6 @@ pub enum Opcode {
 
     Assert(Option<String>),
     AssertEq(Option<String>),
-
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]

@@ -107,7 +107,8 @@ impl RegionBAllocator {
             });
         }
         self.live_bytes.fetch_add(size, Ordering::Relaxed);
-        self.total_allocated_bytes.fetch_add(size, Ordering::Relaxed);
+        self.total_allocated_bytes
+            .fetch_add(size, Ordering::Relaxed);
         self.live_objects.fetch_add(1, Ordering::Relaxed);
         Ok(())
     }

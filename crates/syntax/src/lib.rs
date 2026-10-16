@@ -141,7 +141,10 @@ service InvalidCeilingService {
         let result = parse(source);
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.message.contains("Ceiling budget") && err.message.contains("cannot be less than base budget"));
+        assert!(
+            err.message.contains("Ceiling budget")
+                && err.message.contains("cannot be less than base budget")
+        );
     }
 
     #[test]

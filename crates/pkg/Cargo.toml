@@ -1,0 +1,17 @@
+[package]
+name = "trulang_pkg"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Hermetic Package Manager and Dependency Resolver (tpm) for TruLang"
+
+[dependencies]
+trulang_syntax = { path = "../syntax" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]

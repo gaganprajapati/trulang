@@ -154,7 +154,7 @@ pub enum Expr {
         is_optional: bool, // ?.
     },
     Persist(Box<Spanned<Expr>>),
-    Path(Vec<String>), // e.g. Response.json or Map::new
+    Path(Vec<String>),                    // e.g. Response.json or Map::new
     Object(Vec<(String, Spanned<Expr>)>), // e.g. { "status": "success", "user": user_id }
 }
 

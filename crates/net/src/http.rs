@@ -68,7 +68,9 @@ impl HttpRequest {
     }
 
     pub fn header(&self, name: &str) -> Option<&str> {
-        self.headers.get(&name.to_ascii_lowercase()).map(|s| s.as_str())
+        self.headers
+            .get(&name.to_ascii_lowercase())
+            .map(|s| s.as_str())
     }
 
     pub fn body_str(&self) -> &str {
@@ -109,9 +111,18 @@ impl HttpRequest {
 
         if let Value::Object(ref o) = req_obj {
             let mut g = o.lock().unwrap();
-            g.insert("method".to_string(), Value::String(Arc::new(method_str.clone())));
-            g.insert("path".to_string(), Value::String(Arc::new(path_str.clone())));
-            g.insert("body".to_string(), Value::String(Arc::new(body_str.clone())));
+            g.insert(
+                "method".to_string(),
+                Value::String(Arc::new(method_str.clone())),
+            );
+            g.insert(
+                "path".to_string(),
+                Value::String(Arc::new(path_str.clone())),
+            );
+            g.insert(
+                "body".to_string(),
+                Value::String(Arc::new(body_str.clone())),
+            );
             g.insert(
                 "params".to_string(),
                 Value::Map(Arc::new(Mutex::new(query_map))),
@@ -175,37 +186,47 @@ impl HttpResponse {
     pub fn json(val: &serde_json::Value) -> Self {
         let body = serde_json::to_vec(val).unwrap_or_default();
         let mut res = Self::new(200, body);
-        res.headers.insert("content-type".to_string(), "application/json; charset=utf-8".to_string());
+        res.headers.insert(
+            "content-type".to_string(),
+            "application/json; charset=utf-8".to_string(),
+        );
         res
     }
 
     pub fn text(status_code: u16, body: impl Into<String>) -> Self {
         let b = body.into().into_bytes();
         let mut res = Self::new(status_code, b);
-        res.headers.insert("content-type".to_string(), "text/plain; charset=utf-8".to_string());
+        res.headers.insert(
+            "content-type".to_string(),
+            "text/plain; charset=utf-8".to_string(),
+        );
         res
     }
 
     pub fn error(status_code: u16, message: impl Into<String>) -> Self {
         let msg = message.into();
-        let json_body = format!(r#"{{"error":true,"status":{},"message":"{}"}}"#, status_code, msg);
+        let json_body = format!(
+            r#"{{"error":true,"status":{},"message":"{}"}}"#,
+            status_code, msg
+        );
         let mut res = Self::new(status_code, json_body.into_bytes());
-        res.headers.insert("content-type".to_string(), "application/json; charset=utf-8".to_string());
+        res.headers.insert(
+            "content-type".to_string(),
+            "application/json; charset=utf-8".to_string(),
+        );
         res
     }
 
     pub fn with_header(mut self, key: impl Into<String>, val: impl Into<String>) -> Self {
-        self.headers.insert(key.into().to_ascii_lowercase(), val.into());
+        self.headers
+            .insert(key.into().to_ascii_lowercase(), val.into());
         self
     }
 
     /// Serializes this response into RFC-compliant HTTP/1.1 wire bytes.
     pub fn to_wire_bytes(&self, keep_alive: bool) -> Vec<u8> {
         let mut out = Vec::with_capacity(128 + self.body.len());
-        let status_line = format!(
-            "HTTP/1.1 {} {}\r\n",
-            self.status_code, self.status_text
-        );
+        let status_line = format!("HTTP/1.1 {} {}\r\n", self.status_code, self.status_text);
         out.extend_from_slice(status_line.as_bytes());
 
         // Standard headers
@@ -274,7 +295,10 @@ impl HttpResponse {
                     res.headers.extend(headers);
                 }
                 if !res.headers.contains_key("content-type") {
-                    res.headers.insert("content-type".to_string(), "application/json; charset=utf-8".to_string());
+                    res.headers.insert(
+                        "content-type".to_string(),
+                        "application/json; charset=utf-8".to_string(),
+                    );
                 }
                 res
             }
@@ -400,7 +424,9 @@ fn decode_uri_component(s: &str) -> String {
     let mut i = 0;
     while i < bytes.len() {
         if bytes[i] == b'%' && i + 2 < bytes.len() {
-            if let Ok(byte_val) = u8::from_str_radix(std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or(""), 16) {
+            if let Ok(byte_val) =
+                u8::from_str_radix(std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or(""), 16)
+            {
                 out.push(byte_val as char);
                 i += 3;
                 continue;
@@ -420,7 +446,9 @@ fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     if needle.is_empty() || haystack.len() < needle.len() {
         return None;
     }
-    haystack.windows(needle.len()).position(|window| window == needle)
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
 }
 
 fn json_to_trulang_value(val: &serde_json::Value) -> Value {

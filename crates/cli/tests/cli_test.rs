@@ -73,7 +73,13 @@ fn test_cli_build_and_execute_standalone() {
 
     // 1. Build standalone executable
     let build_out = Command::new(env!("CARGO_BIN_EXE_trulang"))
-        .args(["build", "--release", fib_path.to_str().unwrap(), "-o", out_bin.to_str().unwrap()])
+        .args([
+            "build",
+            "--release",
+            fib_path.to_str().unwrap(),
+            "-o",
+            out_bin.to_str().unwrap(),
+        ])
         .output()
         .expect("Failed to run trulang build");
     assert!(build_out.status.success());
@@ -160,10 +166,13 @@ fn test_cli_serve_command() {
         .join("examples")
         .join("http_api_gateway.tr");
 
-    // Pick an available port
-    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-    let port = listener.local_addr().unwrap().port();
-    drop(listener);
+    // Pick an available ephemeral port
+    let port = 50000
+        + (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+            % 10000) as u16;
 
     let mut child = Command::new(env!("CARGO_BIN_EXE_trulang"))
         .args([
@@ -189,7 +198,11 @@ fn test_cli_serve_command() {
         }
     }
 
-    assert!(connected, "Failed to connect to trulang serve on port {}", port);
+    assert!(
+        connected,
+        "Failed to connect to trulang serve on port {}",
+        port
+    );
     let mut stream = client.unwrap();
 
     stream
@@ -197,7 +210,9 @@ fn test_cli_serve_command() {
         .expect("Write to trulang serve failed");
 
     let mut response_buf = Vec::new();
-    stream.read_to_end(&mut response_buf).expect("Read from trulang serve failed");
+    stream
+        .read_to_end(&mut response_buf)
+        .expect("Read from trulang serve failed");
     let resp = String::from_utf8(response_buf).expect("Valid UTF-8 response");
 
     assert!(resp.starts_with("HTTP/1.1 200 OK\r\n"));
@@ -207,4 +222,139 @@ fn test_cli_serve_command() {
     // Terminate child process
     let _ = child.kill();
     let _ = child.wait();
+}
+
+#[test]
+fn test_cli_pkg_lifecycle() {
+    let base_temp = std::env::temp_dir().join(format!(
+        "trulang_cli_pkg_{}",
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    fs::create_dir_all(&base_temp).unwrap();
+
+    let project_dir = base_temp.join("my_microservice");
+
+    // 1. trulang new my_microservice
+    let new_out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args([
+            "new",
+            "my_microservice",
+            "--path",
+            project_dir.to_str().unwrap(),
+        ])
+        .output()
+        .expect("Failed to execute trulang new");
+    assert!(
+        new_out.status.success(),
+        "trulang new failed: {}",
+        String::from_utf8_lossy(&new_out.stderr)
+    );
+    assert!(project_dir.join("Tru.toml").exists());
+    assert!(project_dir.join("src").join("main.tr").exists());
+    assert!(project_dir.join("src").join("main_test.tr").exists());
+
+    // 2. trulang test on the newly scaffolded project
+    let test_out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args(["test", project_dir.to_str().unwrap()])
+        .output()
+        .expect("Failed to execute trulang test on scaffold");
+    assert!(
+        test_out.status.success(),
+        "trulang test failed: {}",
+        String::from_utf8_lossy(&test_out.stderr)
+    );
+    let test_str = String::from_utf8_lossy(&test_out.stdout);
+    assert!(
+        test_str.contains("passed"),
+        "Expected tests to pass in scaffolded project"
+    );
+
+    // 3. Create a local library package and use trulang add
+    let lib_dir = base_temp.join("math_lib");
+    let lib_src = lib_dir.join("src");
+    fs::create_dir_all(&lib_src).unwrap();
+    fs::write(
+        lib_dir.join("Tru.toml"),
+        "[package]\nname = \"math_lib\"\nversion = \"0.1.0\"\n",
+    )
+    .unwrap();
+    fs::write(
+        lib_src.join("lib.tr"),
+        "fn calculate(factor: i64) -> i64 {\n    return factor * 10;\n}\n",
+    )
+    .unwrap();
+
+    let add_out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .current_dir(&project_dir)
+        .args(["add", "math_lib", "--path", lib_dir.to_str().unwrap()])
+        .output()
+        .expect("Failed to execute trulang add");
+    assert!(
+        add_out.status.success(),
+        "trulang add failed: {}",
+        String::from_utf8_lossy(&add_out.stderr)
+    );
+    assert!(project_dir.join("Tru.lock").exists());
+
+    // 4. Update src/main.tr to import and use math_lib
+    let user_code = r#"
+import "math_lib" as math;
+
+fn main() -> i64 {
+    let result = math.calculate(5);
+    println("Calculated result:");
+    println(result);
+    return result;
+}
+"#;
+    fs::write(project_dir.join("src").join("main.tr"), user_code).unwrap();
+
+    let run_out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .current_dir(&project_dir)
+        .args(["run", "src/main.tr"])
+        .output()
+        .expect("Failed to execute trulang run with imported package");
+    assert!(
+        run_out.status.success(),
+        "trulang run failed: {}",
+        String::from_utf8_lossy(&run_out.stderr)
+    );
+    let run_str = String::from_utf8_lossy(&run_out.stdout);
+    assert!(
+        run_str.contains("Program exited with value: 50"),
+        "Expected 50 from math_lib, got: {}",
+        run_str
+    );
+
+    // 5. trulang install (re-verifies lockfile integrity)
+    let install_out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .current_dir(&project_dir)
+        .arg("install")
+        .output()
+        .expect("Failed to execute trulang install");
+    assert!(
+        install_out.status.success(),
+        "trulang install failed: {}",
+        String::from_utf8_lossy(&install_out.stderr)
+    );
+
+    // 6. trulang publish
+    let pub_out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .current_dir(&project_dir)
+        .arg("publish")
+        .output()
+        .expect("Failed to execute trulang publish");
+    assert!(
+        pub_out.status.success(),
+        "trulang publish failed: {}",
+        String::from_utf8_lossy(&pub_out.stderr)
+    );
+    let pub_str = String::from_utf8_lossy(&pub_out.stdout);
+    assert!(pub_str.contains("ready for distribution"));
+    assert!(pub_str.contains("Cryptographic Integrity (SHA-256)"));
+
+    let _ = fs::remove_dir_all(&base_temp);
 }

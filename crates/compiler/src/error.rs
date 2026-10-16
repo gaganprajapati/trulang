@@ -24,7 +24,11 @@ impl CompileError {
 
     pub fn format_with_source(&self, source: &str, file_name: &str) -> String {
         let lines: Vec<&str> = source.lines().collect();
-        let line_idx = if self.span.line > 0 { self.span.line - 1 } else { 0 };
+        let line_idx = if self.span.line > 0 {
+            self.span.line - 1
+        } else {
+            0
+        };
         let line_content = lines.get(line_idx).unwrap_or(&"");
 
         let pointer_padding = " ".repeat(self.span.col.saturating_sub(1));

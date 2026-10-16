@@ -45,8 +45,8 @@ impl Transport {
         let mut buffer = vec![0u8; length];
         reader.read_exact(&mut buffer)?;
 
-        let text = String::from_utf8(buffer)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        let text =
+            String::from_utf8(buffer).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
         Ok(Some(text))
     }

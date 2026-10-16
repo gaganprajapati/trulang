@@ -12,7 +12,11 @@ pub fn get(args: &[Value], pool: Option<&WorkerPool>) -> Result<Value, FfiError>
                 other
             )));
         }
-        None => return Err(FfiError::InvalidArgument("http.get requires 1 argument (url)".into())),
+        None => {
+            return Err(FfiError::InvalidArgument(
+                "http.get requires 1 argument (url)".into(),
+            ))
+        }
     };
 
     let run_task = move || -> Result<Value, FfiError> {
@@ -47,13 +51,14 @@ pub fn post(args: &[Value], pool: Option<&WorkerPool>) -> Result<Value, FfiError
                 other
             )));
         }
-        None => return Err(FfiError::InvalidArgument("http.post requires 2 arguments (url, body)".into())),
+        None => {
+            return Err(FfiError::InvalidArgument(
+                "http.post requires 2 arguments (url, body)".into(),
+            ))
+        }
     };
 
-    let body_str = args
-        .get(1)
-        .map(|v| format!("{}", v))
-        .unwrap_or_default();
+    let body_str = args.get(1).map(|v| format!("{}", v)).unwrap_or_default();
 
     let run_task = move || -> Result<Value, FfiError> {
         let resp = Value::new_object();
