@@ -12,6 +12,7 @@
     <a href="#benchmarks"><img src="https://img.shields.io/badge/Base%20RSS-2.5%20MB-purple?style=flat-square" alt="Base RSS"></a>
     <a href="#test-suite"><img src="https://img.shields.io/badge/Tests-25%20Passing%20(100%25)-brightgreen?style=flat-square" alt="Tests"></a>
     <a href="#license"><img src="https://img.shields.io/badge/License-MIT%20%2F%20Apache--2.0-orange?style=flat-square" alt="License"></a>
+    <a href="https://gagn.dev/trulang/"><img src="https://img.shields.io/badge/Docs-gagn.dev%2Ftrulang-3b82f6?style=flat-square" alt="Documentation"></a>
   </p>
 </p>
 
@@ -28,7 +29,7 @@ Traditional backend runtimes force a compromise:
 **TruLang eliminates this trade-off.** By enforcing a **Dual-Region Memory Model** and **Single-Threaded Service Actors**, per-request allocations are reclaimed in $O(1)$ constant time with **zero garbage collection pauses**, achieving compiled-level throughput while retaining memory safety and TypeScript-like ergonomics.
 
 > 🧠 **Coming from Node.js, Go, or Rust?**  
-> Read our comprehensive architectural guide: [**How TruLang Works: Under the Hood Architecture & Execution Mechanism**](docs/INTERNALS.md) (or view the [Interactive Web Visualizer](https://gaganprajapati.github.io/trulang/internals.html)) to understand the Dual-Region Memory Engine, Request Lifecycle, and Zero-Lock Service Actor concurrency model.
+> Read our comprehensive architectural guide: [**How TruLang Works: Under the Hood Architecture & Execution Mechanism**](docs/INTERNALS.md) (or view the [Interactive Web Visualizer](https://gagn.dev/trulang/internals.html)) to understand the Dual-Region Memory Engine, Request Lifecycle, and Zero-Lock Service Actor concurrency model.
 
 ---
 
