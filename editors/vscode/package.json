@@ -1,0 +1,116 @@
+{
+  "name": "trulang",
+  "displayName": "TruLang",
+  "description": "Rich Language Support, Syntax Highlighting, and Language Server Protocol for TruLang (.tr)",
+  "version": "0.1.0",
+  "publisher": "gaganprajapati",
+  "author": {
+    "name": "Gagan Prajapati",
+    "url": "https://gagn.dev"
+  },
+  "license": "MIT",
+  "homepage": "https://gagn.dev/trulang/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gaganprajapati/trulang.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gaganprajapati/trulang/issues"
+  },
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "trulang",
+    "backend",
+    "memory arenas",
+    "actors",
+    "lsp"
+  ],
+  "activationEvents": [
+    "onLanguage:trulang"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "trulang",
+        "aliases": ["TruLang", "trulang", "tr"],
+        "extensions": [".tr"],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icon.png",
+          "dark": "./icon.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "trulang",
+        "scopeName": "source.trulang",
+        "path": "./syntaxes/trulang.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "trulang.restartServer",
+        "title": "TruLang: Restart Language Server",
+        "category": "TruLang"
+      },
+      {
+        "command": "trulang.runFile",
+        "title": "TruLang: Run Current File",
+        "category": "TruLang"
+      },
+      {
+        "command": "trulang.checkFile",
+        "title": "TruLang: Type Check Current File",
+        "category": "TruLang"
+      },
+      {
+        "command": "trulang.openDocs",
+        "title": "TruLang: Open Documentation",
+        "category": "TruLang"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "TruLang",
+      "properties": {
+        "trulang.lsp.path": {
+          "type": "string",
+          "default": "trulang",
+          "description": "Path to the trulang executable (defaults to 'trulang' in PATH)."
+        },
+        "trulang.lsp.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Traces the communication between VS Code and the TruLang language server."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "watch": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.1",
+    "typescript": "^5.3.3"
+  }
+}

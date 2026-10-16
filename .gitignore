@@ -4,3 +4,5 @@
 *.swp
 *~
 
+editors/vscode/node_modules
+editors/vscode/dist

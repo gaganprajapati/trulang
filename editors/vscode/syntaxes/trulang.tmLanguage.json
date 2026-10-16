@@ -1,0 +1,181 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "TruLang",
+  "scopeName": "source.trulang",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#memory_primitives" },
+    { "include": "#types" },
+    { "include": "#constants" },
+    { "include": "#function_calls" },
+    { "include": "#operators" },
+    { "include": "#delimiters" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.trulang",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.trulang",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.trulang",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.trulang",
+              "match": "\\\\(?:[nrt\\\\\"'0]|x[0-9a-fA-F]{2}|u\\{[0-9a-fA-F]+\\})"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hex.trulang",
+          "match": "\\b0x[0-9a-fA-F_]+\\b"
+        },
+        {
+          "name": "constant.numeric.binary.trulang",
+          "match": "\\b0b[01_]+\\b"
+        },
+        {
+          "name": "constant.numeric.float.trulang",
+          "match": "\\b[0-9][0-9_]*\\.[0-9][0-9_]*(?:[eE][+-]?[0-9_]+)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.trulang",
+          "match": "\\b[0-9][0-9_]*\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.declaration.trulang",
+          "match": "\\b(service|actor|fn|let|mut|struct|enum|type|import|export)\\b"
+        },
+        {
+          "name": "keyword.control.trulang",
+          "match": "\\b(if|else|while|for|in|return|break|continue)\\b"
+        },
+        {
+          "name": "keyword.control.exception.trulang",
+          "match": "\\b(try|catch|defer)\\b"
+        },
+        {
+          "name": "keyword.other.concurrency.trulang",
+          "match": "\\b(spawn|receive|send)\\b"
+        }
+      ]
+    },
+    "memory_primitives": {
+      "patterns": [
+        {
+          "name": "keyword.other.memory.trulang",
+          "match": "\\b(persist|memory_budget|request|persistent|max|ceiling|budget|MB|KB|GB)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "entity.name.type.primitive.trulang",
+          "match": "\\b(i64|i32|i16|i8|u64|u32|u16|u8|f64|f32|bool|string|void|any)\\b"
+        },
+        {
+          "name": "entity.name.type.arena.trulang",
+          "match": "\\b(RegionA|RegionB)\\b"
+        },
+        {
+          "name": "entity.name.type.collection.trulang",
+          "match": "\\b(Array|Map|Option|Result)\\b"
+        },
+        {
+          "name": "entity.name.type.custom.trulang",
+          "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.trulang",
+          "match": "\\b(true|false)\\b"
+        },
+        {
+          "name": "constant.language.null.trulang",
+          "match": "\\b(null|nil)\\b"
+        }
+      ]
+    },
+    "function_calls": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.trulang",
+          "match": "\\b(println|print|assert|panic)\\b(?=\\s*\\()"
+        },
+        {
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.function.trulang" }
+          }
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.arrow.trulang",
+          "match": "(->|=>)"
+        },
+        {
+          "name": "keyword.operator.comparison.trulang",
+          "match": "(==|!=|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.assignment.trulang",
+          "match": "(\\+=|-=|\\*=|/=|%=|=)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.trulang",
+          "match": "(\\+|-|\\*|/|%)"
+        },
+        {
+          "name": "keyword.operator.logical.trulang",
+          "match": "(&&|\\|\\||!)"
+        },
+        {
+          "name": "keyword.operator.namespace.trulang",
+          "match": "(::|\\?|:)"
+        }
+      ]
+    },
+    "delimiters": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.trulang",
+          "match": "(,|;|\\.)"
+        },
+        {
+          "name": "punctuation.bracket.trulang",
+          "match": "(\\{|\\}|\\[|\\]|\\(|\\))"
+        }
+      ]
+    }
+  }
+}
