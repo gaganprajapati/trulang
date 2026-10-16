@@ -27,7 +27,7 @@
     <a href="index.html" class="brand">
       <img src="assets/logo.png" alt="TruLang Logo" class="brand-logo">
       <div class="brand-name">TruLang</div>
-      <span class="brand-badge">v0.1.0</span>
+      <span class="brand-badge">v1.0.0</span>
     </a>
 
     <nav class="nav-links">
@@ -36,7 +36,8 @@
       <a href="#tooling" class="nav-link">CLI Tooling</a>
       <a href="#benchmarks" class="nav-link">Benchmarks</a>
       <a href="internals.html" class="nav-link">Runtime Internals</a>
-      <a href="https://github.com/gaganprajapati/trulang/blob/main/ROADMAP.md" class="nav-link" target="_blank">Roadmap 1.0</a>
+      <a href="https://github.com/gaganprajapati/trulang/blob/main/ROADMAP.md" class="nav-link" target="_blank">Roadmap</a>
+      <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RFC-0001-STABILITY-1.0.md" class="nav-link" target="_blank">1.0 RFC</a>
       <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RUST_INTEROP.md" class="nav-link" target="_blank">Rust Interop</a>
     </nav>
 
@@ -157,7 +158,8 @@
 
       <div class="sidebar-group">
         <div class="sidebar-title">Ecosystem & Community</div>
-        <a href="https://github.com/gaganprajapati/trulang/blob/main/CHANGELOG.md" target="_blank" class="sidebar-link">Release Changelog <span class="tag tag-cli">v0.1.0</span></a>
+        <a href="https://github.com/gaganprajapati/trulang/blob/main/CHANGELOG.md" target="_blank" class="sidebar-link">Release Changelog <span class="tag tag-cli">v1.0.0</span></a>
+        <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RFC-0001-STABILITY-1.0.md" target="_blank" class="sidebar-link">Stability RFC <span class="tag tag-type">RFC-0001</span></a>
         <a href="https://github.com/gaganprajapati/trulang/blob/main/CONTRIBUTING.md" target="_blank" class="sidebar-link">Contributor Guide <span class="tag tag-decl">CONTRIB</span></a>
         <a href="https://github.com/gaganprajapati/trulang/releases" target="_blank" class="sidebar-link">GitHub Releases <span class="tag tag-mem">ASSETS</span></a>
       </div>
@@ -366,7 +368,7 @@
           <div class="bench-tabs-header">
             <button class="bench-tab-btn active" id="btnInstallBinary" onclick="switchInstallTab('binary')">
               <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              Prebuilt Binaries (v0.1.0)
+              Prebuilt Binaries (v1.0.0)
             </button>
             <button class="bench-tab-btn" id="btnInstallSource" onclick="switchInstallTab('source')">
               <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
@@ -384,9 +386,9 @@
 
           <!-- TAB 1: Prebuilt Binaries (Default Active) -->
           <div class="bench-tab-content active" id="tabInstallBinary">
-            <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Pre-Compiled Standalone Binaries (Release v0.1.0)</h3>
+            <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 0.5rem;">Pre-Compiled Standalone Binaries (Release v1.0.0)</h3>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
-              Download standalone, statically linked binaries directly from <a href="https://github.com/gaganprajapati/trulang/releases/tag/v0.1.0" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">GitHub Releases</a>. Zero external dependencies or Rust toolchain required.
+              Download standalone, statically linked binaries directly from <a href="https://github.com/gaganprajapati/trulang/releases/tag/v1.0.0" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">GitHub Releases</a>. Zero external dependencies or Rust toolchain required.
             </p>
 
             <div style="overflow-x: auto; margin-bottom: 1.25rem;">
@@ -444,7 +446,7 @@ sudo mv trulang /usr/local/bin/
 
 <span class="comment"># Verify installation</span>
 trulang --version
-<span class="comment"># Output: trulang 0.1.0</span></code></pre>
+<span class="comment"># Output: trulang 1.0.0</span></code></pre>
             </div>
           </div>
 
@@ -463,7 +465,7 @@ trulang --version
 git clone https://github.com/gaganprajapati/trulang.git
 cd trulang
 
-<span class="comment"># 2. Run unit and integration tests (25 test suites)</span>
+<span class="comment"># 2. Run unit and integration tests (95 tests across 12 workspace crates)</span>
 cargo test
 
 <span class="comment"># 3. Build optimized release binary</span>
@@ -474,7 +476,7 @@ cargo install --path crates/cli
 
 <span class="comment"># 5. Verify successful installation</span>
 trulang --version
-<span class="comment"># Output: trulang 0.1.0</span></code></pre>
+<span class="comment"># Output: trulang 1.0.0</span></code></pre>
             </div>
           </div>
 
@@ -522,8 +524,8 @@ trulang run examples/fibonacci.tr</code></pre>
                   <tr class="highlight-row">
                     <td>GitHub Releases</td>
                     <td>Standalone prebuilt binaries (macOS, Linux, Windows)</td>
-                    <td><span style="color: #34d399; font-weight: 700;">✓ Available (v0.1.0)</span></td>
-                    <td><a href="https://github.com/gaganprajapati/trulang/releases/tag/v0.1.0" target="_blank" style="color: #34d399; text-decoration: underline;">v0.1.0 Assets</a></td>
+                    <td><span style="color: #34d399; font-weight: 700;">✓ Available (v1.0.0)</span></td>
+                    <td><a href="https://github.com/gaganprajapati/trulang/releases/tag/v1.0.0" target="_blank" style="color: #34d399; text-decoration: underline;">v1.0.0 Assets</a></td>
                   </tr>
                   <tr>
                     <td>1-Line Install Script</td>
@@ -546,14 +548,14 @@ trulang run examples/fibonacci.tr</code></pre>
                   <tr class="highlight-row">
                     <td>Homebrew Tap</td>
                     <td>macOS / Linux (Apple Silicon &amp; Intel, Linux x86_64)</td>
-                    <td><span style="color: #34d399; font-weight: 700;">✓ Available (v0.1.0)</span></td>
+                    <td><span style="color: #34d399; font-weight: 700;">✓ Available (v1.0.0)</span></td>
                     <td><code>brew install gaganprajapati/trulang</code></td>
                   </tr>
                   <tr>
                     <td>Docker OCI Image</td>
-                    <td>Alpine container (&lt; 12 MB)</td>
-                    <td><span style="color: #fbbf24;">Planned</span></td>
-                    <td><code>docker pull ghcr.io/gaganprajapati/trulang</code></td>
+                    <td>Alpine container (&lt; 15 MB)</td>
+                    <td><span style="color: #34d399; font-weight: 700;">✓ Available (deploy/Dockerfile)</span></td>
+                    <td><code>docker build -f deploy/Dockerfile -t trulang:1.0.0 .</code></td>
                   </tr>
                 </tbody>
               </table>

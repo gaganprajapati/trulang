@@ -7,42 +7,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.0.0] - 2026-10-17
 
-### Added
-- **Language Server Protocol (`crates/lsp`)**:
-  - Integrated `trulang lsp --stdio` subcommand in core CLI binary for seamless IDE connectivity (VS Code, Cursor, Neovim, Zed) with zero extra toolchain downloads.
-  - Live syntax and typecheck diagnostics with actionable compiler hints (e.g. suggesting `let mut` on illegal mutations).
-  - Rich hover tooltips for services, actor fields, memory budgets, functions, and imported modules.
-  - Document jump-to-definition across service declarations, fields, methods, functions, and imports.
-  - Automated code formatter (`trulang fmt <file> [--write]`) enforcing consistent 4-space indentation and clean brace structure.
-- **Safe Rust/C FFI Bridge Layer (`crates/ffi`)**:
-  - `import "rust:pkg" as mod;` syntax for integrating native libraries and standard drivers.
-  - **Hybrid Background Worker Pool (`WorkerPool`)**: Offloads blocking foreign I/O (database queries, network sockets, heavy crypto) to a dedicated worker thread pool, guaranteeing the single-threaded actor mailbox is never starved.
-  - **Deterministic RAII Destructors (`ExternalHandle<T>`)**: Opaque handles (e.g. PostgreSQL connection pools, sockets) with automatic cleanup when actor state or variables go out of scope.
-  - **Region A Arena Marshaling**: Marshals foreign return values directly into Region A bump memory, strictly enforcing memory budgets so foreign payloads cannot bypass memory quotas.
-  - **Standard Library Modules**:
-    - `std::json`: Fast JSON parser (`json.parse`) and serializer (`json.stringify`) streaming into TruLang values.
-    - `std::http`: High-performance HTTP client (`http.get`, `http.post`) offloaded to worker pool.
-    - `std::sql` & `rust:trulang_std_pg`: Universal connection pooling abstractions (`db.create_pool`, `pool.query_user`).
-- **Elastic Burst Arenas**: Support tiered memory budgets (`memory_budget request = 16 MB max 64 MB;`) with burst headroom and `ArenaBurst = 5` Seqlock telemetry warnings, while retaining strict backward-compatible caps when `max` is omitted.
-- **Compiler Auto-Promotion (`persist` Inference)**: Transparent compiler pass that automatically injects `Opcode::Persist` when writing transient data into persistent actor fields or mutating persistent maps (`cache.insert(k, v)`), eliminating manual `persist()` boilerplate while keeping explicit calls valid.
-- **Enhanced CLI Diagnostics**: `trulang run` reports base budget, max ceiling, and runtime elastic burst count.
-- **Primitive Type Aliases**: Added parser support for `String`, `Int`, `Float`, `Bool` capitalized type names alongside standard lowercase tokens.
-- **New Example**: Added `examples/elastic_burst.tr` demonstrating elastic burst allocation and auto-promotion.
+### 🎉 TruLang 1.0 General Availability (GA)
+TruLang 1.0 marks the formal production milestone, delivering a complete, enterprise-ready cloud runtime ecosystem designed for zero garbage collection pauses and sub-microsecond latency.
 
-- **Native AOT Code Generation & Standalone Binaries (`crates/codegen`, `trulang build`)**:
-  - `trulang build [--release] <file> [-o <out>]`: Native ahead-of-time compilation generating optimized native machine code and linking into standalone executables (Mach-O on macOS, ELF on Linux, PE on Windows).
-  - Preserves TruLang's dual-region memory architecture: inline Region A $O(1)$ bump arena allocation, zero GC pauses, elastic burst handling up to ceiling, and Region B persistent memory tracking.
-  - Produces standalone binaries with zero runtime dependencies on the `trulang` CLI or virtual machine.
-  - Emits native C source via `trulang build --emit-c <file>` for cross-compilation, security auditing, or embedding into external C/Rust toolchains.
-  - Closes compute throughput gap to within 90–95%+ of native Rust/C++ through `-O3` vectorization and host compiler optimization.
-- **Native JIT Engine (`trulang run --jit`)**:
-  - On-the-fly native machine code compilation and execution (`trulang run --jit <file>`), delivering native execution speed with near-instant iteration during testing and benchmarks.
-- **Dual-Mode Execution Architecture**:
-  - **Dev Mode (`trulang run <file>`)**: Bytecode VM with <3ms instantaneous cold-start for development loops.
-  - **Production Mode (`trulang build --release <file>`)**: Standalone native machine code binaries for high-throughput production services.
-  - **JIT Mode (`trulang run --jit <file>`)**: High-speed native JIT execution.
+### Phase 1: Native Test Runner Harness (`trulang test`)
+- Built-in test execution engine integrated directly into compiler and VM with `trulang test [path] [--filter <str>]`.
+- Syntax support for test declarations: `test "name" { ... }`.
+- Native bytecode opcodes: `Opcode::Assert` and `Opcode::AssertEq` with formatted diff output.
+- Isolated per-test execution tracking elapsed milliseconds, assertions executed, and peak Region A memory bytes.
+- Automatic recursive test suite discovery (`*_test.tr` and test blocks).
+
+### Phase 2: Native Async HTTP Engine (`trulang/http`)
+- Pure non-blocking asynchronous socket event loop backed by OS-level pollers (`kqueue` on macOS, `epoll` on Linux).
+- Zero-copy streaming HTTP/1.1 request parser allocating directly into Region A bump arena.
+- Request lifecycle with instantaneous $O(1)$ bulk arena resets upon response completion (0.0 ms GC pause).
+- Standard library module `trulang/http` providing `http::Request` and `http::Response` types.
+- CLI subcommand: `trulang serve <file> [--port <port>]` with graceful signal interruption.
+- First-class map/dictionary literal syntax `{ key: value, ... }` with indexing, mutation, and JSON interop.
+
+### Phase 3: Decentralized Package Manager (`tpm`)
+- Human-readable `Tru.toml` package manifest specification (`[package]`, `[dependencies]`).
+- Cryptographically verifiable `Tru.lock` lockfile with deterministic SHA-256 tree hashing.
+- Scaffolding engine `trulang new <project_name>` generating standard microservice templates.
+- CLI package management commands:
+  - `trulang add <package>` with Git URL, semver branch/tag, or local filesystem path resolution.
+  - `trulang install` for bit-for-bit reproducible dependency vendoring.
+  - `trulang publish` for package validation and tarball archive generation.
+- Multi-module compiler import resolution and cross-module bytecode linking.
+
+### Phase 4: Database Wire Protocols (`trulang/postgres`, `trulang/redis`)
+- Zero-dependency, pure binary wire protocol implementations in `crates/db`:
+  - **PostgreSQL v3.0 Protocol**: Startup handshake, MD5 password authentication, Simple Query protocol, and DataRow field decoder.
+  - **Redis RESP2 / RESP3 Protocol**: Pipelined commands, String, Integer, Hash, and Key/Value primitives.
+- **Dual-Region Database Lifecycle**:
+  - **Region B**: Long-lived connection pools (`PgPool`, `RedisPool`) and prepared statement caches.
+  - **Region A**: Incoming wire frames, row tuples, and response values reclaimed in $O(1)$ time.
+- Integrated standard library modules: `import "trulang/postgres" as pg;` and `import "trulang/redis" as redis;`.
+- Built-in mock wire servers (`MockPostgresServer`, `MockRedisServer`) for zero-dependency offline unit testing.
+
+### Phase 5: Cloud & Kubernetes Hardening
+- Native Prometheus `/metrics` exposition exporter exposing live lockless Seqlock supervisor metrics:
+  - Region A allocations, $O(1)$ reset counts, mailbox backpressure depth, and HTTP latency histograms.
+- Built-in Kubernetes health probes: `/healthz` (liveness) and `/ready` (readiness).
+- Production graceful draining on `SIGTERM` / `SIGINT`:
+  - Ingress closure, in-flight request completion, actor mailbox draining, and connection pool cleanup.
+- Built-in OpenTelemetry (OTel) distributed tracing with W3C `traceparent` context propagation.
+- Multi-stage minimal production `deploy/Dockerfile` (<15 MB Alpine Linux runtime footprint, non-root user).
+- Production Kubernetes manifests in `deploy/k8s/`: Deployment (with preStop hook), Service, and Prometheus ServiceMonitor.
+
+### Phase 6: Interactive DAP Debugger, Visual Memory Profiler, & 1.0 Stability
+- **Debug Adapter Protocol (DAP)**:
+  - Stdio JSON-RPC DAP server via `trulang dap --stdio`.
+  - Dynamic source line breakpoints, single-stepping (`next`, `stepIn`, `stepOut`), and multi-frame stack trace inspection.
+  - Dual-Region Memory Scope inspection in IDE debug pane: separate `Region A (Arena)` and `Region B (Persistent DAG)` variable inspectors.
+- **Visual Dual-Region Memory Profiler**:
+  - `trulang profile <file.tr> --output <path> --format <svg|json|folded>`.
+  - Interactive SVG flamegraphs highlighting Region A bump allocations, Region B promotions (`persist()`), and elastic burst expansions.
+  - Structured JSON and folded stack trace formats for CI/CD and external profiling tools.
+- **TruLang 1.0 Stability RFC**:
+  - Ratified formal specification in `docs/RFC-0001-STABILITY-1.0.md` with SemVer 2.0.0 backward compatibility guarantee.
+- **VS Code Extension 1.0.0**:
+  - Packaged extension `editors/vscode/trulang-1.0.0.vsix` with LSP language server, DAP debugger adapter, and memory profiling commands.
+
+### Language Server Protocol & Core Developer Tools
+- Integrated `trulang lsp --stdio` subcommand in core CLI binary for seamless IDE connectivity.
+- Live syntax and typecheck diagnostics with actionable compiler hints.
+- Rich hover tooltips for services, actor fields, memory budgets, functions, and imported modules.
+- Document jump-to-definition across service declarations, fields, methods, functions, and imports.
+- Automated code formatter (`trulang fmt <file> [--write]`).
+
+### Safe FFI Bridge & Background Worker Pool
+- `import "rust:pkg" as mod;` syntax for integrating native Rust and C libraries.
+- Hybrid background worker pool (`WorkerPool`) offloading blocking foreign operations without starving actor mailboxes.
+- Deterministic RAII destructors (`ExternalHandle<T>`) for foreign resources.
+- Safe Region A arena marshaling enforcing memory budget quotas on foreign return values.
+
+### Elastic Memory Burst Headroom & Auto-Promotion
+- Tiered memory budgets: `memory_budget request = 16 MB max 64 MB;` with automatic doubling up to ceiling.
+- Real-time Seqlock telemetry tracking `ArenaBurst` events.
+- Transparent compiler auto-promotion pass eliminating manual `persist(...)` boilerplate on persistent mutations.
+
+### Native AOT Code Generation & JIT Engine
+- `trulang build [--release] <file> [-o <out>]`: Native ahead-of-time compilation producing standalone executables with zero external runtime dependencies.
+- `trulang run --jit <file>`: High-speed on-the-fly JIT execution.
+- Emits clean, optimized C source via `trulang build --emit-c <file>`.
 
 ---
 
