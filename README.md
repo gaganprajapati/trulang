@@ -66,6 +66,21 @@ Empirical benchmarks run across identical microservice API lifecycle workloads (
 
 ## 🚀 Installation & Setup
 
+## 💻 Visual Studio Code Support
+
+TruLang includes an official Visual Studio Code extension with TextMate syntax highlighting and real-time Language Server Protocol (LSP) diagnostics:
+
+- **Syntax Highlighting:** Full support for `service`, `actor`, `persist`, `let mut`, `memory_budget`, and arena types.
+- **Language Server (LSP):** Real-time compiler diagnostics, go-to-definition, hover type signatures, and auto-formatting (`trulang fmt`).
+- **Quick Run Commands:** Execute or type-check the active `.tr` file directly inside VS Code.
+
+To install the extension:
+```bash
+code --install-extension editors/vscode/trulang-0.1.0.vsix
+```
+
+---
+
 ### Option 1: Install via Homebrew (macOS & Linux)
 The recommended package manager installation for macOS and Linux users:
 
