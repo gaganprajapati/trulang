@@ -103,3 +103,46 @@ fn test_cli_build_emit_c() {
     assert!(stdout.contains("trulang_region_a_init"));
     assert!(stdout.contains("int main(int argc, char** argv)"));
 }
+
+#[test]
+fn test_cli_test_command() {
+    let test_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("examples")
+        .join("tests")
+        .join("math_test.tr");
+
+    let out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args(["test", test_path.to_str().unwrap()])
+        .output()
+        .expect("Failed to run trulang test");
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("running 3 test(s)"));
+    assert!(stdout.contains("3 passed; 0 failed"));
+}
+
+#[test]
+fn test_cli_test_filter() {
+    let test_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("examples")
+        .join("tests")
+        .join("math_test.tr");
+
+    let out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args(["test", test_path.to_str().unwrap(), "--filter", "factorial"])
+        .output()
+        .expect("Failed to run trulang test with filter");
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("running 1 test(s)"));
+    assert!(stdout.contains("test factorial computation"));
+    assert!(stdout.contains("1 passed; 0 failed"));
+}

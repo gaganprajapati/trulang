@@ -214,8 +214,8 @@ Incoming DB Wire Bytes
 
 | Phase | Milestone | Primary Deliverable | Target Timeline |
 | :---: | :--- | :--- | :--- |
-| **Phase 1** | **`trulang test` CLI Harness** | Built-in test runner subcommand, assertion macros, colored diffs, and test reporting. | Immediate Next |
-| **Phase 2** | **Native Async HTTP Engine** | `trulang/http` standard library, non-blocking socket loop, and Region A zero-copy request lifecycle. | Milestone 2 |
+| **Phase 1** | **`trulang test` CLI Harness** | Built-in test runner subcommand, assertion opcodes, colored diffs, and test reporting. | ✅ Complete |
+| **Phase 2** | **Native Async HTTP Engine** | `trulang/http` standard library, non-blocking socket loop, and Region A zero-copy request lifecycle. | Immediate Next |
 | **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, and Git-based module resolution. | Milestone 3 |
 | **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | Milestone 4 |
 | **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | Milestone 5 |
@@ -227,12 +227,13 @@ Incoming DB Wire Bytes
 
 When ready to implement any phase, use this checklist as your starting blueprint:
 
-### Phase 1: `trulang test` Harness
-- [ ] Add `TestDeclaration` AST node in `crates/syntax/src/ast.rs`
-- [ ] Implement `assert(...)` and `assert_eq(a, b)` builtins in `crates/compiler` and `crates/vm`
-- [ ] Implement `Commands::Test { path, filter }` in `crates/cli/src/main.rs`
-- [ ] Add colored terminal reporting (green passes, red failure diffs with line numbers)
-- [ ] Update VS Code extension with a "Run Test" CodeLens above `test "..."` blocks
+### Phase 1: `trulang test` Harness (Completed)
+- [x] Add `TestDecl` AST node and `"test"` keyword token in `crates/syntax`
+- [x] Implement `assert(...)` and `assert_eq(a, b, [msg])` opcodes in `crates/compiler` and `crates/vm`
+- [x] Implement isolated per-test VM execution tracking execution duration and Region A bytes in `TestRunner`
+- [x] Implement `Commands::Test { path, filter }` in `crates/cli/src/main.rs` with automatic test discovery
+- [x] Add colored terminal reporting with pass/fail counts, duration, and formatted failure diagnostics
+- [x] Update VS Code extension syntax highlighting for `test` and `assert_eq`
 
 ### Phase 2: Native Async HTTP Engine
 - [ ] Add non-blocking socket abstraction in `crates/ffi` or new `crates/net`

@@ -1,10 +1,12 @@
 pub mod actor;
 pub mod frame;
 pub mod memory;
+pub mod test_runner;
 pub mod vm;
 
 pub use actor::ServiceActor;
 pub use memory::{MemoryError, MemoryRegion, RegionAAllocator, RegionBAllocator};
+pub use test_runner::{TestOutcome, TestResult, TestRunner};
 pub use vm::{VirtualMachine, VmError};
 
 #[cfg(test)]
@@ -349,6 +351,44 @@ fn main() -> string {
                 assert!(s.contains("\"email\":\"alice@example.com\""));
             }
             other => panic!("Expected String result from json.stringify, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_test_runner_pass_and_assertion_failure() {
+        let source = r#"
+test "should pass basic arithmetic" {
+    let a = 10;
+    let b = 20;
+    assert_eq(a + b, 30);
+    assert(a < b);
+}
+
+test "should fail on inequality" {
+    let x = 50;
+    assert_eq(x, 99);
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compile failed");
+        assert_eq!(chunk.tests.len(), 2);
+
+        let results = TestRunner::run_all(&chunk.tests, None);
+        assert_eq!(results.len(), 2);
+
+        assert_eq!(results[0].name, "should pass basic arithmetic");
+        assert!(results[0].is_passed());
+
+        assert_eq!(results[1].name, "should fail on inequality");
+        assert!(results[1].is_failed());
+        match &results[1].outcome {
+            TestOutcome::Failed { error, line, .. } => {
+                assert!(error.contains("assert_eq"));
+                assert!(error.contains("50"));
+                assert!(error.contains("99"));
+                assert_eq!(*line, 11);
+            }
+            _ => panic!("Expected failed test outcome"),
         }
     }
 }

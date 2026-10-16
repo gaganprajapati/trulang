@@ -88,6 +88,14 @@ enum Commands {
         #[arg(short, long)]
         write: bool,
     },
+    /// Run built-in test suites and assertions
+    Test {
+        /// Test file or directory to run tests from (defaults to current directory)
+        path: Option<PathBuf>,
+        /// Filter tests by substring matching test name
+        #[arg(short, long)]
+        filter: Option<String>,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -367,6 +375,143 @@ fn main() -> anyhow::Result<()> {
                 print!("{}", formatted);
             }
         }
+        Commands::Test { path, filter } => {
+            let target_path = path.unwrap_or_else(|| PathBuf::from("."));
+            let mut test_files = Vec::new();
+
+            if target_path.is_file() {
+                test_files.push(target_path.clone());
+            } else if target_path.is_dir() {
+                fn collect_tr_files(dir: &std::path::Path, out: &mut Vec<PathBuf>) {
+                    if let Ok(entries) = fs::read_dir(dir) {
+                        for entry in entries.flatten() {
+                            let p = entry.path();
+                            if p.is_dir() {
+                                let name = p.file_name().and_then(|s| s.to_str()).unwrap_or("");
+                                if !name.starts_with('.') && name != "target" && name != "node_modules" {
+                                    collect_tr_files(&p, out);
+                                }
+                            } else if p.extension().and_then(|s| s.to_str()) == Some("tr") {
+                                out.push(p);
+                            }
+                        }
+                    }
+                }
+                collect_tr_files(&target_path, &mut test_files);
+                test_files.sort();
+            } else {
+                eprintln!("Error: Path '{}' does not exist", target_path.display());
+                std::process::exit(1);
+            }
+
+            if test_files.is_empty() {
+                println!("No .tr files found in '{}'.", target_path.display());
+                return Ok(());
+            }
+
+            let start_total = std::time::Instant::now();
+            let mut total_passed = 0;
+            let mut total_failed = 0;
+            let mut failed_details = Vec::new();
+            let mut files_with_tests = 0;
+
+            for file in &test_files {
+                let file_str = file.to_str().unwrap_or("unknown");
+                let content = match fs::read_to_string(file) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        eprintln!("Error reading {}: {}", file_str, e);
+                        total_failed += 1;
+                        continue;
+                    }
+                };
+
+                let program = match trulang_syntax::parse(&content) {
+                    Ok(prog) => prog,
+                    Err(err) => {
+                        eprintln!("\nSyntax error in {}:\n{}", file_str, err.format_with_source(&content, file_str));
+                        total_failed += 1;
+                        continue;
+                    }
+                };
+
+                let mut checker = trulang_compiler::type_checker::TypeChecker::new();
+                if let Err(err) = checker.check_program(&program) {
+                    eprintln!("\nType error in {}:\n{}", file_str, err.format_with_source(&content, file_str));
+                    total_failed += 1;
+                    continue;
+                }
+
+                let chunk = match trulang_compiler::compile(&program) {
+                    Ok(chunk) => chunk,
+                    Err(err) => {
+                        eprintln!("\nCompilation error in {}:\n{}", file_str, err.format_with_source(&content, file_str));
+                        total_failed += 1;
+                        continue;
+                    }
+                };
+
+                if chunk.tests.is_empty() {
+                    continue;
+                }
+
+                files_with_tests += 1;
+                let results = trulang_vm::test_runner::TestRunner::run_all(&chunk.tests, filter.as_deref());
+
+                println!("\nrunning {} test(s) in {}", results.len(), file_str);
+                for res in results {
+                    match res.outcome {
+                        trulang_vm::test_runner::TestOutcome::Passed { duration, region_a_bytes } => {
+                            total_passed += 1;
+                            println!(
+                                "test {} ... \x1b[32mok\x1b[0m ({:.2} ms, {} B Region A)",
+                                res.name,
+                                duration.as_secs_f64() * 1000.0,
+                                region_a_bytes
+                            );
+                        }
+                        trulang_vm::test_runner::TestOutcome::Failed { error, line, duration } => {
+                            total_failed += 1;
+                            println!(
+                                "test {} ... \x1b[31mFAILED\x1b[0m ({:.2} ms)",
+                                res.name,
+                                duration.as_secs_f64() * 1000.0
+                            );
+                            failed_details.push((res.name.clone(), file_str.to_string(), line, error));
+                        }
+                    }
+                }
+            }
+
+            if files_with_tests == 0 {
+                println!("No test blocks found in specified files.");
+                return Ok(());
+            }
+
+            let elapsed = start_total.elapsed();
+            if !failed_details.is_empty() {
+                println!("\nfailures:");
+                for (name, file, line, err) in &failed_details {
+                    println!("\n---- {} ({}:{}) ----", name, file, line);
+                    println!("{}", err);
+                }
+            }
+
+            println!();
+            if total_failed > 0 {
+                println!(
+                    "\x1b[1m\x1b[31mtest result: FAILED\x1b[0m. {} passed; {} failed; finished in {:.3}s\n",
+                    total_passed, total_failed, elapsed.as_secs_f64()
+                );
+                std::process::exit(1);
+            } else {
+                println!(
+                    "\x1b[1m\x1b[32mtest result: ok\x1b[0m. {} passed; {} failed; finished in {:.3}s\n",
+                    total_passed, total_failed, elapsed.as_secs_f64()
+                );
+            }
+        }
+
         Commands::Bench { file, requests, concurrency, leak_check } => {
             let content = fs::read_to_string(&file)?;
             let file_str = file.to_str().unwrap_or("unknown");

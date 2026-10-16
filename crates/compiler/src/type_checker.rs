@@ -28,6 +28,11 @@ impl TypeChecker {
                 Declaration::Import(imp) => {
                     self.symbols.define(&imp.alias, SemType::Any, false, false, decl.span)?;
                 }
+                Declaration::Test(t) => {
+                    self.symbols.enter_scope();
+                    self.check_block(&t.body)?;
+                    self.symbols.exit_scope();
+                }
             }
         }
         Ok(())
@@ -327,7 +332,7 @@ impl TypeChecker {
                 }
                 match &callee.node {
                     Expr::Ident(name) => match name.as_str() {
-                        "log_request_completed" | "print" | "println" => Ok(SemType::Void),
+                        "log_request_completed" | "print" | "println" | "assert" | "assert_eq" => Ok(SemType::Void),
                         _ => Ok(SemType::Any),
                     },
                     _ => {

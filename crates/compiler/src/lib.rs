@@ -122,4 +122,23 @@ service CacheServiceExplicit {
         // Exactly one Persist opcode (no redundant duplicate)
         assert_eq!(persist_count, 1, "Expected exactly one Persist opcode when explicit persist() is used");
     }
+
+    #[test]
+    fn test_compile_test_declaration_and_assert_opcodes() {
+        let source = r#"
+test "addition check" {
+    let actual = 20 + 22;
+    assert(actual > 0, "should be positive");
+    assert_eq(actual, 42, "must equal 42");
+}
+"#;
+        let prog = parse(source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compilation failed");
+
+        assert_eq!(chunk.tests.len(), 1);
+        let compiled_test = &chunk.tests[0];
+        assert_eq!(compiled_test.name, "addition check");
+        assert!(compiled_test.chunk.code.iter().any(|op| matches!(op, bytecode::Opcode::Assert(_))));
+        assert!(compiled_test.chunk.code.iter().any(|op| matches!(op, bytecode::Opcode::AssertEq(_))));
+    }
 }

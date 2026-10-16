@@ -11,6 +11,13 @@ pub enum Declaration {
     Function(FunctionDecl),
     Struct(StructDecl),
     Import(ImportDecl),
+    Test(TestDecl),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct TestDecl {
+    pub name: String,
+    pub body: Block,
 }
 
 #[derive(Debug, Clone, PartialEq)]

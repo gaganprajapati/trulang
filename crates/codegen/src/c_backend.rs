@@ -235,6 +235,22 @@ impl CBackend {
                 Opcode::Println => {
                     out.push_str("    trulang_val_println(stack[--sp]);\n");
                 }
+                Opcode::Assert(ref msg) => {
+                    let msg_str = msg.as_deref().unwrap_or("Assertion failed");
+                    out.push_str("    {\n");
+                    out.push_str("        TruValue val = stack[--sp];\n");
+                    let _ = writeln!(out, "        if ((val.tag == TAG_BOOL && !val.as.b) || val.tag == TAG_NULL || (val.tag == TAG_INT && val.as.i == 0)) {{\n            fprintf(stderr, \"Assertion failed: %s\\n\", {:?});\n            exit(1);\n        }}", msg_str);
+                    out.push_str("    }\n");
+                }
+                Opcode::AssertEq(ref msg) => {
+                    let msg_str = msg.as_deref().unwrap_or("Assertion equality failed");
+                    out.push_str("    {\n");
+                    out.push_str("        TruValue right = stack[--sp];\n");
+                    out.push_str("        TruValue left = stack[--sp];\n");
+                    out.push_str("        TruValue res = trulang_op_eq(left, right);\n");
+                    let _ = writeln!(out, "        if (res.tag == TAG_BOOL && !res.as.b) {{\n            fprintf(stderr, \"Assertion failed: %s\\n\", {:?});\n            exit(1);\n        }}", msg_str);
+                    out.push_str("    }\n");
+                }
             }
         }
 

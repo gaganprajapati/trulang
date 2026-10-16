@@ -78,13 +78,56 @@ impl CodeGenerator {
         for decl in &program.declarations {
             match &decl.node {
                 Declaration::Service(svc) => self.compile_service(svc)?,
-                Declaration::Function(func) => self.compile_function(func)?,
+                Declaration::Function(func) => {
+                    let entry_ip = self.chunk.code.len();
+                    self.chunk.functions.insert(func.name.clone(), entry_ip);
+                    self.compile_function(func)?;
+                }
                 Declaration::Struct(_) => {}
                 Declaration::Import(imp) => {
                     self.chunk.imports.insert(imp.alias.clone(), imp.path.clone());
                 }
+                Declaration::Test(t) => {
+                    self.compile_test(t, decl.span.line, program)?;
+                }
             }
         }
+        Ok(())
+    }
+
+    pub fn compile_test(&mut self, test_decl: &trulang_syntax::ast::TestDecl, line: usize, program: &Program) -> Result<(), CompileError> {
+        use crate::bytecode::CompiledTest;
+        let mut test_gen = CodeGenerator::new();
+        test_gen.chunk.imports = self.chunk.imports.clone();
+
+        // Jump over function declarations to test body
+        let test_entry_jump = test_gen.chunk.emit(Opcode::Jump(0), line);
+
+        // Compile functions declared in the file into this test chunk
+        for decl in &program.declarations {
+            if let Declaration::Function(func) = &decl.node {
+                let fn_entry = test_gen.chunk.code.len();
+                test_gen.chunk.functions.insert(func.name.clone(), fn_entry);
+                test_gen.compile_function(func)?;
+            }
+        }
+
+        let test_start = test_gen.chunk.code.len();
+        test_gen.chunk.patch_jump(test_entry_jump, test_start);
+
+        test_gen.enter_scope();
+        for stmt in &test_decl.body.statements {
+            test_gen.compile_statement(stmt)?;
+        }
+        test_gen.exit_scope();
+        test_gen.chunk.emit(Opcode::LoadNull, line);
+        test_gen.chunk.emit(Opcode::Return, line);
+
+        self.chunk.tests.push(CompiledTest {
+            name: test_decl.name.clone(),
+            chunk: test_gen.chunk,
+            line,
+        });
         Ok(())
     }
 
@@ -359,6 +402,47 @@ impl CodeGenerator {
                             self.compile_expr(arg)?;
                             self.chunk.emit(Opcode::Print, line);
                         }
+                        self.chunk.emit(Opcode::LoadNull, line);
+                        return Ok(());
+                    } else if name == "assert" {
+                        if args.is_empty() || args.len() > 2 {
+                            return Err(CompileError::new(
+                                "assert expects 1 or 2 arguments: assert(condition, [msg])",
+                                callee.span,
+                            ));
+                        }
+                        self.compile_expr(&args[0])?;
+                        let msg = if args.len() == 2 {
+                            if let Expr::Literal(trulang_syntax::ast::Literal::String(s)) = &args[1].node {
+                                Some(s.clone())
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        };
+                        self.chunk.emit(Opcode::Assert(msg), line);
+                        self.chunk.emit(Opcode::LoadNull, line);
+                        return Ok(());
+                    } else if name == "assert_eq" {
+                        if args.len() != 2 && args.len() != 3 {
+                            return Err(CompileError::new(
+                                "assert_eq expects 2 or 3 arguments: assert_eq(actual, expected, [msg])",
+                                callee.span,
+                            ));
+                        }
+                        self.compile_expr(&args[0])?; // actual
+                        self.compile_expr(&args[1])?; // expected
+                        let msg = if args.len() == 3 {
+                            if let Expr::Literal(trulang_syntax::ast::Literal::String(s)) = &args[2].node {
+                                Some(s.clone())
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        };
+                        self.chunk.emit(Opcode::AssertEq(msg), line);
                         self.chunk.emit(Opcode::LoadNull, line);
                         return Ok(());
                     }

@@ -84,6 +84,10 @@ impl Parser {
                 self.advance();
                 Ok(("persistent".to_string(), span))
             }
+            TokenKind::Test => {
+                self.advance();
+                Ok(("test".to_string(), span))
+            }
             found => Err(SyntaxError::new(
                 format!("Expected identifier, found '{}'", found),
                 span,
@@ -120,11 +124,36 @@ impl Parser {
                 let span = start_span.merge(self.previous_span());
                 Ok(Spanned::new(Declaration::Import(import_decl), span))
             }
+            TokenKind::Test => {
+                let test_decl = self.parse_test_decl()?;
+                let span = start_span.merge(self.previous_span());
+                Ok(Spanned::new(Declaration::Test(test_decl), span))
+            }
             _ => Err(SyntaxError::new(
                 format!("Expected declaration (service, fn, import), found '{}'", self.peek()),
                 start_span,
             )),
         }
+    }
+
+    fn parse_test_decl(&mut self) -> Result<TestDecl, SyntaxError> {
+        self.expect(TokenKind::Test)?;
+        let name = match self.peek() {
+            TokenKind::StringLit(s) => {
+                let s = s.clone();
+                self.advance();
+                s
+            }
+            found => {
+                return Err(SyntaxError::new(
+                    format!("Expected test name string, found '{}'", found),
+                    self.current_span(),
+                ));
+            }
+        };
+
+        let body = self.parse_block()?;
+        Ok(TestDecl { name, body })
     }
 
     fn parse_import_decl(&mut self) -> Result<ImportDecl, SyntaxError> {

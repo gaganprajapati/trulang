@@ -173,4 +173,25 @@ service AccountService {
             _ => panic!("Expected Import declaration"),
         }
     }
+
+    #[test]
+    fn test_parse_test_declaration() {
+        let source = r#"
+test "should assert addition correctly" {
+    let mut x = 40;
+    x = x + 2;
+    assert(x == 42);
+    assert_eq(x, 42);
+}
+"#;
+        let program = parse(source).expect("Failed to parse test declaration");
+        assert_eq!(program.declarations.len(), 1);
+        match &program.declarations[0].node {
+            Declaration::Test(t) => {
+                assert_eq!(t.name, "should assert addition correctly");
+                assert_eq!(t.body.statements.len(), 4);
+            }
+            _ => panic!("Expected Test declaration"),
+        }
+    }
 }

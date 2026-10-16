@@ -3,16 +3,36 @@
   "name": "TruLang",
   "scopeName": "source.trulang",
   "patterns": [
-    { "include": "#comments" },
-    { "include": "#strings" },
-    { "include": "#numbers" },
-    { "include": "#keywords" },
-    { "include": "#memory_primitives" },
-    { "include": "#types" },
-    { "include": "#constants" },
-    { "include": "#function_calls" },
-    { "include": "#operators" },
-    { "include": "#delimiters" }
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#memory_primitives"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#function_calls"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#delimiters"
+    }
   ],
   "repository": {
     "comments": {
@@ -67,7 +87,7 @@
       "patterns": [
         {
           "name": "keyword.declaration.trulang",
-          "match": "\\b(service|actor|fn|let|mut|struct|enum|type|import|export)\\b"
+          "match": "\\b(service|actor|fn|let|mut|struct|enum|type|import|export|test)\\b"
         },
         {
           "name": "keyword.control.trulang",
@@ -127,12 +147,14 @@
       "patterns": [
         {
           "name": "support.function.builtin.trulang",
-          "match": "\\b(println|print|assert|panic)\\b(?=\\s*\\()"
+          "match": "\\b(println|print|assert|assert_eq|panic)\\b(?=\\s*\\()"
         },
         {
           "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
           "captures": {
-            "1": { "name": "entity.name.function.trulang" }
+            "1": {
+              "name": "entity.name.function.trulang"
+            }
           }
         }
       ]

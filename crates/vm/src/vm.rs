@@ -15,6 +15,16 @@ pub enum VmError {
     MemoryExceeded(MemoryError),
     UnhandledException(Value),
     InvalidJumpAddress(usize),
+    AssertionFailure {
+        message: String,
+        line: usize,
+    },
+    AssertionEqFailure {
+        left: String,
+        right: String,
+        message: Option<String>,
+        line: usize,
+    },
 }
 
 impl std::fmt::Display for VmError {
@@ -30,6 +40,19 @@ impl std::fmt::Display for VmError {
             VmError::MemoryExceeded(mem) => write!(f, "Memory limit exceeded: {}", mem),
             VmError::UnhandledException(val) => write!(f, "Unhandled exception: {}", val),
             VmError::InvalidJumpAddress(addr) => write!(f, "Invalid jump address {}", addr),
+            VmError::AssertionFailure { message, line } => {
+                write!(f, "Assertion failed: {} (at line {})", message, line)
+            }
+            VmError::AssertionEqFailure { left, right, message, line } => {
+                write!(f, "Assertion failed: assert_eq (at line {})
+  left:  {}
+  right: {}", line, left, right)?;
+                if let Some(msg) = message {
+                    write!(f, "
+  message: {}", msg)?;
+                }
+                Ok(())
+            }
         }
     }
 }
@@ -252,7 +275,8 @@ impl VirtualMachine {
                 }
             }
 
-            let op = &chunk.code[frame.ip];
+            let current_ip = frame.ip;
+            let op = &chunk.code[current_ip];
             frame.ip += 1;
 
             match op {
@@ -610,13 +634,32 @@ impl VirtualMachine {
                 Opcode::RunDefers => {
                     // Defers will be drained upon function return
                 }
-                Opcode::Call(_arity) => {
+                Opcode::Call(arity) => {
                     if self.frames.len() >= Self::MAX_CALL_FRAMES {
                         return Err(VmError::StackOverflow(format!(
                             "Call frame depth limit ({}) exceeded",
                             Self::MAX_CALL_FRAMES
                         )));
                     }
+                    let callee = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                    let target_ip = match callee {
+                        Value::String(ref name) => {
+                            match chunk.functions.get(name.as_str()) {
+                                Some(&ip) => ip,
+                                None => return Err(VmError::InvalidOperand(format!("Undefined function: {}", name))),
+                            }
+                        }
+                        Value::Int(ip) => ip as usize,
+                        other => return Err(VmError::InvalidOperand(format!("Cannot call non-function value: {}", other))),
+                    };
+                    if target_ip >= chunk.code.len() {
+                        return Err(VmError::InvalidOperand(format!("Invalid function address: {}", target_ip)));
+                    }
+                    if self.stack.len() < *arity {
+                        return Err(VmError::StackUnderflow);
+                    }
+                    let slots_offset = self.stack.len() - *arity;
+                    self.frames.push(CallFrame::new(target_ip, slots_offset));
                 }
                 Opcode::Return => {
                     let return_val = self.stack.pop().unwrap_or(Value::Null);
@@ -695,6 +738,33 @@ impl VirtualMachine {
                         println!("{}", text);
                     }
                     self.output_log.push(text);
+                }
+                Opcode::Assert(ref msg) => {
+                    let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                    let is_truthy = match val {
+                        Value::Bool(b) => b,
+                        Value::Null => false,
+                        Value::Int(n) => n != 0,
+                        _ => true,
+                    };
+                    if !is_truthy {
+                        let line = chunk.lines.get(current_ip).copied().unwrap_or(1);
+                        let message = msg.clone().unwrap_or_else(|| format!("Expected truthy value, found {}", val));
+                        return Err(VmError::AssertionFailure { message, line });
+                    }
+                }
+                Opcode::AssertEq(ref msg) => {
+                    let expected = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                    let actual = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                    if actual != expected {
+                        let line = chunk.lines.get(current_ip).copied().unwrap_or(1);
+                        return Err(VmError::AssertionEqFailure {
+                            left: format!("{}", actual),
+                            right: format!("{}", expected),
+                            message: msg.clone(),
+                            line,
+                        });
+                    }
                 }
             }
         }

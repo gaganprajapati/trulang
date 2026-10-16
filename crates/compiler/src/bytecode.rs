@@ -190,6 +190,17 @@ pub enum Opcode {
 
     Print,
     Println,
+
+    Assert(Option<String>),
+    AssertEq(Option<String>),
+
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct CompiledTest {
+    pub name: String,
+    pub chunk: Chunk,
+    pub line: usize,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -198,6 +209,8 @@ pub struct Chunk {
     pub constants: Vec<Value>,
     pub lines: Vec<usize>,
     pub imports: HashMap<String, String>,
+    pub functions: HashMap<String, usize>,
+    pub tests: Vec<CompiledTest>,
 }
 
 impl Chunk {

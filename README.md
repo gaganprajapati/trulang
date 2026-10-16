@@ -249,6 +249,55 @@ Output:
 
 ---
 
+## 🧪 Native Testing Framework (`trulang test`)
+
+TruLang includes a **zero-dependency, built-in testing framework** inspired by Rust and Zig, integrated directly into the language syntax, compiler, VM, and CLI toolchain.
+
+### Writing Tests in TruLang
+Declare tests anywhere using `test "description" { ... }` blocks with native `assert` and `assert_eq`:
+```trulang
+fn add(a: int, b: int) -> int {
+    return a + b;
+}
+
+test "basic addition and truthiness" {
+    let sum = add(10, 32);
+    assert_eq(sum, 42);
+    assert(sum > 0, "sum must be positive");
+}
+
+test "collection operations" {
+    let map = Map::new();
+    map.insert("key", 100);
+    assert_eq(map.get("key"), 100);
+}
+```
+
+### Running Tests
+Execute test suites across individual files or recursively across entire directory trees:
+```bash
+# Run tests in a file
+trulang test examples/tests/math_test.tr
+
+# Run all tests in a directory
+trulang test examples/tests/
+
+# Filter tests by substring matching test name
+trulang test examples/tests/ --filter addition
+```
+
+Output:
+```
+running 3 test(s) in examples/tests/math_test.tr
+test basic addition and assert ... ok (0.26 ms, 35 B Region A)
+test factorial computation ... ok (0.14 ms, 182 B Region A)
+test boolean assertions ... ok (0.06 ms, 0 B Region A)
+
+test result: ok. 3 passed; 0 failed; finished in 0.002s
+```
+
+---
+
 ## 🦀 Using Rust Libraries with TruLang (Native FFI Bridge)
 
 New languages usually fail because they suffer from the **"No Libraries" Cold-Start Trap**—developers love the syntax, but cannot adopt it without battle-tested drivers for PostgreSQL, Redis, JWT, and cryptography.
@@ -298,6 +347,7 @@ Long-lived objects (database connection pools, sockets) are held as opaque **RAI
 | `trulang check <file.tr>` | Parses AST, verifies static typing, checks mutability rules, and enforces ownership |
 | `trulang run <file.tr> [--jit]` | Dual-mode execution: Bytecode VM (<3ms cold start) or Native JIT engine |
 | `trulang build <file.tr> [--release] [-o <out>]` | Production AOT compiler producing standalone native executables (Mach-O, ELF, PE) with `-O3` vectorization |
+| `trulang test [path] [--filter <pat>]` | Built-in test runner for native `test "..." { assert(...); assert_eq(...); }` suites |
 | `trulang monitor` | Attaches to zero-lock seqlock shared memory to stream live memory telemetry |
 | `trulang lsp --stdio` | Integrated Language Server Protocol daemon for IDE integration (VS Code, Cursor, Neovim) |
 | `trulang fmt <file.tr> [--write]` | Automated code formatter enforcing language layout conventions |

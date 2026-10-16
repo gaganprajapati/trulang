@@ -1,0 +1,27 @@
+fn add(a: int, b: int) -> int {
+    return a + b;
+}
+
+fn factorial(n: int) -> int {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+test "basic addition and assert" {
+    let sum = add(10, 32);
+    assert_eq(sum, 42);
+    assert(sum > 0);
+}
+
+test "factorial computation" {
+    assert_eq(factorial(5), 120);
+    assert_eq(factorial(1), 1);
+}
+
+test "boolean assertions" {
+    let flag = true;
+    assert(flag);
+    assert(!false);
+}
