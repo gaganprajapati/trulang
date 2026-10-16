@@ -1,8 +1,16 @@
+# Rust build artifacts
 /target
 **/*.rs.bk
+
+# Node & JavaScript dependencies
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.vscode-test/
+
+# OS & Editor temporary files
 .DS_Store
 *.swp
 *~
-
-editors/vscode/node_modules
-editors/vscode/dist
+.idea/
