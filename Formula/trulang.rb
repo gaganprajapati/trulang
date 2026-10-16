@@ -1,7 +1,6 @@
 class Trulang < Formula
-  desc "High-performance backend language with dual-region memory arenas and structured concurrency"
+  desc "High-performance backend language with dual-region memory arenas"
   homepage "https://trulang.dev"
-  version "0.1.0"
   license "MIT"
 
   if OS.mac? && Hardware::CPU.arm?
