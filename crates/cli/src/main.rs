@@ -923,15 +923,21 @@ fn main() -> anyhow::Result<()> {
                 "\nReady to receive ingress HTTP traffic. Press Ctrl+C to terminate cleanly.\n"
             );
 
-            let stop_flag = server.stop_handle();
-            let stop_flag_clone = Arc::clone(&stop_flag);
+            println!("Observability & Lifecycle Endpoints Active:");
+            println!("  • Prometheus Metrics:  GET /metrics");
+            println!("  • Kubernetes Liveness: GET /healthz");
+            println!("  • Kubernetes Ready:    GET /ready");
+            println!("  • Distributed Tracing: W3C traceparent context propagation\n");
+
+            let drain_flag = server.drain_handle();
+            let drain_clone = Arc::clone(&drain_flag);
             unsafe {
-                static mut SHUTDOWN_FLAG: Option<Arc<std::sync::atomic::AtomicBool>> = None;
-                SHUTDOWN_FLAG = Some(stop_flag_clone);
+                static mut DRAIN_TRIGGER: Option<Arc<std::sync::atomic::AtomicBool>> = None;
+                DRAIN_TRIGGER = Some(drain_clone);
                 extern "C" fn sig_handler(_sig: libc::c_int) {
                     unsafe {
-                        if let Some(ref flag) = SHUTDOWN_FLAG {
-                            flag.store(false, Ordering::SeqCst);
+                        if let Some(ref flag) = DRAIN_TRIGGER {
+                            flag.store(true, Ordering::SeqCst);
                         }
                     }
                 }
@@ -943,7 +949,7 @@ fn main() -> anyhow::Result<()> {
             }
 
             server.run()?;
-            println!("HTTP Engine stopped cleanly. Goodbye!");
+            println!("HTTP Engine drained in-flight requests and stopped cleanly. Goodbye!");
         }
         Commands::New { name, path } => {
             let target_path = path.unwrap_or_else(|| PathBuf::from(&name));

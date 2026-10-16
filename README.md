@@ -43,6 +43,7 @@ Traditional backend runtimes force a compromise:
   - **Region A (Execution Arena):** High-speed bump-pointer allocator for per-request transient objects. Reclaimed in $O(1)$ bulk reset upon request completion.
   - **Region B (Persistent State):** Reference-counted, acyclic DAG storage for actor state. Long-lived objects are promoted explicitly via `persist(x)`.
 - **🗄️ Native Binary Wire Protocols (`trulang/postgres`, `trulang/redis`):** Pure, zero-dependency async drivers for PostgreSQL (Frontend/Backend Protocol v3.0) and Redis (RESP2/RESP3 with pipelining). Connection pools live in Region B, while per-query socket buffers, wire frames, and parsed records are bump-allocated in Region A and reset in $O(1)$.
+- **☸️ Kubernetes-Native Observability & Draining:** Built-in `/healthz` (liveness), `/ready` (readiness), and `/metrics` (Prometheus exposition format). Zero-downtime rolling updates via graceful draining on `SIGTERM`, combined with OpenTelemetry distributed tracing and W3C `traceparent` context propagation.
 - **📦 Built-in Package Manager (`tpm`):** Deterministic dependency management with `Tru.toml`, SHA-256 lockfile (`Tru.lock`), decentralized Git package resolution, and `trulang new`/`add`/`install`/`publish`.
 - **⏱️ Zero-Lock Actor Mailbox:** Single-threaded actors execute sequentially, eliminating data races, mutex deadlocks, and sync overhead. Incoming bursts are shed via bounded queue backpressure (`ActorError::MailboxFull`).
 - **📊 Real-Time Out-of-Process Telemetry:** Independent supervisor process reads live VM memory metrics via lockless atomic **Seqlock shared memory (`/tmp/trulang_shm_active.dat`)** without interrupting worker execution.
@@ -409,6 +410,72 @@ fn main() -> i64 {
     // O(1) bulk arena reset: zero memory leaks, zero GC pauses!
 }
 ```
+
+---
+
+## ☸️ Cloud, Kubernetes & Production Observability
+
+TruLang is engineered from the ground up for high-density Kubernetes cluster deployments:
+
+### 1. Prometheus `/metrics` Scraper
+The native async HTTP engine exposes live lockless memory metrics in standard Prometheus exposition format:
+```bash
+curl http://localhost:8080/metrics
+```
+Output:
+```text
+# HELP trulang_arena_a_bytes_allocated Total bytes bump-allocated in Region A
+# TYPE trulang_arena_a_bytes_allocated counter
+trulang_arena_a_bytes_allocated 104857600
+
+# HELP trulang_arena_a_resets_total Total number of O(1) arena resets
+# TYPE trulang_arena_a_resets_total counter
+trulang_arena_a_resets_total 50000
+
+# HELP trulang_actor_mailbox_depth Current queued messages in actor mailboxes
+# TYPE trulang_actor_mailbox_depth gauge
+trulang_actor_mailbox_depth{actor="ServiceActor"} 0
+
+# HELP trulang_http_requests_total Total HTTP requests handled
+# TYPE trulang_http_requests_total counter
+trulang_http_requests_total{status="2xx"} 49980
+trulang_http_requests_total{status="5xx"} 20
+
+# HELP trulang_uptime_seconds Total server uptime in seconds
+# TYPE trulang_uptime_seconds gauge
+trulang_uptime_seconds 3600
+```
+
+### 2. Kubernetes Health Probes & Graceful Draining
+- **Liveness Probe (`GET /healthz`):** Verifies worker process health and returns `{"status":"ok"}`.
+- **Readiness Probe (`GET /ready`):** Returns `{"status":"ready"}` when accepting traffic.
+- **Graceful Draining on `SIGTERM` / `SIGINT`:**
+  1. `/ready` immediately flips to `503 Service Unavailable` (`{"status":"draining"}`) so kube-proxy and ingress controllers remove the pod from endpoints.
+  2. The TCP listener backlog is drained and closed to stop accepting new connections.
+  3. All in-flight Region A requests are completed cleanly within the configurable drain timeout.
+  4. The engine terminates with exit code 0.
+
+### 3. OpenTelemetry (OTel) Distributed Tracing
+Incoming requests automatically extract W3C `traceparent` headers (`00-{trace_id}-{span_id}-{flags}`) or generate new distributed trace IDs. The engine automatically injects `traceparent`, `x-trace-id`, and `x-request-id` into all response headers for seamless integration with Jaeger, Datadog, and Grafana Tempo:
+```bash
+curl -i http://localhost:8080/healthz \
+  -H "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+```
+Response:
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+Traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-a1b2c3d4e5f60718-01
+X-Trace-Id: 4bf92f3577b34da6a3ce929d0e0e4736
+X-Request-Id: 4bf92f3577b34da6a3ce929d0e0e4736
+```
+
+### 4. Container & Kubernetes Deployments
+Production assets are provided in [`deploy/`](deploy/):
+- **[`deploy/Dockerfile`](deploy/Dockerfile):** Multi-stage minimal runtime container (<15 MB Alpine Linux, non-root user `trulang:10001`).
+- **[`deploy/k8s/deployment.yaml`](deploy/k8s/deployment.yaml):** 3-replica production deployment with health probes, resource limits, and `preStop` hook.
+- **[`deploy/k8s/service.yaml`](deploy/k8s/service.yaml):** ClusterIP service.
+- **[`deploy/k8s/servicemonitor.yaml`](deploy/k8s/servicemonitor.yaml):** Prometheus Operator configuration.
 
 ---
 

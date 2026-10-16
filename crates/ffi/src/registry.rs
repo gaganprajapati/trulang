@@ -1,5 +1,5 @@
 use crate::error::FfiError;
-use crate::modules::{http, json, pg, redis};
+use crate::modules::{http, json, pg, redis, trace};
 use crate::worker_pool::WorkerPool;
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -28,6 +28,9 @@ impl FfiRegistry {
         registry.register_alias("pg", "trulang/postgres");
         registry.register_alias("postgres", "trulang/postgres");
         registry.register_alias("redis", "trulang/redis");
+        registry.register_alias("trace", "trulang/trace");
+        registry.register_alias("otel", "trulang/trace");
+        registry.register_alias("trulang/otel", "trulang/trace");
 
         registry
     }
@@ -54,7 +57,9 @@ impl FfiRegistry {
             | "rust:trulang_std_pg"
             | "trulang/postgres"
             | "trulang/redis"
-            | "std::redis" => true,
+            | "std::redis"
+            | "trulang/trace"
+            | "trulang/otel" => true,
             other => self.custom_modules.read().unwrap().contains_key(other),
         }
     }
@@ -140,6 +145,15 @@ impl FfiRegistry {
             "trulang/redis" | "std::redis" => match method {
                 "create_pool" => redis::create_pool(args),
                 "create_client" | "connect" => redis::create_client(args),
+                _ => Err(FfiError::MethodNotFound {
+                    module: resolved,
+                    method: method.to_string(),
+                }),
+            },
+            "trulang/trace" | "trulang/otel" | "trace" | "otel" => match method {
+                "create_span" => trace::create_span(args),
+                "trace_id" | "new_trace_id" => trace::new_trace_id(args),
+                "span_id" | "new_span_id" => trace::new_span_id(args),
                 _ => Err(FfiError::MethodNotFound {
                     module: resolved,
                     method: method.to_string(),

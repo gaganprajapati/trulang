@@ -302,3 +302,79 @@ pub fn create_redis_pool_handle(conn_url: &str) -> Arc<ExternalHandle> {
         resource: Arc::new(res),
     })
 }
+
+/// OpenTelemetry Span Resource implementing ExternalResource
+#[derive(Debug)]
+pub struct SpanResource {
+    pub id: u64,
+    pub name: String,
+    pub trace_id: String,
+    pub span_id: String,
+    pub attributes: std::sync::Mutex<std::collections::HashMap<String, String>>,
+}
+
+impl SpanResource {
+    pub fn new(
+        name: impl Into<String>,
+        trace_id: impl Into<String>,
+        span_id: impl Into<String>,
+    ) -> Self {
+        Self {
+            id: next_handle_id(),
+            name: name.into(),
+            trace_id: trace_id.into(),
+            span_id: span_id.into(),
+            attributes: std::sync::Mutex::new(std::collections::HashMap::new()),
+        }
+    }
+
+    pub fn into_value(self) -> Value {
+        let id = self.id;
+        Value::new_handle(id, "TraceSpan", self)
+    }
+}
+
+impl ExternalResource for SpanResource {
+    fn type_name(&self) -> &'static str {
+        "TraceSpan"
+    }
+
+    fn call_method(&self, method: &str, args: &[Value]) -> Result<Value, String> {
+        match method {
+            "trace_id" => Ok(Value::String(Arc::new(self.trace_id.clone()))),
+            "span_id" => Ok(Value::String(Arc::new(self.span_id.clone()))),
+            "name" => Ok(Value::String(Arc::new(self.name.clone()))),
+            "set_attribute" => {
+                let k = match args.first() {
+                    Some(Value::String(s)) => s.as_str(),
+                    _ => return Err("Expected key string".into()),
+                };
+                let v = match args.get(1) {
+                    Some(Value::String(s)) => s.to_string(),
+                    Some(other) => format!("{:?}", other),
+                    None => "".to_string(),
+                };
+                self.attributes.lock().unwrap().insert(k.to_string(), v);
+                Ok(Value::Bool(true))
+            }
+            "finish" => Ok(Value::Bool(true)),
+            _ => Err(format!("Unknown method '{}' on TraceSpan", method)),
+        }
+    }
+}
+
+impl Drop for SpanResource {
+    fn drop(&mut self) {
+        GLOBAL_DROPPED_HANDLES_COUNT.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+pub fn create_span_handle(name: &str, trace_id: &str, span_id: &str) -> Arc<ExternalHandle> {
+    let res = SpanResource::new(name, trace_id, span_id);
+    let id = res.id;
+    Arc::new(ExternalHandle {
+        id,
+        type_name: "TraceSpan".to_string(),
+        resource: Arc::new(res),
+    })
+}

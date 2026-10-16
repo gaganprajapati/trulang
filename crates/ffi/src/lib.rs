@@ -184,4 +184,48 @@ mod tests {
         let int_val = Value::Int(42);
         assert_eq!(estimate_value_size(&int_val), 8);
     }
+
+    #[test]
+    fn test_ffi_trace_span_and_otel_module() {
+        let registry = FfiRegistry::new();
+        assert!(registry.has_module("trulang/trace"));
+        assert!(registry.has_module("otel"));
+
+        let span_val = registry
+            .invoke(
+                "otel",
+                "create_span",
+                &[Value::String(Arc::new("checkout_flow".into()))],
+                None,
+            )
+            .expect("create_span failed");
+
+        match span_val {
+            Value::Handle(h) => {
+                assert_eq!(h.type_name, "TraceSpan");
+                let trace_id = h.resource.call_method("trace_id", &[]).unwrap();
+                let span_id = h.resource.call_method("span_id", &[]).unwrap();
+                match (trace_id, span_id) {
+                    (Value::String(t), Value::String(s)) => {
+                        assert_eq!(t.len(), 32);
+                        assert_eq!(s.len(), 16);
+                    }
+                    _ => panic!("Expected string IDs"),
+                }
+
+                let set_attr = h.resource.call_method(
+                    "set_attribute",
+                    &[
+                        Value::String(Arc::new("http.status_code".into())),
+                        Value::String(Arc::new("200".into())),
+                    ],
+                );
+                assert_eq!(set_attr, Ok(Value::Bool(true)));
+
+                let finish = h.resource.call_method("finish", &[]);
+                assert_eq!(finish, Ok(Value::Bool(true)));
+            }
+            _ => panic!("Expected TraceSpan handle"),
+        }
+    }
 }

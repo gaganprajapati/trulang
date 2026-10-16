@@ -218,6 +218,34 @@ fn test_cli_serve_command() {
     assert!(resp.starts_with("HTTP/1.1 200 OK\r\n"));
     assert!(resp.contains(r#""status":"success""#));
     assert!(resp.contains(r#""user":"cli_test_user""#));
+    assert!(resp.to_ascii_lowercase().contains("traceparent: 00-"));
+
+    // Verify /metrics endpoint
+    let mut metrics_stream =
+        TcpStream::connect(format!("127.0.0.1:{}", port)).expect("Connect metrics failed");
+    metrics_stream
+        .write_all(b"GET /metrics HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        .expect("Write to /metrics failed");
+    let mut metrics_buf = Vec::new();
+    metrics_stream
+        .read_to_end(&mut metrics_buf)
+        .expect("Read /metrics failed");
+    let metrics_resp = String::from_utf8_lossy(&metrics_buf);
+    assert!(metrics_resp.contains("trulang_http_requests_total"));
+    assert!(metrics_resp.contains("trulang_uptime_seconds"));
+
+    // Verify /healthz endpoint
+    let mut healthz_stream =
+        TcpStream::connect(format!("127.0.0.1:{}", port)).expect("Connect healthz failed");
+    healthz_stream
+        .write_all(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        .expect("Write to /healthz failed");
+    let mut healthz_buf = Vec::new();
+    healthz_stream
+        .read_to_end(&mut healthz_buf)
+        .expect("Read /healthz failed");
+    let healthz_resp = String::from_utf8_lossy(&healthz_buf);
+    assert!(healthz_resp.contains(r#"{"status":"ok""#));
 
     // Terminate child process
     let _ = child.kill();

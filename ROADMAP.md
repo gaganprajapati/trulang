@@ -218,8 +218,8 @@ Incoming DB Wire Bytes
 | **Phase 2** | **Native Async HTTP Engine** | `trulang/http` standard library, non-blocking socket loop, and Region A zero-copy request lifecycle. | ✅ Complete |
 | **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, decentralized Git resolver, and `new`/`add`/`install`/`publish` CLI commands. | ✅ Complete |
 | **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | ✅ Complete |
-| **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | Immediate Next |
-| **Phase 6** | **DAP Debugger & TruLang 1.0 GA** | Interactive VS Code breakpoints, memory flamegraphs, and backward-compatible 1.0 RFC. | TruLang 1.0 GA |
+| **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | ✅ Complete |
+| **Phase 6** | **DAP Debugger & TruLang 1.0 GA** | Interactive VS Code breakpoints, memory flamegraphs, and backward-compatible 1.0 RFC. | Immediate Next |
 
 ---
 
@@ -261,6 +261,14 @@ When ready to implement any phase, use this checklist as your starting blueprint
 - [x] High-performance in-process mock wire servers (`MockPostgresServer`, `MockRedisServer`) for zero-dependency offline verification
 - [x] TruLang FFI & VM integration for `import "trulang/postgres" as pg;` and `import "trulang/redis" as redis;`
 - [x] End-to-end TruLang test suite and runnable example (`examples/database_demo.tr`)
+
+### Phase 5: Cloud & Kubernetes Hardening (Completed)
+- [x] Standard Prometheus `/metrics` exposition exporter serving live memory arena, O(1) reset counts, mailbox depth, and request duration
+- [x] Kubernetes `/healthz` (liveness) and `/ready` (readiness) probe endpoints built directly into the HTTP engine
+- [x] Production graceful draining on `SIGTERM` and `SIGINT`: marks pod not-ready, drains listener backlog, completes in-flight requests, and shuts down with code 0
+- [x] OpenTelemetry (OTel) distributed tracing with W3C `traceparent` context propagation, span hierarchy, and header injection
+- [x] Multi-stage minimal production `deploy/Dockerfile` (Alpine Linux non-root UID 10001, <15 MB runtime footprint)
+- [x] Complete Kubernetes manifests in `deploy/k8s/`: `deployment.yaml` (probes, limits, preStop hook), `service.yaml`, and `servicemonitor.yaml`
 
 ---
 

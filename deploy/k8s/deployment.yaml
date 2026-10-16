@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trulang-api-gateway
+  namespace: default
+  labels:
+    app.kubernetes.io/name: trulang-api-gateway
+    app.kubernetes.io/part-of: trulang
+    app.kubernetes.io/component: microservice
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: trulang-api-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: trulang-api-gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: gateway
+          image: trulang/api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 128Mi
+          env:
+            - name: TRULANG_ENV
+              value: "production"
+            - name: TRULANG_HOST
+              value: "0.0.0.0"
+            - name: TRULANG_PORT
+              value: "8080"
+          lifecycle:
+            preStop:
+              exec:
+                # Sleep briefly to allow kube-proxy & Ingress to propagate endpoint removal
+                command: ["/bin/sleep", "5"]
+          # Kubernetes Liveness Probe: Checks if container is alive and responding
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Kubernetes Readiness Probe: Checks if container is ready to accept user ingress traffic
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 1
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

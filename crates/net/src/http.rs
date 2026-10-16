@@ -203,6 +203,16 @@ impl HttpResponse {
         res
     }
 
+    pub fn prometheus(body: impl Into<String>) -> Self {
+        let b = body.into().into_bytes();
+        let mut res = Self::new(200, b);
+        res.headers.insert(
+            "content-type".to_string(),
+            "text/plain; version=0.0.4; charset=utf-8".to_string(),
+        );
+        res
+    }
+
     pub fn error(status_code: u16, message: impl Into<String>) -> Self {
         let msg = message.into();
         let json_body = format!(
