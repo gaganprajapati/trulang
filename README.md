@@ -47,6 +47,7 @@ Traditional backend runtimes force a compromise:
 - **🚫 Cycle Detection on Promotion:** `persist()` traverses reference graphs to reject circular references (`VmError::CyclicPersistentData`), guaranteeing zero ARC memory leaks.
 - **⚡ Checked Arithmetic:** All integer arithmetic (`+`, `-`, `*`, `/`) is checked against overflow and underflow, preventing integer wrapping exploits.
 - **📦 Microsecond Cold Starts:** Instantaneous bytecode VM startup (< 3 ms) with an idle footprint of just **2.5 MB RSS**, enabling **15x to 40x higher microservice pod density** in Kubernetes clusters.
+- **🦀 Zero Cold-Start Ecosystem (150,000+ Rust Crates):** Native thread-pooled FFI bridge into the entire Rust ecosystem (`sqlx`, `redis`, `bcrypt`, `ring`, `serde_json`). TruLang eliminates the new-language cold-start penalty, giving developers access to production libraries with deterministic RAII handle cleanup.
 
 ---
 
@@ -245,6 +246,48 @@ Output:
   Arena Resets (O(1)):  50,000 total | Telemetry Drift: 0 B
 ======================================================================
 ```
+
+---
+
+## 🦀 Using Rust Libraries with TruLang (Native FFI Bridge)
+
+New languages usually fail because they suffer from the **"No Libraries" Cold-Start Trap**—developers love the syntax, but cannot adopt it without battle-tested drivers for PostgreSQL, Redis, JWT, and cryptography.
+
+**TruLang solves this on day one.** Because TruLang's VM and compiler are written in Rust, TruLang has direct, native access to the **150,000+ packages on [crates.io](https://crates.io)** with zero-copy argument passing and automatic thread pool offloading:
+
+```
+┌─────────────────────────────────┐
+│     TruLang Service (.tr)       │
+│  import "crypto" as crypto;     │
+│  let hash = crypto.hash(pw);    │
+└────────────────┬────────────────┘
+                 │ Safe FFI Bridge
+                 ▼
+┌─────────────────────────────────┐
+│     Rust Crate (crates.io)      │
+│  bcrypt • ring • sqlx • redis   │
+└─────────────────────────────────┘
+```
+
+### Quick Example: Password Hashing via Rust `bcrypt`
+```trulang
+import "crypto" as crypto;
+
+service AuthService {
+    memory_budget request = 16 MB;
+
+    fn register_user(password: string) -> string {
+        // Runs at compiled Rust speed; zero GC pause
+        let hash = crypto.hash_password(password, 10);
+        return hash;
+    }
+}
+```
+
+### Stateful Clients with RAII Handles (`Redis`, `Postgres`)
+Long-lived objects (database connection pools, sockets) are held as opaque **RAII Handles (`Value::Handle`)** in **Region B**. When an actor terminates or a handle goes out of scope, Rust's `Drop` executes deterministically—guaranteeing **zero socket or memory leaks**.
+
+📖 **Read the Full Architectural Guide & Tutorial:** [**Extending TruLang with the Rust Ecosystem (`docs/RUST_INTEROP.md`)**](docs/RUST_INTEROP.md)
 
 ---
 

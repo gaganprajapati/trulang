@@ -37,6 +37,7 @@
       <a href="#benchmarks" class="nav-link">Benchmarks</a>
       <a href="internals.html" class="nav-link">Runtime Internals</a>
       <a href="https://github.com/gaganprajapati/trulang/blob/main/ROADMAP.md" class="nav-link" target="_blank">Roadmap 1.0</a>
+      <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RUST_INTEROP.md" class="nav-link" target="_blank">Rust Interop</a>
     </nav>
 
     <div class="nav-search">
@@ -80,6 +81,7 @@
         <a href="#installation" class="sidebar-link">Installation & Setup <span class="tag tag-cli">INSTALL</span></a>
         <a href="#architecture" class="sidebar-link">Why TruLang? (Problems Solved) <span class="tag tag-mem">WHY</span></a>
         <a href="#playground" class="sidebar-link">Live Playground</a>
+        <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RUST_INTEROP.md" class="sidebar-link" target="_blank" style="color: #f43f5e; font-weight: 600;">Rust Crates Interop <span class="tag tag-cli">150k+</span></a>
       </div>
 
       <div class="sidebar-group">
@@ -292,6 +294,20 @@
             </p>
             <div style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 4px; color: var(--accent-amber);">
               ✓ Lock-Free Atomic SHM &bull; 0.0% APM Profiling Overhead
+            </div>
+          </div>
+
+          <!-- Pillar 5 -->
+          <div class="spec-card" style="padding: 1.25rem; border-left: 3px solid #e11d48;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
+              <span class="pill" style="color: #f43f5e; border-color: rgba(244, 63, 94, 0.3);">Pillar 5</span>
+              <strong style="color: var(--text-main); font-size: 1rem;">Zero Cold-Start: 150k+ Rust Crates Interop</strong>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 0.75rem;">
+              New languages take years to build libraries. TruLang solves this on day one: through our thread-pooled native FFI bridge, TruLang calls directly into <strong>crates.io</strong> (PostgreSQL, Redis, Bcrypt, AWS SDK). Stateful Rust clients are held safely as <strong>RAII Handles</strong> in Region B with zero socket or memory leaks.
+            </p>
+            <div style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-subtle); border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; border-radius: 4px; color: #f43f5e;">
+              ✓ crates.io Direct Access &bull; Deterministic RAII Destructors
             </div>
           </div>
         </div>
