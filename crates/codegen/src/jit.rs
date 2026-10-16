@@ -26,11 +26,13 @@ impl JitEngine {
         let c_source = CBackend::emit(chunk);
 
         let temp_dir = std::env::temp_dir();
+        static JIT_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let count = JIT_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos();
-        let temp_bin = temp_dir.join(format!("trulang_jit_{}_{}", std::process::id(), timestamp));
+        let temp_bin = temp_dir.join(format!("trulang_jit_{}_{}_{}", std::process::id(), timestamp, count));
 
         let config = CodegenConfig {
             release: false,
