@@ -452,4 +452,77 @@ test "should fail on inequality" {
             _ => panic!("Expected failed test outcome"),
         }
     }
+
+    #[test]
+    fn test_end_to_end_postgres_wire_driver() {
+        let _server = trulang_db::MockPostgresServer::start();
+        let url = _server.url();
+
+        let source = format!(
+            r#"
+import "trulang/postgres" as pg;
+import "std::json" as json;
+
+fn main() -> string {{
+    let pool = pg.create_pool("{}");
+    let rows = pool.query("SELECT id, name FROM users;");
+    let serialized = json.stringify(rows);
+    return serialized;
+}}
+"#,
+            url
+        );
+
+        let prog = parse(&source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compile failed");
+
+        let mut vm = VirtualMachine::new();
+        let res = vm.execute(&chunk).expect("Execution failed");
+
+        match res {
+            Value::String(s) => {
+                assert!(
+                    s.contains("\"id\":\"1\"") || s.contains("\"id\":1") || s.contains("Alice")
+                );
+                assert!(s.contains("Bob"));
+            }
+            other => panic!(
+                "Expected String result from json.stringify, got {:?}",
+                other
+            ),
+        }
+    }
+
+    #[test]
+    fn test_end_to_end_redis_wire_driver() {
+        let _server = trulang_db::MockRedisServer::start();
+        let url = _server.url();
+
+        let source = format!(
+            r#"
+import "trulang/redis" as redis;
+
+fn main() -> string {{
+    let client = redis.create_pool("{}");
+    client.set("session:token", "xyz-987-token");
+    let token = client.get("session:token");
+    return token;
+}}
+"#,
+            url
+        );
+
+        let prog = parse(&source).expect("Parse failed");
+        let chunk = compile(&prog).expect("Compile failed");
+
+        let mut vm = VirtualMachine::new();
+        let res = vm.execute(&chunk).expect("Execution failed");
+
+        match res {
+            Value::String(s) => {
+                assert_eq!(&*s, "xyz-987-token");
+            }
+            other => panic!("Expected String result from redis.get, got {:?}", other),
+        }
+    }
 }

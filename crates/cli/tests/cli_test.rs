@@ -358,3 +358,21 @@ fn main() -> i64 {
 
     let _ = fs::remove_dir_all(&base_temp);
 }
+
+#[test]
+fn test_cli_check_database_demo() {
+    let demo_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("examples")
+        .join("database_demo.tr");
+    let out = Command::new(env!("CARGO_BIN_EXE_trulang"))
+        .args(["check", demo_path.to_str().unwrap()])
+        .output()
+        .expect("Failed to run trulang check");
+    assert!(out.status.success());
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(stdout.contains("Check passed"));
+}

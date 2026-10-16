@@ -1,0 +1,15 @@
+[package]
+name = "trulang_db"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Native wire protocol drivers for PostgreSQL and Redis with dual-region memory architecture for TruLang"
+
+[dependencies]
+trulang_compiler = { path = "../compiler" }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]

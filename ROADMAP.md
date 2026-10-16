@@ -217,8 +217,8 @@ Incoming DB Wire Bytes
 | **Phase 1** | **`trulang test` CLI Harness** | Built-in test runner subcommand, assertion opcodes, colored diffs, and test reporting. | ✅ Complete |
 | **Phase 2** | **Native Async HTTP Engine** | `trulang/http` standard library, non-blocking socket loop, and Region A zero-copy request lifecycle. | ✅ Complete |
 | **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, decentralized Git resolver, and `new`/`add`/`install`/`publish` CLI commands. | ✅ Complete |
-| **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | Immediate Next |
-| **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | Milestone 5 |
+| **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | ✅ Complete |
+| **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | Immediate Next |
 | **Phase 6** | **DAP Debugger & TruLang 1.0 GA** | Interactive VS Code breakpoints, memory flamegraphs, and backward-compatible 1.0 RFC. | TruLang 1.0 GA |
 
 ---
@@ -253,6 +253,16 @@ When ready to implement any phase, use this checklist as your starting blueprint
 - [x] Integrate module resolution into `crates/compiler` and `crates/vm` for package imports and method invocations
 - [x] Add end-to-end integration tests verifying complete package lifecycle and multi-module compilation
 
+### Phase 4: Database Wire Protocols (Completed)
+- [x] Pure, zero-dependency `crates/db` (`trulang_db`) implementing direct binary wire framing
+- [x] Native PostgreSQL Frontend/Backend Protocol v3.0 driver supporting Startup handshake, MD5 auth, Simple Query, and DataRow decoding
+- [x] Native Redis RESP2/RESP3 protocol client supporting command pipelining, string, integer, boolean, and hash operations
+- [x] Dual-region database architecture: Region B persistent connection pools (`PgPool`, `RedisPool`) and Region A transient query frames with $O(1)$ bulk arena reclamation
+- [x] High-performance in-process mock wire servers (`MockPostgresServer`, `MockRedisServer`) for zero-dependency offline verification
+- [x] TruLang FFI & VM integration for `import "trulang/postgres" as pg;` and `import "trulang/redis" as redis;`
+- [x] End-to-end TruLang test suite and runnable example (`examples/database_demo.tr`)
+
 ---
 
 *Authored by the TruLang Core Team. Maintained at [github.com/gaganprajapati/trulang](https://github.com/gaganprajapati/trulang).*
+

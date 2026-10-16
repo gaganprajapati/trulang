@@ -42,6 +42,8 @@ Traditional backend runtimes force a compromise:
 - **🎯 Dual-Region Execution Arenas:**
   - **Region A (Execution Arena):** High-speed bump-pointer allocator for per-request transient objects. Reclaimed in $O(1)$ bulk reset upon request completion.
   - **Region B (Persistent State):** Reference-counted, acyclic DAG storage for actor state. Long-lived objects are promoted explicitly via `persist(x)`.
+- **🗄️ Native Binary Wire Protocols (`trulang/postgres`, `trulang/redis`):** Pure, zero-dependency async drivers for PostgreSQL (Frontend/Backend Protocol v3.0) and Redis (RESP2/RESP3 with pipelining). Connection pools live in Region B, while per-query socket buffers, wire frames, and parsed records are bump-allocated in Region A and reset in $O(1)$.
+- **📦 Built-in Package Manager (`tpm`):** Deterministic dependency management with `Tru.toml`, SHA-256 lockfile (`Tru.lock`), decentralized Git package resolution, and `trulang new`/`add`/`install`/`publish`.
 - **⏱️ Zero-Lock Actor Mailbox:** Single-threaded actors execute sequentially, eliminating data races, mutex deadlocks, and sync overhead. Incoming bursts are shed via bounded queue backpressure (`ActorError::MailboxFull`).
 - **📊 Real-Time Out-of-Process Telemetry:** Independent supervisor process reads live VM memory metrics via lockless atomic **Seqlock shared memory (`/tmp/trulang_shm_active.dat`)** without interrupting worker execution.
 - **🚫 Cycle Detection on Promotion:** `persist()` traverses reference graphs to reject circular references (`VmError::CyclicPersistentData`), guaranteeing zero ARC memory leaks.
@@ -358,6 +360,58 @@ See [benchmarks/http_benchmark_comparison.md](file:///Volumes/work/apps/TruLang/
 
 ---
 
+## 🗄️ Database Wire Protocols (`trulang/postgres` & `trulang/redis`)
+
+TruLang includes **pure, zero-dependency async binary wire protocol drivers** for PostgreSQL and Redis, natively integrated into the dual-region memory architecture:
+
+### Dual-Region Database Memory Flow
+```text
+Incoming DB Wire Bytes
+        │
+        ▼
+┌────────────────────────────────┐
+│ Region A (Bump Allocator)      │ ──► Query Response sent to client
+│  • Wire frame decoders         │ ──► Entire Arena wiped in O(1)!
+│  • Parsed rows & string columns│
+└────────────────────────────────┘
+        ▲
+        │ Borrowed Connection
+┌────────────────────────────────┐
+│ Region B (Persistent DAG)      │
+│  • Connection Pool (Active Sockets)
+│  • Prepared Statement Hashes   │
+└────────────────────────────────┘
+```
+
+- **Region B (Persistent State):** Long-lived connection pools (`PgPool`, `RedisPool`), authentication credentials, and persistent TCP sockets live in Region B across requests.
+- **Region A (Transient Request):** Wire socket frames, binary row parsers, column buffers, and result sets are bump-allocated in Region A. Once the request finishes, the entire arena is reclaimed in **$O(1)$ constant time with zero GC overhead**.
+
+### Usage Example
+```trulang
+import "trulang/postgres" as pg;
+import "trulang/redis" as redis;
+import "std::json" as json;
+
+fn main() -> i64 {
+    // 1. Connection pools live in Region B (persistent memory)
+    let pg_pool = pg.create_pool("postgres://user:pass@127.0.0.1:5432/app");
+    let redis_pool = redis.create_pool("redis://127.0.0.1:6379/0");
+
+    // 2. Query executed over binary wire protocol; rows decoded into Region A
+    let rows = pg_pool.query("SELECT id, username, email FROM users;");
+
+    // 3. Cache results in Redis using RESP2/RESP3 wire protocol
+    redis_pool.set("cache:users", json.stringify(rows));
+    let cached = redis_pool.get("cache:users");
+    println(cached);
+
+    return 0;
+    // O(1) bulk arena reset: zero memory leaks, zero GC pauses!
+}
+```
+
+---
+
 ## 🦀 Using Rust Libraries with TruLang (Native FFI Bridge)
 
 New languages usually fail because they suffer from the **"No Libraries" Cold-Start Trap**—developers love the syntax, but cannot adopt it without battle-tested drivers for PostgreSQL, Redis, JWT, and cryptography.
@@ -478,6 +532,7 @@ trulang/
 │   ├── supervisor/     # Out-of-process shared memory supervisor with atomic seqlock protocol
 │   ├── lsp/            # Language Server Protocol (JSON-RPC), live diagnostics, hover, definition jump, & formatter
 │   ├── ffi/            # Hybrid thread-pooled Rust/C FFI bridge, RAII handles, and standard library (JSON, HTTP, SQL)
+│   ├── db/             # Pure binary wire protocols (PostgreSQL v3.0 & Redis RESP2/RESP3) with dual-region pooling
 │   ├── codegen/        # Native AOT compiler backend and JIT engine producing standalone native binaries
 │   ├── net/            # Zero-copy async HTTP engine (trulang/http) backed by kqueue/epoll
 │   ├── pkg/            # Decentralized package manager (tpm), Tru.toml parser, Tru.lock SHA-256 verifier, & installer

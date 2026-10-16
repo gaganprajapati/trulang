@@ -1,0 +1,37 @@
+import "trulang/postgres" as pg;
+import "trulang/redis" as redis;
+import "std::json" as json;
+
+// Dual-Region Database Wire Protocol Demonstration
+// Region B: Connection pools (pg_pool, redis_client) persist across requests
+// Region A: Query frames, row buffers, and intermediate responses are zero-cost reclaimed
+fn main() -> i64 {
+    println("--- TruLang Database Wire Protocols Demo ---");
+
+    // 1. Initialize PostgreSQL connection pool (Region B persistent)
+    let pg_pool = pg.create_pool("postgres://postgres:secret@127.0.0.1:5432/production");
+    println("Connected to PostgreSQL wire protocol v3.0");
+
+    // 2. Query users table (wire binary framing, rows decoded in Region A)
+    let users = pg_pool.query("SELECT id, username, email FROM users LIMIT 10;");
+    println("Fetched user records:");
+    println(json.stringify(users));
+
+    // 3. Initialize Redis connection pool (Region B persistent)
+    let redis_client = redis.create_pool("redis://127.0.0.1:6379/0");
+    println("Connected to Redis RESP2/RESP3 protocol");
+
+    // 4. Cache user session in Redis
+    redis_client.set("session:user_101", json.stringify(users));
+    let cached = redis_client.get("session:user_101");
+    println("Retrieved cached session from Redis:");
+    println(cached);
+
+    // 5. Atomic counter increment
+    let hits = redis_client.incr("metrics:page_views");
+    println("Metrics page views updated via atomic wire command:");
+    println(hits);
+
+    println("Request lifecycle completed. Region A transient buffers reclaimed in O(1)!");
+    return 0;
+}

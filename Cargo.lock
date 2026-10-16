@@ -641,6 +641,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "trulang_db"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "trulang_compiler",
+]
+
+[[package]]
 name = "trulang_ffi"
 version = "0.1.0"
 dependencies = [
@@ -648,6 +659,7 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.21",
  "trulang_compiler",
+ "trulang_db",
  "trulang_syntax",
 ]
 
@@ -721,6 +733,7 @@ dependencies = [
  "libc",
  "thiserror 2.0.21",
  "trulang_compiler",
+ "trulang_db",
  "trulang_ffi",
  "trulang_supervisor",
  "trulang_syntax",

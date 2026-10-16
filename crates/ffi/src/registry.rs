@@ -1,5 +1,5 @@
 use crate::error::FfiError;
-use crate::modules::{http, json, pg};
+use crate::modules::{http, json, pg, redis};
 use crate::worker_pool::WorkerPool;
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -25,6 +25,9 @@ impl FfiRegistry {
         registry.register_alias("http", "std::http");
         registry.register_alias("trulang/http", "std::http");
         registry.register_alias("sql", "std::sql");
+        registry.register_alias("pg", "trulang/postgres");
+        registry.register_alias("postgres", "trulang/postgres");
+        registry.register_alias("redis", "trulang/redis");
 
         registry
     }
@@ -45,7 +48,13 @@ impl FfiRegistry {
     pub fn has_module(&self, name_or_alias: &str) -> bool {
         let resolved = self.resolve_module(name_or_alias);
         match resolved.as_str() {
-            "std::json" | "std::http" | "std::sql" | "rust:trulang_std_pg" => true,
+            "std::json"
+            | "std::http"
+            | "std::sql"
+            | "rust:trulang_std_pg"
+            | "trulang/postgres"
+            | "trulang/redis"
+            | "std::redis" => true,
             other => self.custom_modules.read().unwrap().contains_key(other),
         }
     }
@@ -121,8 +130,16 @@ impl FfiRegistry {
                     method: method.to_string(),
                 }),
             },
-            "rust:trulang_std_pg" | "std::sql" => match method {
-                "create_pool" => pg::create_pool(args),
+            "rust:trulang_std_pg" | "std::sql" | "trulang/postgres" => match method {
+                "create_pool" | "connect" => pg::create_pool(args),
+                _ => Err(FfiError::MethodNotFound {
+                    module: resolved,
+                    method: method.to_string(),
+                }),
+            },
+            "trulang/redis" | "std::redis" => match method {
+                "create_pool" => redis::create_pool(args),
+                "create_client" | "connect" => redis::create_client(args),
                 _ => Err(FfiError::MethodNotFound {
                     module: resolved,
                     method: method.to_string(),
