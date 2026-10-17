@@ -1,250 +1,67 @@
-# 🗺️ TruLang Roadmap: The Path to an Industry Standard
+# TruLang Master Roadmap Hub 🗺️
 
-> **Document Version:** 1.0.0  
-> **Target Milestone:** TruLang 1.0 Enterprise GA  
-> **Status:** Active Reference Architecture & Implementation Plan  
-> **Official Website:** [https://gagn.dev/trulang/](https://gagn.dev/trulang/)
+> **The Living Status & Development Roadmap for TruLang**  
+> **Current Stable Release:** **TruLang 1.0.0 GA** (Production Ready)  
+> **Active Milestone:** **Phase 7: Native TLS/HTTPS & WebSockets** (`v1.1.0`)  
+> **Stability Promise:** [RFC-0001: TruLang 1.0 Stability Contract](docs/RFC-0001-STABILITY-1.0.md)
+
+---
+
+## 1. Milestone Tracking Matrix
+
+| Phase | Title | Focus Area | Status | Target Release | Detailed Spec |
+|:---:|---|---|:---:|:---:|:---:|
+| **1** | **Native Microservice Engine** | Async HTTP (`trulang/http`), Region A reset, Routing | **✅ Completed** | `v1.0.0` | [01-ROADMAP-1.0-GA.md](roadmaps/completed/01-ROADMAP-1.0-GA.md#phase-1-native-microservice-runtime-and-zero-overhead-http-engine) |
+| **2** | **Secure Package Manager** | `Tru.toml`, `tpm`, SHA-256 verification, vendoring | **✅ Completed** | `v1.0.0` | [01-ROADMAP-1.0-GA.md](roadmaps/completed/01-ROADMAP-1.0-GA.md#phase-2-tru-package-manager-tpm-and-dependency-ecosystem) |
+| **3** | **Native Database Drivers** | Binary wire protocols (Redis RESP3 & Postgres v3.0) | **✅ Completed** | `v1.0.0` | [01-ROADMAP-1.0-GA.md](roadmaps/completed/01-ROADMAP-1.0-GA.md#phase-3-high-performance-native-database-wire-drivers) |
+| **4** | **Developer Tooling & LSP** | Language Server Protocol, `trulang fmt`, `trulang test` | **✅ Completed** | `v1.0.0` | [01-ROADMAP-1.0-GA.md](roadmaps/completed/01-ROADMAP-1.0-GA.md#phase-4-production-tooling-developer-experience--ide-ecosystem) |
+| **5** | **Cloud & K8s Hardening** | Prometheus `/metrics`, OTel tracing, graceful drain, Helm | **✅ Completed** | `v1.0.0` | [01-ROADMAP-1.0-GA.md](roadmaps/completed/01-ROADMAP-1.0-GA.md#phase-5-cloud-native-production-hardening-docker--kubernetes-orchestration) |
+| **6** | **DAP Debugger & TruLang 1.0** | Debug Adapter Protocol, visual flamegraph profiler, GA | **✅ Completed** | `v1.0.0` | [01-ROADMAP-1.0-GA.md](roadmaps/completed/01-ROADMAP-1.0-GA.md#phase-6-interactive-debugger-dap-visual-memory-profiler--trulang-10-ga) |
+| **7** | **Native TLS & WebSockets** | `rustls` HTTPS, WebSockets RFC 6455, SSE, HTTP/2 | **🎯 Next Up** | `v1.1.0` | [02-ROADMAP-2.0-SCALE.md](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md#phase-7-native-tlshttps-websockets--streaming-protocols-next-milestone) |
+| **8** | **WASM & Edge Runtime** | `wasm32-wasip1`, Cloudflare/Fastly Edge, In-Browser VM | **📋 Planned** | `v1.2.0` | [02-ROADMAP-2.0-SCALE.md](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md#phase-8-webassembly-wasm--wasi-and-edge-sandboxes) |
+| **9** | **Distributed Clustering** | Location-transparent actors, SWIM gossip, Raft consensus | **📋 Planned** | `v1.3.0` | [02-ROADMAP-2.0-SCALE.md](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md#phase-9-distributed-actor-clustering--consensus-otp-grade-cluster-runtime) |
+| **10** | **Central Package Registry** | `tpm.trulang.org`, VS Code Marketplace, `trulang doc` | **📋 Planned** | `v1.4.0` | [02-ROADMAP-2.0-SCALE.md](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md#phase-10-central-package-registry--ecosystem-infrastructure) |
+| **11** | **Cranelift Machine-Code JIT** | Native AOT/JIT, Hotspot OSR, Direct C-ABI FFI inlining | **📋 Planned** | `v1.5.0` | [02-ROADMAP-2.0-SCALE.md](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md#phase-11-machine-code-jit--cranelift-native-backend) |
+| **12** | **Enterprise Governance 2.0** | Live hot-code reload, 3-year LTS contract, chaos testing | **📋 Planned** | `v2.0.0` | [02-ROADMAP-2.0-SCALE.md](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md#phase-12-enterprise-operational-governance--trulang-20-lts) |
 
 ---
 
-## 🎯 Executive Summary & Vision
+## 2. Roadmap Document Organization
 
-**TruLang v0.1.0** established the foundational computer science breakthrough:
-1. **Dual-Region Memory Arenas:** Sub-microsecond per-request bump allocation in **Region A** reclaimed via $O(1)$ constant-time bulk resets (Zero Stop-the-World GC pauses), paired with acyclic reference-counted **Region B** persistent DAGs.
-2. **Zero-Lock Actor Concurrency:** Single-threaded service actors eliminating mutex contention, data races, and deadlocks with bounded mailbox backpressure.
-3. **Out-of-Process Seqlock Telemetry:** Lockless atomic memory telemetry accessible in real time via shared memory.
-4. **Multi-Target Execution:** High-speed bytecode VM, native Ahead-Of-Time (AOT) C compiler, and JIT engine.
-
-To transition from an innovative language runtime into a **global industry standard** adopted by enterprise engineering teams (joining the ranks of Go, Rust, and Node.js for backend microservices), TruLang must deliver a **batteries-included, enterprise-ready cloud production ecosystem**.
-
-This roadmap outlines the **5 Core Pillars** and the **Phased Implementation Milestones** required to reach TruLang 1.0.
-
----
+To ensure complete clarity on what is already delivered versus what lies ahead, roadmap documentation is structured as follows:
 
 ```
-                       ┌────────────────────────────────────────────────────────┐
-                       │          TruLang 1.0: Enterprise Standard              │
-                       └───────────────────────────┬────────────────────────────┘
-                                                   │
-         ┌───────────────────┬─────────────────────┼─────────────────────┬───────────────────┐
-         ▼                   ▼                     ▼                     ▼                   ▼
-   ┌───────────┐      ┌───────────────┐     ┌─────────────┐      ┌───────────────┐     ┌───────────┐
-   │ Pillar 1  │      │   Pillar 2    │     │  Pillar 3   │      │   Pillar 4    │     │ Pillar 5  │
-   │  Async    │      │  Package Mgr  │     │  Database   │      │ Observability │     │ Developer │
-   │  & HTTP   │      │  (`tpm`)      │     │  Protocols  │      │  & Cloud/K8s  │     │  Tooling  │
-   └───────────┘      └───────────────┘     └─────────────┘      └───────────────┘     └───────────┘
+roadmaps/
+├── README.md                           <-- Master Status Dashboard (this file)
+├── completed/
+│   └── 01-ROADMAP-1.0-GA.md            <-- Full specifications & verification of Phases 1 to 6
+└── upcoming/
+    └── 02-ROADMAP-2.0-SCALE.md         <-- Full technical specifications for Phases 7 to 12
 ```
 
----
-
-## 🏛️ The 5 Pillars to Industry Standard
-
----
-
-### 🌐 Pillar 1: Non-Blocking Asynchronous I/O & Built-in HTTP Engine
-
-> **The Industry Benchmark:** *Can an engineer write a high-throughput JSON microservice with zero third-party dependencies in under 20 lines of code?*
-
-#### 1. Native Asynchronous Event Loop (OS Poller)
-- Implement non-blocking OS event readiness notification (`epoll` on Linux, `kqueue` on macOS, `IOCP` on Windows), analogous to Tokio or Go's netpoller.
-- When an actor initiates network I/O or awaits a timer, its task yields execution without blocking kernel threads, resuming automatically when socket readiness events fire.
-
-#### 2. Zero-Copy HTTP/1.1 & HTTP/2 Engine
-- Built-in standard library module: `import "trulang/http" as http`.
-- **The Core TruLang Advantage:** Sockets read directly into **Region A**. Request headers, parsed JSON parameters, and dynamic routing maps are bump-allocated in Region A. Once the HTTP response is dispatched, the entire request memory is wiped in $O(1)$ bulk reset without any garbage collector scan.
-```trulang
-service ApiGateway {
-    memory_budget request = 16 MB max 64 MB;
-
-    fn handle_request(req: http::Request) -> http::Response {
-        let user_id = req.param("id");
-        let body = req.json(); // Bump-allocated in Region A
-        
-        return http::Response::json({
-            "status": "success",
-            "user": user_id
-        });
-        // Request finishes: Region A is reset in O(1) with 0.0 ms GC pause!
-    }
-}
-```
-
-#### 3. Native TLS / HTTPS (Zero C Dependency)
-- Standard library TLS encryption powered by pure, memory-safe cryptographic primitives (`rustls`), eliminating OpenSSL dynamic linking hurdles in microservice containers.
+- **[01-ROADMAP-1.0-GA.md](roadmaps/completed/01-ROADMAP-1.0-GA.md):** The complete historical record of the 6 foundational phases that brought TruLang from prototype to 1.0 General Availability. Includes test verification logs (106/106 passing tests across 12 workspace crates) and architectural breakdown.
+- **[02-ROADMAP-2.0-SCALE.md](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md):** The forward-looking technical blueprint for TruLang 2.0 ("The Scale, Edge & Distributed Cloud Era"), detailing architectural requirements, crate targets, and acceptance criteria.
 
 ---
 
-### 📦 Pillar 2: Package Ecosystem & Dependency Manager (`tpm`)
+## 3. What Is Completed (TruLang 1.0 GA)
 
-> **The Industry Benchmark:** *Can a developer easily share, import, and lock dependencies with reproducible hermetic builds?*
-
-#### 1. Tru Package Manager CLI (`tpm`)
-- First-class commands integrated into the compiler:
-  - `trulang new <project_name>` — Scaffolds standard microservice template.
-  - `trulang add <dependency>` — Adds package with semver resolution.
-  - `trulang publish` — Signs and publishes packages.
-
-#### 2. Project Manifest & Hermetic Lockfile
-- `Tru.toml`: Human-readable package manifest:
-  ```toml
-  [package]
-  name = "payment-service"
-  version = "1.0.0"
-  edition = "2026"
-
-  [dependencies]
-  "github.com/trulang/postgres" = "^1.2.0"
-  "github.com/trulang/redis" = "^0.8.0"
-  ```
-- `Tru.lock`: Cryptographic SHA-256 hashes of all dependency trees guaranteeing identical, bit-for-bit reproducible builds across CI/CD pipelines.
-
-#### 3. Decentralized Git-Based Resolution
-- Similar to Go modules, dependencies resolve directly from Git repositories:
-  ```trulang
-  import "github.com/trulang/postgres" as pg;
-  import "github.com/trulang/jwt" as jwt;
-  ```
+1. **Dual-Region Memory Engine:** Zero-pause garbage collection using per-request bump arenas (Region A) with constant-time $O(1)$ bulk resets and reference-counted graph storage (Region B).
+2. **Native Async HTTP Engine (`trulang/http`):** Multi-platform OS readiness event loop (`kqueue` on macOS/BSD, `epoll` on Linux, `WSAPoll` on Windows).
+3. **Secure Package Manager (`tpm`):** Deterministic resolution, SHA-256 integrity verification, and local vendoring via `Tru.toml` and `Tru.lock`.
+4. **Native Database Wire Protocols:** Hand-crafted binary protocol engines for Redis (`RESP2`/`RESP3`) and PostgreSQL (v3.0) with pooling.
+5. **Developer Tooling:** Built-in Language Server Protocol (`trulang lsp`), AST code formatter (`trulang fmt`), and native test runner (`trulang test`).
+6. **Cloud & Kubernetes Hardening:** Prometheus `/metrics`, OpenTelemetry distributed tracing context propagation, graceful shutdown draining, and Helm charts.
+7. **Interactive Debugger & Profiler:** Full Debug Adapter Protocol (`crates/dap`) daemon for VS Code interactive debugging and dual-region SVG flamegraph profiler (`trulang profile`).
+8. **RFC-0001 Stability Promise:** Official SemVer 2.0.0 backward compatibility guarantee.
 
 ---
 
-### 🗄️ Pillar 3: Database & Cloud Connectors ("Bread and Butter")
+## 4. What Lies Ahead (TruLang 2.0 Horizons)
 
-> **The Industry Benchmark:** *Can TruLang communicate natively with PostgreSQL, MySQL, Redis, and message queues at maximum line speed?*
+The immediate focus is **Phase 7: Native TLS/HTTPS & WebSockets (`v1.1.0`)**:
+- Native `rustls` integration directly in the event loop for zero-overhead HTTPS without requiring an Nginx/Envoy reverse proxy.
+- Bidirectional WebSockets with Region A per-frame memory recycling.
+- Server-Sent Events (SSE) streaming generators.
 
-#### 1. Dual-Region Database Architecture
-Database drivers in TruLang leverage both memory regions to achieve unprecedented throughput:
-- **Region B (Persistent State):** Long-lived connection pools, SSL session parameters, prepared statement caches, and authentication tokens live in Region B.
-- **Region A (Transient Request):** Wire socket packets, binary row parsers, and query response objects are parsed into Region A bump memory and automatically cleared when the query handler returns.
-
-```
-Incoming DB Wire Bytes
-        │
-        ▼
-┌────────────────────────────────┐
-│ Region A (Bump Allocator)      │ ──► Query Response sent to client
-│  • Wire frame decoders         │ ──► Entire Arena wiped in O(1)!
-│  • Parsed rows & string columns│
-└────────────────────────────────┘
-        ▲
-        │ Borrowed Connection
-┌────────────────────────────────┐
-│ Region B (Persistent DAG)      │
-│  • Connection Pool (Active Sockets)
-│  • Prepared Statement Hashes   │
-└────────────────────────────────┘
-```
-
-#### 2. Native Wire Protocol Implementations
-- **PostgreSQL / MySQL:** Pure TruLang/Rust async client communicating over binary wire protocols (Frontend/Backend Protocol v3.0).
-- **Redis Client:** Sub-millisecond RESP3 protocol client supporting pipelining and cluster routing.
-- **Message Queues:** Native streaming connectors for Apache Kafka, AWS SQS, and RabbitMQ with actor mailbox backpressure.
-
----
-
-### 📊 Pillar 4: Production Observability & Kubernetes Readiness
-
-> **The Industry Benchmark:** *Can a DevOps or SRE team deploy TruLang in a 10,000-pod Kubernetes cluster with native Prometheus, OpenTelemetry, and zero-downtime lifecycle hooks?*
-
-#### 1. OpenTelemetry (OTel) Distributed Tracing
-- Built-in span creation and context propagation:
-  - Injected automatically across incoming HTTP headers (`traceparent`), service actor mailboxes, and outgoing database queries.
-  - Zero-allocation spans structured within Region A.
-
-#### 2. Native Prometheus `/metrics` Scraper
-- Standard library HTTP metric exporter serving the live lockless Seqlock supervisor data:
-  ```text
-  # HELP trulang_arena_a_bytes_allocated Total bytes bump-allocated in Region A
-  # TYPE trulang_arena_a_bytes_allocated counter
-  trulang_arena_a_bytes_allocated 104857600
-  
-  # HELP trulang_arena_a_resets_total Total number of O(1) arena resets
-  # TYPE trulang_arena_a_resets_total counter
-  trulang_arena_a_resets_total 50000
-
-  # HELP trulang_actor_mailbox_depth Current queued messages in actor mailboxes
-  # TYPE trulang_actor_mailbox_depth gauge
-  trulang_actor_mailbox_depth{actor="UserActor"} 3
-  ```
-
-#### 3. Kubernetes Container Lifecycle & Graceful Draining
-- First-class handlers for `SIGTERM` and `SIGINT`:
-  1. Stop accepting new ingress HTTP connections.
-  2. Allow in-flight Region A request handlers to complete.
-  3. Flush actor mailboxes up to a configurable timeout (e.g. 15s).
-  4. Disconnect persistent database connections cleanly and exit with code 0.
-
----
-
-### 🛠️ Pillar 5: Developer Tooling, Hardening & Language Stability
-
-> **The Industry Benchmark:** *Do developers have enterprise-grade debugging, profiling, and language stability guarantees?*
-
-#### 1. Built-in Test Runner (`trulang test`)
-- Testing framework built directly into the CLI toolchain:
-  ```bash
-  trulang test
-  ```
-  - Test declarations natively in TruLang:
-    ```trulang
-    test "elastic budget overflow is safely caught" {
-        let mut x = 1;
-        assert(x == 1);
-    }
-    ```
-  - Parallel test execution, colored failure diffs, and code coverage analysis.
-
-#### 2. Debug Adapter Protocol (DAP) for VS Code
-- Full interactive debugging in Visual Studio Code:
-  - Set breakpoints in `.tr` files.
-  - Step over, step into, and step out of actor message handlers.
-  - Inspect Region A vs Region B variable values in the VS Code debug pane.
-
-#### 3. Visual Memory Profiler (`trulang profile`)
-- Live or recorded memory profiling tool generating interactive flamegraphs:
-  - Identifies which code paths call `persist()` and promote to Region B.
-  - Highlights requests that trigger elastic memory budget burst expansions.
-
-#### 4. TruLang 1.0 Stability RFC & Semantic Versioning Guarantee
-- A formal language specification guaranteeing backward compatibility:
-  - Code compiled on TruLang 1.0 will continue to compile and run without modification on TruLang 1.x releases for years to come.
-
----
-
-## 🚀 Phased Implementation Roadmap
-
-| Phase | Milestone | Primary Deliverable | Target Timeline |
-| :---: | :--- | :--- | :--- |
-| **Phase 1** | **`trulang test` CLI Harness** | Built-in test runner subcommand, assertion macros, colored diffs, and test reporting. | Immediate Next |
-| **Phase 2** | **Native Async HTTP Engine** | `trulang/http` standard library, non-blocking socket loop, and Region A zero-copy request lifecycle. | Milestone 2 |
-| **Phase 3** | **Package Manager (`tpm`)** | `Tru.toml` manifest, `Tru.lock` SHA-256 verifier, and Git-based module resolution. | Milestone 3 |
-| **Phase 4** | **Database Wire Protocols** | Async PostgreSQL and Redis binary wire drivers with Region B pooling. | Milestone 4 |
-| **Phase 5** | **Cloud & Kubernetes Hardening** | Prometheus `/metrics`, OpenTelemetry tracing, graceful `SIGTERM` draining, and Docker Alpine OCI. | Milestone 5 |
-| **Phase 6** | **DAP Debugger & TruLang 1.0 GA** | Interactive VS Code breakpoints, memory flamegraphs, and backward-compatible 1.0 RFC. | TruLang 1.0 GA |
-
----
-
-## 📋 Implementation Checklist for Future Turns
-
-When ready to implement any phase, use this checklist as your starting blueprint:
-
-### Phase 1: `trulang test` Harness
-- [ ] Add `TestDeclaration` AST node in `crates/syntax/src/ast.rs`
-- [ ] Implement `assert(...)` and `assert_eq(a, b)` builtins in `crates/compiler` and `crates/vm`
-- [ ] Implement `Commands::Test { path, filter }` in `crates/cli/src/main.rs`
-- [ ] Add colored terminal reporting (green passes, red failure diffs with line numbers)
-- [ ] Update VS Code extension with a "Run Test" CodeLens above `test "..."` blocks
-
-### Phase 2: Native Async HTTP Engine
-- [ ] Add non-blocking socket abstraction in `crates/ffi` or new `crates/net`
-- [ ] Implement zero-copy HTTP/1.1 parser streaming into Region A
-- [ ] Expose `http::Request` and `http::Response` stdlib types
-- [ ] Build high-throughput REST API benchmark vs Go/Node.js
-
-### Phase 3: Package Manager (`tpm`)
-- [ ] Implement `Tru.toml` parser and `Tru.lock` generator in `crates/cli`
-- [ ] Add `trulang add <git-url>` submodule / cache resolver in `~/.trulang/pkg/`
-- [ ] Integrate package imports into `crates/compiler` module resolution
-
----
-
-*Authored by the TruLang Core Team. Maintained at [github.com/gaganprajapati/trulang](https://github.com/gaganprajapati/trulang).*
+For complete specifications on all upcoming phases (WASM, Actor Clustering, Central Registry, Cranelift JIT, and Enterprise 2.0 LTS), refer to [**02-ROADMAP-2.0-SCALE.md**](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md).

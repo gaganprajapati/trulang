@@ -31,8 +31,8 @@ Traditional backend runtimes force a compromise:
 > 🧠 **Coming from Node.js, Go, or Rust?**  
 > Read our comprehensive architectural guide: [**How TruLang Works: Under the Hood Architecture & Execution Mechanism**](docs/INTERNALS.md) (or view the [Interactive Web Visualizer](https://gagn.dev/trulang/internals.html)) to understand the Dual-Region Memory Engine, Request Lifecycle, and Zero-Lock Service Actor concurrency model.
 > 
-> 🗺️ **Looking Ahead to TruLang 1.0?**  
-> Explore the 5 pillars to enterprise cloud adoption in our [**Path to Industry Standard Roadmap**](ROADMAP.md).
+> 🗺️ **Looking Ahead to TruLang 2.0?**  
+> Explore the next frontier (TLS, WebSockets, WASM, Distributed Clustering) in our [**Post-1.0 Roadmap**](ROADMAP.md) (or review the archived [**TruLang 1.0 Roadmap**](ROADMAP_V1.md)).
 
 ---
 
