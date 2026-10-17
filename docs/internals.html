@@ -226,6 +226,35 @@ cache.insert(user_id, persist(user_dto));
             </div>
           </div>
         </div>
+
+        <!-- Allocation Decision Engine Box -->
+        <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-top: 1.5rem; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <strong style="color: var(--text-main); font-size: 1.05rem;">🧠 How TruLang Decides: Region A vs. Region B</strong>
+            <span class="pill pill-purple">Allocation Decision Engine</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem;">
+            Developers never manually annotate complex lifetimes. TruLang enforces a deterministic 3-tier allocation decision rule:
+          </p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <div style="background: rgba(2, 132, 199, 0.05); border: 1px solid rgba(2, 132, 199, 0.2); border-radius: 6px; padding: 1rem;">
+              <strong style="color: #38bdf8; font-size: 0.9rem; display: block; margin-bottom: 0.4rem;">1. Default Rule (Region A)</strong>
+              <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">All local variables, parsed JSON payloads, database rows, and intermediate strings begin in Region A. Reclaimed in a single CPU instruction ((1)$) with 0.0 ms GC.</div>
+            </div>
+            <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 6px; padding: 1rem;">
+              <strong style="color: #34d399; font-size: 0.9rem; display: block; margin-bottom: 0.4rem;">2. Explicit persist(x)</strong>
+              <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">Promotes data to Region B with DAG cycle detection (<code>detect_value_cycles</code>). Guarantees zero circular reference leaks in persistent actor storage.</div>
+            </div>
+            <div style="background: rgba(124, 58, 237, 0.05); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 6px; padding: 1rem;">
+              <strong style="color: #a78bfa; font-size: 0.9rem; display: block; margin-bottom: 0.4rem;">3. Compiler Escape Analysis</strong>
+              <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">Assignments from transient scopes into actor fields (e.g. <code>cache.insert(k, v)</code>) are automatically detected by the compiler, which inserts <code>Opcode::Persist</code>.</div>
+            </div>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); display: flex; gap: 1rem; flex-wrap: wrap;">
+            <span>🛡️ <strong>Directional Invariant:</strong> Region B can <em>never</em> point to Region A (UAF is impossible).</span>
+            <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/MEMORY_MODEL.md" target="_blank" style="color: #38bdf8; text-decoration: none; font-weight: 600;">Read Full Memory Model Spec &rarr;</a>
+          </div>
+        </div>
       </section>
 
       <!-- 3. Step-by-Step Lifecycle of a Request -->
