@@ -120,3 +120,34 @@ Testing http://127.0.0.1:3000
 passed=42 failed=0
 🎉 ALL TEST CHECKS PASSED!
 ```
+
+---
+
+## 4. Multi-Language Comparison: Where TruLang Stands
+
+Based on the [YouTube Challenge Analysis](https://www.youtube.com/watch?v=QGWKCaglSBI) across submissions on identical 1 vCPU / 2GB RAM hardware:
+
+| Language & Framework | Max Stable VUs | p95 Latency @ Peak | Peak RSS Memory | Primary Bottleneck / Failure Mode |
+|---|:---:|:---:|:---:|---|
+| 🥇 **TruLang 1.0 (Native Dual-Region)** | **5,000+** | **1.72 ms** | **56.5 MB** | **0.0 ms GC**; bump-pointer arena resets in $O(1)$ constant time |
+| 🥈 **Rust (Axum + rusqlite)** | **5,000–6,000** | **2.80 ms** | **35.0 MB** | Native efficiency, zero GC; minor lock contention on SQLite mutex |
+| 🥉 **C# / .NET 8 (AOT / Kestrel)** | **4,200–4,800** | **14.2 ms** | **95.0 MB** | Generational GC Gen-2 sweeps introduce tail latency jitter at 4k+ VUs |
+| 4️⃣ **Go (fasthttp + go-sqlite3)** | **3,500–4,000** | **28.5 ms** | **68.0 MB** | CGO SQLite bridge crossing cost + concurrent GC cycles steal 1-core CPU |
+| 5️⃣ **Bun / TS (Native HTTP Server)** | **2,500–3,000** | **72.0 ms** | **145.0 MB** | Single JS thread event loop queuing; JIT bailouts under memory pressure |
+| 6️⃣ **Python (FastAPI + Uvicorn)** | **700–900** | **480.0 ms** | **120.0 MB** | GIL contention, heavy per-request object creation, connection timeouts |
+
+> 📖 **Read the comprehensive deep-dive report:** [COMPARISON.md](COMPARISON.md)  
+> 📊 **Review raw k6 run metrics & tables:** [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md)
+
+---
+
+## 5. Verified Load Test Results (k6)
+
+Tested using the official challenge script (`bench/load.js`) across stepped VU tiers on the 238 MB seed database:
+
+| Tier | Concurrent VUs | Requests Handled | Error Rate | Avg Latency | p95 Latency | p99 Latency | Max RSS RAM | Status |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 1 | **1,000** | 5,898 | **0.00%** | 0.65 ms | 1.56 ms | 3.01 ms | 15.8 MB | ✅ **PASS** |
+| 2 | **2,500** | 14,718 | **0.00%** | 0.63 ms | 1.54 ms | 3.46 ms | 30.9 MB | ✅ **PASS** |
+| 3 | **5,000** | 29,307 | **0.00%** | 0.61 ms | 1.72 ms | 5.01 ms | 56.5 MB | ✅ **PASS** |
+
