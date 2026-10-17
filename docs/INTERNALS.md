@@ -80,6 +80,14 @@ Traditional languages force a difficult compromise: accept GC pause jitter (Java
 - **Acyclic Graph (DAG) Invariant**: Enforces reference-counted ownership without cycles, guaranteeing deterministic deallocation on actor shutdown.
 - **Compiler Auto-Promotion**: The compiler infers when data escapes request scope into persistent fields (e.g. `cache.insert(k, v)`) and automatically inserts `Opcode::Persist`.
 
+### How TruLang Decides: Region A vs. Region B
+1. **Default Rule:** Everything instantiated in a function or message handler begins in **Region A** (bump-allocated, zero-GC).
+2. **Explicit Promotion:** Calling `persist(value)` deep-promotes the object into **Region B** with DAG cycle detection.
+3. **Compiler Escape Analysis:** Direct assignments from Region A into actor-level state (Region B) are automatically detected by the compiler, which inserts `Opcode::Persist`.
+4. **Pointer Invariant:** Region B pointers can *never* point to Region A (preventing dangling pointers), while Region A can freely reference Region B.
+
+> 📖 **Read the full dedicated specification:** [**TruLang Memory Model: The Dual-Region Allocation Engine**](MEMORY_MODEL.md)
+
 ---
 
 ## 3. Step-by-Step Lifecycle of a TruLang Request
