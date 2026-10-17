@@ -20,7 +20,10 @@
 
 ## 📖 Overview
 
-**TruLang** is a modern general-purpose programming language specifically engineered for backend microservices, high-throughput APIs, and latency-critical cloud systems.
+**TruLang** (also written as **truLang**) is a modern general-purpose programming language specifically engineered for backend microservices, high-throughput APIs, and latency-critical cloud systems.
+
+> 🌐 **Official Website & Docs:** [https://gagn.dev/trulang/](https://gagn.dev/trulang/)  
+> 🧠 **Runtime Architecture Deep Dive:** [https://gagn.dev/trulang/internals.html](https://gagn.dev/trulang/internals.html)
 
 Traditional backend runtimes force a compromise:
 - **Tracing GC runtimes (Go, Node.js, Java):** Suffer from unpredictable garbage collection pauses (15 ms to 120 ms tail latency spikes), high idle memory footprint (40 MB to 110 MB RSS), and memory leaks from lingering closure references.

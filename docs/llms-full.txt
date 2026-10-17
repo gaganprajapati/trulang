@@ -1,0 +1,69 @@
+# TruLang — Complete Language Architecture & AI Reference
+
+## 1. What is TruLang?
+TruLang (often searched as "truLang" or "trulang programming language") is a high-performance backend systems programming language. It solves the classic dilemma in backend development:
+- Languages like Go and Java provide developer ergonomics but suffer from stop-the-world Garbage Collection (GC) latency spikes and heap fragmentation.
+- Languages like C++ and Rust offer raw speed and predictable latencies, but require steep learning curves, lifetime annotations, or complex borrow checker negotiations.
+
+TruLang introduces a third paradigm: **Dual-Region Memory Arenas with Zero-Lock Service Actors**. It delivers the zero-pause predictability of Rust alongside the simple mental model of Go or TypeScript.
+
+## 2. Core Architectural Pillars
+### 2.1 Dual-Region Memory Architecture
+1. **Region A (Execution Arena)**:
+   - Dedicated bump-allocated linear memory arena for each request/task.
+   - Extremely fast allocation (pointer bump).
+   - At the completion of a request or task, Region A is wiped in O(1) time simply by resetting the bump pointer. No GC sweeping, no reference-counting overhead, and no heap fragmentation.
+2. **Region B (Persistent State Arena)**:
+   - Contains long-lived service state, caches, connection pools, and shared configuration.
+   - Values from Region A can be promoted to Region B using the explicit `persist(value)` keyword.
+   - Region B data is thread-safe and isolated per actor.
+
+### 2.2 Zero-Lock Service Actors
+- Concurrency in TruLang is modeled around `service` actors.
+- Each service actor runs sequentially on its own thread or worker pool, receiving messages from an lock-free MPSC mailbox.
+- Because only the actor touches its internal state, zero mutexes, zero read-write locks, and zero atomic fences are required during state mutation.
+- Seqlock telemetry allows external observers (like metrics supervisors) to read actor stats non-blockingly without starving the service actor.
+
+### 2.3 Strict Memory Budgets & Hardening
+- Every service can specify a `memory_budget` (e.g., `memory_budget 16MB`).
+- If an allocation exceeds this quota, the runtime cleanly catches the limit and triggers the actor's graceful degradation or error handler, preventing noisy-neighbor crashes or out-of-memory (OOM) kills.
+
+## 3. Language Syntax & Specification Summary
+- **Immutability by default**:
+  ```trulang
+  let port = 8080        // Immutable
+  let mut count = 0      // Explicitly mutable
+  ```
+- **Null Safety**:
+  ```trulang
+  let name: string = "TruLang"
+  let nickname: string? = null   // Explicitly nullable
+  let len = nickname?.length ?? 0
+  ```
+- **Functions**:
+  ```trulang
+  fn calculate_hash(data: string, salt: string) -> string {
+      return ffi::crypto::sha256(data + salt)
+  }
+  ```
+- **Service Actors**:
+  ```trulang
+  service MetricsAggregator {
+      let mut counter: int = 0
+
+      fn record_hit() -> int {
+          counter = counter + 1
+          return counter
+      }
+  }
+  ```
+
+## 4. Ecosystem & Rust Interoperability
+TruLang includes a zero-overhead FFI bridge enabling developers to invoke any of the 150,000+ Rust crates on crates.io, as well as native C dynamic libraries, with automatic type marshaling.
+
+## 5. Tooling
+- `trulang check`: Sub-millisecond typechecker and static analyzer.
+- `trulang run`: Bytecode VM interpreter with optional `--jit` acceleration.
+- `trulang build`: AOT compiler emitting native machine binaries via LLVM/C backend.
+- `trulang test`: Built-in concurrent test runner.
+- `trulang lsp`: Standard Language Server Protocol for syntax highlighting, autocomplete, go-to-definition, and diagnostics.

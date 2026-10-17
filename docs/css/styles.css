@@ -1380,6 +1380,94 @@ footer {
 }
 
 /* --------------------------------------------------------------------------
+   FAQ Section & AI Engine Optimization (AIO) Styles
+   -------------------------------------------------------------------------- */
+.faq-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.faq-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color var(--trans-normal), box-shadow var(--trans-normal);
+}
+
+.faq-item[open] {
+  border-color: var(--accent-blue);
+  box-shadow: 0 4px 14px -3px rgba(37, 99, 235, 0.12);
+}
+
+.faq-question {
+  padding: 1.1rem 1.25rem;
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  background: var(--card-header-bg);
+  transition: background var(--trans-fast);
+}
+
+.faq-question:hover {
+  background: var(--bg-hover);
+  color: var(--accent-blue);
+}
+
+.faq-question::-webkit-details-marker {
+  display: none;
+}
+
+.faq-question::after {
+  content: "+";
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  transition: transform var(--trans-fast);
+  line-height: 1;
+  margin-left: 0.75rem;
+}
+
+.faq-item[open] .faq-question::after {
+  content: "−";
+  color: var(--accent-blue);
+}
+
+.faq-answer {
+  padding: 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+  background: var(--card-body-bg);
+}
+
+.faq-answer p {
+  margin-bottom: 0.75rem;
+}
+
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}
+
+.faq-answer code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  background: var(--bg-inset);
+  color: var(--text-main);
+}
+
+
+/* --------------------------------------------------------------------------
    Responsive Layout
    -------------------------------------------------------------------------- */
 @media (max-width: 1120px) {
