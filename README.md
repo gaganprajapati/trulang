@@ -71,6 +71,24 @@ Empirical benchmarks run across identical microservice API lifecycle workloads (
 
 ---
 
+## ⚖️ Why Choose TruLang Over Rust?
+
+While Rust provides industry-leading raw execution speed, building cloud APIs and backend microservices in Rust incurs a substantial **"Borrow Checker Tax"**: complex lifetime annotations (`'a`), async pin projections, slow compile times (1–3+ minutes), and verbose multi-threaded lock management (`Arc<Mutex<T>>`).
+
+**TruLang delivers Rust-level throughput and a guaranteed 0.0 ms GC pause without borrow checker complexity:**
+
+| Challenge in Rust | How TruLang Solves It |
+|---|---|
+| **Borrow Checker & Lifetimes (`'a`)** | **Dual-Region Arenas**: Transient request data allocates sequentially in Region A and resets in $O(1)$ constant time (`offset = 0`). Developers never annotate lifetimes or battle compiler ownership errors. |
+| **Deadlocks & Lock Contention** | **First-Class Service Actors**: Concurrency is built into the language grammar with isolated mailboxes. Shared mutable state is structurally impossible. |
+| **Slow Compilation (1–3 minutes)** | **Sub-Second Builds**: Modular compiler architecture avoids deep generic template monomorphization and heavy macro cascades. |
+| **Recursive Heap Deallocation** | **Zero-Copy Bulk Free**: Rather than recursively calling `Drop` on thousands of nested structs, TruLang reclaims the entire arena in a single CPU instruction. |
+| **Steep Team Learning Curve** | **Go/TypeScript Simplicity**: Familiar, modern syntax allows engineers to write production-grade systems on Day 1. |
+
+> 📖 **Read the full technical whitepaper:** [**Why TruLang Over Rust? (Architecture, Memory Models & Benchmarks)**](docs/WHY_TRULANG_OVER_RUST.md)
+
+---
+
 ## 🚀 Installation & Setup
 
 ## 💻 Visual Studio Code Support
