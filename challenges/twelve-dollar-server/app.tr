@@ -1,0 +1,48 @@
+// TruLang $12 Server Challenge Feed API
+// Demonstrates clean declarative Service Actor architecture with Region A per-request isolation.
+
+service FeedApi {
+    state {
+        db_path: string,
+        jwt_secret: string,
+        start_time: int
+    }
+
+    on_start() {
+        self.db_path = env("SQLITE_PATH", "seed/feed.db");
+        self.jwt_secret = env("JWT_SECRET", "twelve-dollar-challenge");
+        self.start_time = now();
+    }
+
+    on_request(req: HttpRequest) -> HttpResponse {
+        // 1. Health Probe
+        if req.path == "/health" {
+            let uptime = now() - self.start_time;
+            return json(200, {
+                status: "ok",
+                db: "ok",
+                uptime_s: uptime
+            });
+        }
+
+        // 2. Feed Timeline (Top 20 Newest Posts)
+        if req.path == "/feed" {
+            let posts = sqlite_query(
+                self.db_path,
+                "SELECT p.id, p.body, p.created_at, u.username,
+                        (SELECT count(*) FROM likes l WHERE l.post_id = p.id) AS like_count
+                   FROM posts p JOIN users u ON u.id = p.user_id
+                  ORDER BY p.created_at DESC, p.id DESC
+                  LIMIT 20"
+            );
+            return json(200, { posts: posts });
+        }
+
+        // 3. Post Detail and Likes
+        if req.path.starts_with("/posts/") {
+            return handle_posts(req, self.db_path, self.jwt_secret);
+        }
+
+        return json(404, { error: "not found" });
+    }
+}
