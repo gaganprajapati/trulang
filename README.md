@@ -28,6 +28,9 @@ Traditional backend runtimes force a compromise:
 
 **TruLang eliminates this trade-off.** By enforcing a **Dual-Region Memory Model** and **Single-Threaded Service Actors**, per-request allocations are reclaimed in $O(1)$ constant time with **zero garbage collection pauses**, achieving compiled-level throughput while retaining memory safety and TypeScript-like ergonomics.
 
+> 💡 **Why TruLang?**  
+> Read our market manifesto: [**Why We Need TruLang Today: The Cloud Architecture Paradigm Shift**](docs/WHY_TRULANG_TODAY.md) to understand how the 95/5 backend allocation law slashes cloud bills and eliminates GC tail latency.
+> 
 > 🧠 **Coming from Node.js, Go, or Rust?**  
 > Read our comprehensive architectural guide: [**How TruLang Works: Under the Hood Architecture & Execution Mechanism**](docs/INTERNALS.md) (or view the [Interactive Web Visualizer](https://gagn.dev/trulang/internals.html)) to understand the Dual-Region Memory Engine, Request Lifecycle, and Zero-Lock Service Actor concurrency model.
 > 
@@ -86,6 +89,23 @@ While Rust provides industry-leading raw execution speed, building cloud APIs an
 | **Steep Team Learning Curve** | **Go/TypeScript Simplicity**: Familiar, modern syntax allows engineers to write production-grade systems on Day 1. |
 
 > 📖 **Read the full technical whitepaper:** [**Why TruLang Over Rust? (Architecture, Memory Models & Benchmarks)**](docs/WHY_TRULANG_OVER_RUST.md)
+
+---
+
+## 🌍 Why We Need TruLang Today: The Cloud Architecture Shift
+
+Modern cloud infrastructure runs on a paradox: **90% of cloud workloads are stateless microservices, but 99% of backend code runs on runtimes designed for 1990s desktop GUIs (Java, Python, JS, C#).**
+
+In modern APIs, **95% to 99% of memory allocations live for less than 50 milliseconds** (incoming headers, parsed JSON ASTs, database row buffers). Tracing garbage collectors dump all 100% of allocations into a single heap, causing unpredictable tail-latency spikes and forcing companies to overprovision cloud clusters by 300%.
+
+| Era | Primary Environment | Dominant Languages | Memory Model | The Cloud Dilemma |
+|---|---|---|---|---|
+| **1970s–80s** | Unix & Systems | C / C++ | Manual `malloc` / `free` | Blazing speed, but fatal security bugs (Use-After-Free). |
+| **1990s–00s** | Desktop GUIs & Scripts | Java, Python, JS, C# | Tracing GC (Mark-Sweep) | Great for long-lived GUIs; high tail latency on stateless cloud servers. |
+| **2010s** | Datacenter & Browsers | Go, Rust | Goroutines / Borrow Checker | Go suffers GC sweeps under load; Rust imposes high async borrow-checker friction. |
+| **Today** | **Cloud Microservices** | **⚡ TruLang** | **Safe Dual-Region Engine** | **The speed of C pools + the safety of Java + the simplicity of Go.** |
+
+> 📖 **Read the full manifesto & whitepaper:** [**Why We Need TruLang Today: The Cloud Architecture Paradigm Shift**](docs/WHY_TRULANG_TODAY.md)
 
 ---
 
