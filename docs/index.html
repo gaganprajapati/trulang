@@ -3,9 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TruLang — Complete Language Specification & Interactive Docs</title>
-  <meta name="description" content="Comprehensive interactive language documentation, syntax specification, memory architecture, and live playground for TruLang.">
+  <title>TruLang — Memory-Safe Systems Language for Backend Services & APIs</title>
+  <meta name="description" content="TruLang (truLang) is a high-performance, memory-safe backend programming language featuring dual-region memory arenas, zero-lock service actors, O(1) bump resets, and seamless Rust crate interop.">
+  <meta name="keywords" content="truLang, trulang, trulang language, trulang programming language, backend programming language, memory safe systems language, dual-region memory, zero-lock actors, rust interop, Gagn, Gagan Prajapati">
+  <meta name="author" content="Gagan Prajapati">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="theme-color" content="#0f172a">
   <meta name="color-scheme" content="light dark">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://gagn.dev/trulang/">
+
+  <!-- LLM / AI Discovery (AIO) -->
+  <link rel="alternate" type="text/plain" href="https://gagn.dev/trulang/llms.txt" title="LLM-readable summary">
+  <link rel="alternate" type="text/plain" href="https://gagn.dev/trulang/llms-full.txt" title="Full LLM-readable documentation">
+
+  <!-- Open Graph / Facebook / LinkedIn -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TruLang">
+  <meta property="og:url" content="https://gagn.dev/trulang/">
+  <meta property="og:title" content="TruLang — Memory-Safe Systems Language for Backend Services & APIs">
+  <meta property="og:description" content="Statically typed, immutable by default, featuring dual-region execution arenas, zero-lock service actors, and instant O(1) bump resets.">
+  <meta property="og:image" content="https://gagn.dev/trulang/assets/logo.png">
+  <meta property="og:image:width" content="946">
+  <meta property="og:image:height" content="639">
+  <meta property="og:image:alt" content="TruLang Logo and Architecture">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://gagn.dev/trulang/">
+  <meta name="twitter:title" content="TruLang — Memory-Safe Systems Language for Backend Services & APIs">
+  <meta name="twitter:description" content="Fast, memory-safe backend programming language with dual-region memory arenas and zero-lock service actors.">
+  <meta name="twitter:image" content="https://gagn.dev/trulang/assets/logo.png">
+
+  <!-- Structured Data / JSON-LD for Search Engines & AIO -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://gagn.dev/trulang/#website",
+        "url": "https://gagn.dev/trulang/",
+        "name": "TruLang",
+        "alternateName": ["truLang", "TruLang Programming Language"],
+        "description": "High-performance memory-safe systems programming language for backend microservices and APIs.",
+        "inLanguage": "en-US"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://gagn.dev/trulang/#software",
+        "name": "TruLang",
+        "alternateName": "truLang",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Linux, macOS, Windows",
+        "url": "https://gagn.dev/trulang/",
+        "codeRepository": "https://github.com/gaganprajapati/trulang",
+        "programmingLanguage": "Rust",
+        "license": "https://opensource.org/licenses/MIT",
+        "author": {
+          "@type": "Person",
+          "name": "Gagan Prajapati",
+          "url": "https://gagn.dev"
+        },
+        "description": "A statically typed, immutable-by-default systems programming language featuring dual-region memory arenas, zero-lock service actors, and O(1) bump resets."
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://gagn.dev/trulang/#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://gagn.dev/trulang/"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://gagn.dev/trulang/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is TruLang (truLang)?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "TruLang is a modern, memory-safe backend programming language engineered for high-throughput APIs and microservices. It features a Dual-Region Memory Architecture (Region A for instant O(1) per-request bump allocation and Region B for persistent service state), zero-lock service actors, and native interoperability with 150,000+ Rust crates."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does TruLang achieve memory safety without garbage collection or complex borrow checking?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "TruLang uses a Dual-Region Execution Arena model. Request-scoped allocations occur in Region A via a fast bump pointer and are wiped simultaneously in O(1) time when the request completes, entirely bypassing garbage collection pauses. Long-lived state is isolated in Region B and promoted explicitly using the persist() keyword, eliminating both GC latency spikes and complex lifetime annotations."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does TruLang compare to Go and Rust?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Compared to Go, TruLang eliminates stop-the-world Garbage Collector pauses, p99 latency jitter, and concurrency race conditions via zero-lock service actors. Compared to Rust, TruLang provides a dramatically simpler learning curve without explicit lifetime annotations or borrow checker fights, while maintaining bare-metal speed and memory safety."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can TruLang use existing Rust crates and C libraries?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. TruLang provides a zero-overhead FFI bridge and runtime worker pool that enables direct interoperability with more than 150,000 Rust crates on crates.io and native C ABI libraries, complete with automatic type marshaling."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do Zero-Lock Service Actors work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Concurrency in TruLang is modeled around services (actors) that process incoming requests sequentially from lock-free mailboxes. Because only the actor thread can mutate its private state, no mutexes, atomic locks, or read-write locks are required. External observers read metrics through lockless Seqlock telemetry."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I install and run TruLang?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can install TruLang on macOS via Homebrew (brew install gaganprajapati/tap/trulang) or download prebuilt binaries from the GitHub releases page for Linux and Windows. You can also build from source with cargo install trulang."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <script>
     (function() {
       const saved = localStorage.getItem('trulang_theme');
@@ -36,6 +169,7 @@
       <a href="#tooling" class="nav-link">CLI Tooling</a>
       <a href="#benchmarks" class="nav-link">Benchmarks</a>
       <a href="#why-trulang-today" class="nav-link">Why TruLang Today</a>
+      <a href="#faq" class="nav-link">FAQ</a>
       <a href="internals.html" class="nav-link">Runtime Internals</a>
       <a href="https://github.com/gaganprajapati/trulang/blob/main/ROADMAP.md" class="nav-link" target="_blank">Roadmap</a>
       <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RFC-0001-STABILITY-1.0.md" class="nav-link" target="_blank">1.0 RFC</a>
@@ -159,6 +293,7 @@
 
       <div class="sidebar-group">
         <div class="sidebar-title">Ecosystem & Community</div>
+        <a href="#faq" class="sidebar-link">FAQ & Architecture <span class="tag tag-cli">FAQ</span></a>
         <a href="https://github.com/gaganprajapati/trulang/blob/main/CHANGELOG.md" target="_blank" class="sidebar-link">Release Changelog <span class="tag tag-cli">v1.0.0</span></a>
         <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RFC-0001-STABILITY-1.0.md" target="_blank" class="sidebar-link">Stability RFC <span class="tag tag-type">RFC-0001</span></a>
         <a href="https://github.com/gaganprajapati/trulang/blob/main/CONTRIBUTING.md" target="_blank" class="sidebar-link">Contributor Guide <span class="tag tag-decl">CONTRIB</span></a>
@@ -173,9 +308,9 @@
         <div class="hero-header-flex">
           <img src="assets/logo.png" alt="TruLang Logo" class="hero-brand-logo">
           <div>
-            <h1>Complete TruLang Language Reference</h1>
+            <h1>TruLang Programming Language</h1>
             <p class="lead">
-              A general-purpose memory-safe language designed for backend services and APIs. Statically typed with local type inference, immutable by default, featuring dual-region execution arenas, single-threaded Service Actors, and independent supervisor telemetry.
+              <strong>TruLang</strong> (often written as <strong>truLang</strong>) is a high-performance, memory-safe systems programming language designed for backend services and APIs. Statically typed with local type inference, immutable by default, featuring dual-region execution arenas with instant O(1) bump resets, zero-lock Service Actors, and direct Rust crate interoperability.
             </p>
           </div>
         </div>
@@ -2137,6 +2272,93 @@ let row = pool.query_user(1001);</code></pre>
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- Section 11: Frequently Asked Questions & SEO/AIO Index -->
+      <section id="faq" style="margin-bottom: 4rem;">
+        <div class="section-header">
+          <h2>11. Frequently Asked Questions (FAQ)</h2>
+          <span class="pill pill-purple">Architecture & Design FAQ</span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+          Answers to common questions about TruLang (truLang), memory guarantees, concurrency models, benchmarks, and ecosystem integration.
+        </p>
+
+        <div class="faq-grid">
+          <details class="faq-item" open>
+            <summary class="faq-question">What is TruLang (truLang) and why was it created?</summary>
+            <div class="faq-answer">
+              <p>
+                <strong>TruLang</strong> is a statically typed, memory-safe backend programming language engineered to solve the persistent trade-offs in modern server-side development. Traditional languages force engineers to choose between garbage-collected runtimes (Go, Java, Node.js) with non-deterministic stop-the-world latency spikes, or manual/borrow-checked systems (Rust, C++) with steep cognitive overhead and lifetime annotations.
+              </p>
+              <p>
+                TruLang introduces a third path: <strong>Dual-Region Memory Arenas with Zero-Lock Service Actors</strong>. It guarantees predictable sub-millisecond p99 latencies and total memory safety without garbage collector sweeps or complex borrow checking.
+              </p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">How does TruLang achieve memory safety without garbage collection?</summary>
+            <div class="faq-answer">
+              <p>
+                TruLang uses a hardware-friendly <strong>Dual-Region Memory Engine</strong>:
+              </p>
+              <ul>
+                <li><strong>Region A (Execution Arena):</strong> Request-scoped allocations occur via high-speed pointer bumping. When an HTTP request or background worker completes, the entire arena is reset in O(1) time without sweeping or pointer traversal.</li>
+                <li><strong>Region B (Persistent State):</strong> Long-lived data structures, caches, and connection pools live in an isolated arena, populated explicitly using the <code>persist(value)</code> promotion primitive.</li>
+              </ul>
+              <p>
+                This design prevents memory leaks, eliminates reference-counting cycles, and avoids Garbage Collection pauses completely.
+              </p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">How does TruLang compare to Go and Rust?</summary>
+            <div class="faq-answer">
+              <p>
+                <strong>Versus Go:</strong> TruLang provides immutable-by-default variables, eliminates stop-the-world GC pauses during high heap utilization, and removes data race bugs by design using single-threaded Service Actors instead of shared-memory goroutines with mutexes.
+              </p>
+              <p>
+                <strong>Versus Rust:</strong> TruLang delivers comparable bare-metal execution performance and deterministic resource safety, but with the rapid prototyping velocity and straightforward ergonomics of TypeScript or Python—without requiring borrow checker lifetime annotations.
+              </p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">How do Zero-Lock Service Actors handle concurrency?</summary>
+            <div class="faq-answer">
+              <p>
+                In TruLang, stateful components are defined with the <code>service</code> keyword. Each service runs in its own execution thread and receives incoming messages sequentially through a lock-free multi-producer single-consumer (MPSC) mailbox.
+              </p>
+              <p>
+                Because only one thread ever accesses the service's private state, developers never write <code>Mutex</code>, <code>RwLock</code>, or atomic synchronizations. Concurrent observability is achieved through non-blocking <strong>Seqlock telemetry</strong> that enables real-time metrics scraping without lock contention.
+              </p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">Can TruLang interoperate with Rust crates and C libraries?</summary>
+            <div class="faq-answer">
+              <p>
+                Yes. TruLang features a native Foreign Function Interface (FFI) bridge and a dedicated background worker pool. You can import and invoke functions from over 150,000 crates on crates.io as well as C ABI libraries with automatic type conversion and zero-copy buffers.
+              </p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">How do I install and run TruLang?</summary>
+            <div class="faq-answer">
+              <p>
+                TruLang is available via Homebrew for macOS:
+              </p>
+              <pre><code>brew install gaganprajapati/tap/trulang</code></pre>
+              <p>
+                For Linux and Windows, precompiled standalone binaries are available on the <a href="https://github.com/gaganprajapati/trulang/releases" target="_blank">GitHub Releases</a> page. You can also build directly from source using <code>cargo install trulang</code>.
+              </p>
+            </div>
+          </details>
         </div>
       </section>
 

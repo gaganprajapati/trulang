@@ -1,0 +1,42 @@
+# TruLang
+
+> TruLang is a memory-safe, high-performance systems and backend programming language designed specifically for high-throughput microservices, APIs, and real-time backend systems.
+
+## Key Features & Architecture
+- **Dual-Region Memory Model**: Region A (per-request execution arena with O(1) bump resets, zero garbage collection pauses) and Region B (isolated, persistent state arena).
+- **Zero-Lock Service Actors**: Single-threaded actors communicating through lock-free crossbeam mailboxes, eliminating mutex contention and data races.
+- **Static Typing & Immutability**: Variables are immutable by default (`let`), with explicit `let mut` for mutability, local type inference, and nullable types (`T?`).
+- **Hybrid Execution Engine**: Stack-based Bytecode VM with fast JIT/AOT capabilities built in Rust.
+- **Crate & FFI Interoperability**: Direct zero-overhead bridge to 150,000+ Rust crates and C ABI libraries.
+- **Built-in Hardening**: Seqlock metrics telemetry, strict path isolation, checked arithmetic, mailbox backpressure, and automatic cycle detection.
+
+## Documentation Links
+- [Complete Language Specification & Overview](https://gagn.dev/trulang/): Detailed syntax guide, variables, functions, actors, error handling, and interactive browser playground.
+- [How TruLang Works: Under the Hood Architecture](https://gagn.dev/trulang/internals.html): Deep-dive into dual-region memory layout, execution pipeline, service actor lifecycle, and FFI bridges.
+- [GitHub Repository](https://github.com/gaganprajapati/trulang): Open-source Rust codebase, issue tracker, RFCs, and releases.
+- [Roadmap to 1.0](https://github.com/gaganprajapati/trulang/blob/main/ROADMAP.md): Milestones, production benchmarks, and enterprise features.
+- [Rust Interop Guide](https://github.com/gaganprajapati/trulang/blob/main/docs/RUST_INTEROP.md): How to use Rust libraries and FFI within TruLang.
+
+## Code Example
+```trulang
+service UserService {
+    let mut cache: Map<string, string> = Map()
+
+    fn handle_request(req: Request) -> Response {
+        let user_id = req.query("id")
+        if cache.has(user_id) {
+            return Response.json(cache.get(user_id))
+        }
+        let user = db.query(user_id)
+        cache.insert(user_id, persist(user))
+        return Response.json(user)
+    }
+}
+```
+
+## CLI Tooling
+- `trulang check <file>`: Typecheck and validate without running.
+- `trulang run <file> [--jit]`: Execute file via interpreter or JIT.
+- `trulang build <file>`: AOT compile to optimized standalone binary.
+- `trulang test <dir>`: Execute test suite.
+- `trulang lsp`: Language Server Protocol for VS Code and editors.

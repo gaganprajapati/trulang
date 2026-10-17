@@ -5,7 +5,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>How TruLang Works: Under the Hood Architecture & Execution Mechanism</title>
   <meta name="description" content="A comprehensive deep-dive into TruLang's internal architecture: Dual-Region memory model, zero-lock service actors, hybrid FFI worker pool, and dual-mode execution pipeline.">
+  <meta name="keywords" content="truLang internals, trulang architecture, dual-region memory model, zero-lock actors, bytecode VM, rust FFI, memory arena, Gagn">
+  <meta name="author" content="Gagan Prajapati">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="theme-color" content="#0f172a">
   <meta name="color-scheme" content="light dark">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://gagn.dev/trulang/internals.html">
+
+  <!-- LLM / AI Discovery (AIO) -->
+  <link rel="alternate" type="text/plain" href="https://gagn.dev/trulang/llms.txt" title="LLM-readable summary">
+  <link rel="alternate" type="text/plain" href="https://gagn.dev/trulang/llms-full.txt" title="Full LLM-readable documentation">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="TruLang">
+  <meta property="og:url" content="https://gagn.dev/trulang/internals.html">
+  <meta property="og:title" content="How TruLang Works: Under the Hood Architecture & Execution Mechanism">
+  <meta property="og:description" content="Comprehensive architectural guide: Dual-region execution arenas, zero-lock service actors, Seqlock metrics, and FFI bridges.">
+  <meta property="og:image" content="https://gagn.dev/trulang/assets/logo.png">
+  <meta property="og:image:width" content="946">
+  <meta property="og:image:height" content="639">
+  <meta property="og:image:alt" content="TruLang Architecture Diagram">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://gagn.dev/trulang/internals.html">
+  <meta name="twitter:title" content="How TruLang Works: Under the Hood Architecture & Execution Mechanism">
+  <meta name="twitter:description" content="Comprehensive architectural guide: Dual-region execution arenas, zero-lock service actors, Seqlock metrics, and FFI bridges.">
+  <meta name="twitter:image" content="https://gagn.dev/trulang/assets/logo.png">
+
+  <!-- Structured Data / JSON-LD TechArticle -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "TechArticle",
+        "@id": "https://gagn.dev/trulang/internals.html#article",
+        "headline": "How TruLang Works: Under the Hood Architecture & Execution Mechanism",
+        "url": "https://gagn.dev/trulang/internals.html",
+        "description": "A comprehensive deep-dive into TruLang's internal architecture: Dual-Region memory model, zero-lock service actors, hybrid FFI worker pool, and dual-mode execution pipeline.",
+        "inLanguage": "en-US",
+        "image": "https://gagn.dev/trulang/assets/logo.png",
+        "author": {
+          "@type": "Person",
+          "name": "Gagan Prajapati",
+          "url": "https://gagn.dev"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "TruLang",
+          "url": "https://gagn.dev/trulang/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://gagn.dev/trulang/assets/logo.png"
+          }
+        },
+        "about": [
+          {"@type": "Thing", "name": "Systems Programming Language"},
+          {"@type": "Thing", "name": "Memory Arena"},
+          {"@type": "Thing", "name": "Actor Model Concurrency"}
+        ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://gagn.dev/trulang/internals.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://gagn.dev/trulang/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Runtime Internals",
+            "item": "https://gagn.dev/trulang/internals.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <script>
     (function() {
       const saved = localStorage.getItem('trulang_theme');
