@@ -171,6 +171,7 @@
       <a href="#why-trulang-today" class="nav-link">Why TruLang Today</a>
       <a href="#faq" class="nav-link">FAQ</a>
       <a href="internals.html" class="nav-link">Runtime Internals</a>
+      <a href="stats.html" class="nav-link">Live Stats <span class="nav-link-badge"></span></a>
       <a href="https://github.com/gaganprajapati/trulang/blob/main/ROADMAP.md" class="nav-link" target="_blank">Roadmap</a>
       <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RFC-0001-STABILITY-1.0.md" class="nav-link" target="_blank">1.0 RFC</a>
       <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RUST_INTEROP.md" class="nav-link" target="_blank">Rust Interop</a>
@@ -294,6 +295,7 @@
       <div class="sidebar-group">
         <div class="sidebar-title">Ecosystem & Community</div>
         <a href="#faq" class="sidebar-link">FAQ & Architecture <span class="tag tag-cli">FAQ</span></a>
+        <a href="stats.html" class="sidebar-link">Live Telemetry & Stats <span class="tag tag-cli">STATS</span></a>
         <a href="https://github.com/gaganprajapati/trulang/blob/main/CHANGELOG.md" target="_blank" class="sidebar-link">Release Changelog <span class="tag tag-cli">v1.0.0</span></a>
         <a href="https://github.com/gaganprajapati/trulang/blob/main/docs/RFC-0001-STABILITY-1.0.md" target="_blank" class="sidebar-link">Stability RFC <span class="tag tag-type">RFC-0001</span></a>
         <a href="https://github.com/gaganprajapati/trulang/blob/main/CONTRIBUTING.md" target="_blank" class="sidebar-link">Contributor Guide <span class="tag tag-decl">CONTRIB</span></a>
@@ -2363,12 +2365,21 @@ let row = pool.query_user(1001);</code></pre>
       </section>
 
       <footer>
-        TruLang Language Specification & Reference Documentation • Built with Rust Bytecode VM & Memory Supervisor
+        <div style="margin-bottom: 0.75rem;">
+          TruLang Language Specification & Reference Documentation • Built with Rust Bytecode VM & Memory Supervisor
+        </div>
+        <div>
+          <a href="stats.html" class="footer-stats-callout">
+            <span class="pulse-dot"></span>
+            <span><strong class="live-pageview-count">—</strong> Pageviews Recorded • View Live Analytics Dashboard →</span>
+          </a>
+        </div>
       </footer>
     </main>
   </div>
 
   <script src="js/main.js"></script>
   <script src="js/playground.js"></script>
+  <script src="js/tracker.js"></script>
 </body>
 </html>

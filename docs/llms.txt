@@ -13,6 +13,7 @@
 ## Documentation Links
 - [Complete Language Specification & Overview](https://gagn.dev/trulang/): Detailed syntax guide, variables, functions, actors, error handling, and interactive browser playground.
 - [How TruLang Works: Under the Hood Architecture](https://gagn.dev/trulang/internals.html): Deep-dive into dual-region memory layout, execution pipeline, service actor lifecycle, and FFI bridges.
+- [Live Documentation Telemetry & Stats](https://gagn.dev/trulang/stats.html): Real-time metrics on documentation readership, unique visitor sessions, and in-browser bytecode VM executions.
 - [GitHub Repository](https://github.com/gaganprajapati/trulang): Open-source Rust codebase, issue tracker, RFCs, and releases.
 - [Roadmap to 1.0](https://github.com/gaganprajapati/trulang/blob/main/ROADMAP.md): Milestones, production benchmarks, and enterprise features.
 - [Rust Interop Guide](https://github.com/gaganprajapati/trulang/blob/main/docs/RUST_INTEROP.md): How to use Rust libraries and FFI within TruLang.
