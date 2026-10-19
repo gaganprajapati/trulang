@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TruLang — Live Documentation Analytics & Telemetry</title>
+  <meta name="description" content="Live, privacy-first community analytics and telemetry for TruLang documentation, developer sessions, and in-browser bytecode VM executions.">
+  <meta name="keywords" content="truLang stats, trulang analytics, visitor counter, trulang telemetry, programming language adoption">
+  <meta name="author" content="Gagan Prajapati">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="color-scheme" content="light dark">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://gagn.dev/trulang/stats.html">
+
+  <!-- LLM / AI Discovery (AIO) -->
+  <link rel="alternate" type="text/plain" href="https://gagn.dev/trulang/llms.txt" title="LLM-readable summary">
+  <link rel="alternate" type="text/plain" href="https://gagn.dev/trulang/llms-full.txt" title="Full LLM-readable documentation">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TruLang">
+  <meta property="og:url" content="https://gagn.dev/trulang/stats.html">
+  <meta property="og:title" content="TruLang — Live Documentation Analytics & Telemetry">
+  <meta property="og:description" content="Real-time, privacy-friendly telemetry measuring TruLang documentation readership, unique visitors, and interactive playground executions.">
+  <meta property="og:image" content="https://gagn.dev/trulang/assets/logo.png">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://gagn.dev/trulang/stats.html">
+  <meta name="twitter:title" content="TruLang — Live Documentation Analytics & Telemetry">
+  <meta name="twitter:description" content="Real-time telemetry measuring TruLang documentation readership, unique visitors, and interactive playground executions.">
+  <meta name="twitter:image" content="https://gagn.dev/trulang/assets/logo.png">
+
+  <!-- Structured Data / JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://gagn.dev/trulang/stats.html#webpage",
+        "url": "https://gagn.dev/trulang/stats.html",
+        "name": "TruLang Documentation Telemetry & Statistics",
+        "description": "Live, open-access telemetry and visitor analytics for the TruLang programming language documentation and playground.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "@id": "https://gagn.dev/trulang/#website"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://gagn.dev/trulang/stats.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://gagn.dev/trulang/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Live Stats",
+            "item": "https://gagn.dev/trulang/stats.html"
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <script>
+    (function() {
+      const saved = localStorage.getItem('trulang_theme');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', saved || (systemDark ? 'dark' : 'light'));
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="128x128" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <a href="index.html" class="brand">
+      <img src="assets/logo.png" alt="TruLang Logo" class="brand-logo">
+      <div class="brand-name">TruLang</div>
+      <span class="brand-badge">v1.0.0</span>
+    </a>
+
+    <nav class="nav-links">
+      <a href="index.html" class="nav-link">Overview</a>
+      <a href="index.html#spec" class="nav-link">Language Spec</a>
+      <a href="index.html#tooling" class="nav-link">CLI Tooling</a>
+      <a href="index.html#benchmarks" class="nav-link">Benchmarks</a>
+      <a href="internals.html" class="nav-link">Runtime Internals</a>
+      <a href="stats.html" class="nav-link active">Live Stats <span class="nav-link-badge"></span></a>
+      <a href="https://github.com/gaganprajapati/trulang" class="nav-link" target="_blank">GitHub</a>
+    </nav>
+
+    <div class="nav-actions">
+      <a href="index.html#playground" class="btn btn-secondary">Playground</a>
+      <a href="https://github.com/gaganprajapati/trulang" target="_blank" class="btn btn-secondary">GitHub</a>
+      <button id="themeToggle" class="theme-toggle-btn" aria-label="Toggle light and dark theme" title="Toggle theme">
+        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="stats-container">
+    <!-- Hero Header -->
+    <section class="stats-hero">
+      <div class="stats-hero-top">
+        <div>
+          <h1>
+            <span>Documentation Telemetry & Visitor Stats</span>
+          </h1>
+          <p>
+            Real-time, open metrics monitoring developer adoption, page engagement, and bytecode VM playground simulations across TruLang's official documentation.
+          </p>
+        </div>
+        <div class="stats-controls">
+          <div class="live-indicator">
+            <span class="pulse-dot"></span>
+            <span>Live Stream</span>
+          </div>
+          <button id="refreshBtn" class="btn btn-secondary" onclick="loadDashboardStats(true)" style="padding: 0.35rem 0.85rem; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <svg id="refreshIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div style="font-size: 0.8rem; color: var(--text-dim); display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <span>Last updated: <strong id="lastUpdatedLabel" style="color: var(--text-main);">Checking...</strong></span>
+        <span>•</span>
+        <span>Telemetry API: <span id="apiStatusLabel" style="color: #10b981; font-weight: 600;">Connecting...</span></span>
+        <span>•</span>
+        <span>Polling: <span style="color: var(--accent-blue); font-weight: 600;">Every 30s</span></span>
+      </div>
+    </section>
+
+    <!-- Key Metrics Grid -->
+    <div class="stats-grid">
+      <!-- Card 1: Total Pageviews -->
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-icon-badge icon-blue">
+            📈
+          </div>
+          <span class="stat-pill">Global Traffic</span>
+        </div>
+        <div class="stat-value" id="valTotalPageviews">—</div>
+        <div class="stat-label">Total Documentation Pageviews</div>
+        <div class="stat-subtext">
+          <span>●</span> All recorded hits across language docs
+        </div>
+      </div>
+
+      <!-- Card 2: Unique Visitors -->
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-icon-badge icon-green">
+            👥
+          </div>
+          <span class="stat-pill">Unique Readers</span>
+        </div>
+        <div class="stat-value" id="valUniqueVisitors">—</div>
+        <div class="stat-label">Unique Developer Sessions</div>
+        <div class="stat-subtext">
+          <span>●</span> Deduplicated 24-hour browser sessions
+        </div>
+      </div>
+
+      <!-- Card 3: Internals Architecture Reads -->
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-icon-badge icon-purple">
+            🧠
+          </div>
+          <span class="stat-pill">Deep Dives</span>
+        </div>
+        <div class="stat-value" id="valInternalsViews">—</div>
+        <div class="stat-label">Runtime Internals Reads</div>
+        <div class="stat-subtext">
+          <span>●</span> Engineers studying Dual-Region Arenas
+        </div>
+      </div>
+
+      <!-- Card 4: In-Browser Playground Runs -->
+      <div class="stat-card">
+        <div class="stat-card-header">
+          <div class="stat-icon-badge icon-amber">
+            ⚡
+          </div>
+          <span class="stat-pill">VM Executions</span>
+        </div>
+        <div class="stat-value" id="valPlaygroundRuns">—</div>
+        <div class="stat-label">Playground Code Simulations</div>
+        <div class="stat-subtext">
+          <span>●</span> Interactive Bytecode VM executions
+        </div>
+      </div>
+    </div>
+
+    <!-- Details Grid: Breakdown & Diagnostics -->
+    <div class="stats-detail-grid">
+      <!-- Left Panel: Documentation Content Popularity -->
+      <div class="metric-panel">
+        <div class="metric-panel-title">
+          <span>📚 Content Readership Distribution</span>
+        </div>
+        <div class="metric-panel-desc">
+          Relative volume of developer interest across documentation sections.
+        </div>
+
+        <div class="breakdown-row">
+          <div class="breakdown-label-row">
+            <span class="breakdown-name">
+              <span>📖</span> Language Specification (Overview)
+            </span>
+            <span class="breakdown-pct" id="pctOverview">0%</span>
+          </div>
+          <div class="breakdown-track">
+            <div id="barOverview" class="breakdown-fill fill-accent-blue" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="breakdown-row">
+          <div class="breakdown-label-row">
+            <span class="breakdown-name">
+              <span>🧠</span> Under the Hood Architecture (Internals)
+            </span>
+            <span class="breakdown-pct" id="pctInternals">0%</span>
+          </div>
+          <div class="breakdown-track">
+            <div id="barInternals" class="breakdown-fill fill-accent-purple" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="breakdown-row">
+          <div class="breakdown-label-row">
+            <span class="breakdown-name">
+              <span>⚡</span> Interactive Playground Engine
+            </span>
+            <span class="breakdown-pct" id="pctPlayground">0%</span>
+          </div>
+          <div class="breakdown-track">
+            <div id="barPlayground" class="breakdown-fill fill-accent-cyan" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <div class="breakdown-row">
+          <div class="breakdown-label-row">
+            <span class="breakdown-name">
+              <span>📊</span> Live Telemetry Dashboard
+            </span>
+            <span class="breakdown-pct" id="pctStats">0%</span>
+          </div>
+          <div class="breakdown-track">
+            <div id="barStats" class="breakdown-fill fill-accent-green" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Client Diagnostics & Environment -->
+      <div class="metric-panel">
+        <div class="metric-panel-title">
+          <span>🔬 Live Client Telemetry Diagnostics</span>
+        </div>
+        <div class="metric-panel-desc">
+          Zero-PII local client telemetry detected for your current session.
+        </div>
+
+        <table class="diag-table">
+          <tbody>
+            <tr>
+              <td class="diag-key">Operating System</td>
+              <td class="diag-val" id="diagOS">Detecting...</td>
+            </tr>
+            <tr>
+              <td class="diag-key">Browser Engine</td>
+              <td class="diag-val" id="diagBrowser">Detecting...</td>
+            </tr>
+            <tr>
+              <td class="diag-key">Active Theme</td>
+              <td class="diag-val" id="diagTheme">Detecting...</td>
+            </tr>
+            <tr>
+              <td class="diag-key">Display Resolution</td>
+              <td class="diag-val" id="diagRes">Detecting...</td>
+            </tr>
+            <tr>
+              <td class="diag-key">Hardware Cores</td>
+              <td class="diag-val" id="diagCores">Detecting...</td>
+            </tr>
+            <tr>
+              <td class="diag-key">Telemetry Ping Latency</td>
+              <td class="diag-val" id="diagPing">Measuring...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Privacy Manifesto -->
+    <div class="privacy-card">
+      <div class="privacy-icon">🛡️</div>
+      <div class="privacy-content">
+        <h3>100% Privacy-Preserving Open Analytics</h3>
+        <p>
+          TruLang values engineer privacy. We do not use third-party tracking cookies, fingerprinting scripts, advertising pixels, or persist personally identifiable information (PII). All metric counters are aggregated, anonymous numbers stored in an open key-value telemetry cluster.
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Footer -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+      <div style="font-size: 0.85rem; color: var(--text-muted);">
+        ← Return to <a href="index.html" style="color: var(--accent-blue); font-weight: 600; text-decoration: none;">Language Specification</a> or read <a href="internals.html" style="color: var(--accent-blue); font-weight: 600; text-decoration: none;">Runtime Internals</a>
+      </div>
+      <div>
+        <a href="https://github.com/gaganprajapati/trulang" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem;">
+          View Source on GitHub
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts -->
+  <script src="js/main.js"></script>
+  <script src="js/tracker.js"></script>
+  <script>
+    // Animated number counter
+    function animateValue(id, start, end, duration = 800) {
+      const obj = document.getElementById(id);
+      if (!obj) return;
+      if (isNaN(end)) {
+        obj.textContent = end;
+        return;
+      }
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const current = Math.floor(progress * (end - start) + start);
+        obj.textContent = current.toLocaleString();
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        } else {
+          obj.textContent = Number(end).toLocaleString();
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    // Load and render stats
+    async function loadDashboardStats(isManual = false) {
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (refreshIcon) refreshIcon.style.animation = 'spin 0.6s linear infinite';
+
+      const startTime = performance.now();
+      try {
+        const stats = await TruLangTracker.fetchStats();
+        const latency = Math.round(performance.now() - startTime);
+
+        // Update KPI values with count-up animation
+        animateValue('valTotalPageviews', 0, stats.totalPageviews);
+        animateValue('valUniqueVisitors', 0, stats.uniqueVisitors);
+        animateValue('valInternalsViews', 0, stats.internalsViews);
+        animateValue('valPlaygroundRuns', 0, stats.playgroundRuns);
+
+        // Update timestamps & status
+        const now = new Date();
+        document.getElementById('lastUpdatedLabel').textContent = now.toLocaleTimeString();
+        const apiLabel = document.getElementById('apiStatusLabel');
+        if (apiLabel) {
+          apiLabel.textContent = `● Connected (${stats.source === 'live' ? 'Live Cluster' : 'Cached'})`;
+          apiLabel.style.color = '#10b981';
+        }
+
+        const pingLabel = document.getElementById('diagPing');
+        if (pingLabel) pingLabel.textContent = `${latency} ms`;
+
+        // Calculate proportions
+        const totalActivity = (stats.totalPageviews || 100) + (stats.playgroundRuns || 20);
+        const overviewCount = stats.indexViews || Math.round(stats.totalPageviews * 0.6);
+        const internalsCount = stats.internalsViews || Math.round(stats.totalPageviews * 0.3);
+        const playgroundCount = stats.playgroundRuns || 35;
+        const statsCount = Math.max(1, stats.totalPageviews - overviewCount - internalsCount);
+
+        const pctO = Math.min(100, Math.round((overviewCount / totalActivity) * 100));
+        const pctI = Math.min(100, Math.round((internalsCount / totalActivity) * 100));
+        const pctP = Math.min(100, Math.round((playgroundCount / totalActivity) * 100));
+        const pctS = Math.max(1, 100 - pctO - pctI - pctP);
+
+        // Render progress bars
+        document.getElementById('pctOverview').textContent = `${pctO}% (${overviewCount.toLocaleString()} views)`;
+        document.getElementById('barOverview').style.width = `${pctO}%`;
+
+        document.getElementById('pctInternals').textContent = `${pctI}% (${internalsCount.toLocaleString()} views)`;
+        document.getElementById('barInternals').style.width = `${pctI}%`;
+
+        document.getElementById('pctPlayground').textContent = `${pctP}% (${playgroundCount.toLocaleString()} runs)`;
+        document.getElementById('barPlayground').style.width = `${pctP}%`;
+
+        document.getElementById('pctStats').textContent = `${pctS}% (${statsCount.toLocaleString()} views)`;
+        document.getElementById('barStats').style.width = `${pctS}%`;
+
+      } catch (err) {
+        console.error('Stats loading error:', err);
+      } finally {
+        if (refreshIcon) {
+          setTimeout(() => { refreshIcon.style.animation = 'none'; }, 500);
+        }
+      }
+    }
+
+    // Populate client telemetry diagnostics
+    function populateDiagnostics() {
+      const diag = TruLangTracker.getClientTelemetry();
+      document.getElementById('diagOS').textContent = diag.os;
+      document.getElementById('diagBrowser').textContent = diag.browser;
+      document.getElementById('diagTheme').textContent = (diag.theme.charAt(0).toUpperCase() + diag.theme.slice(1)) + ' Mode';
+      document.getElementById('diagRes').textContent = diag.screenRes;
+      document.getElementById('diagCores').textContent = `${diag.cores} Logical Cores`;
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', () => {
+      populateDiagnostics();
+      loadDashboardStats();
+
+      // Poll stats every 30 seconds
+      setInterval(() => loadDashboardStats(false), 30000);
+    });
+  </script>
+
+  <style>
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</body>
+</html>

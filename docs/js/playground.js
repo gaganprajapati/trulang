@@ -107,6 +107,10 @@ function runSimulatedCode() {
   const status = document.getElementById('execStatus');
   if (!editor || !terminal || !status) return;
 
+  if (window.TruLangTracker && typeof window.TruLangTracker.recordPlaygroundRun === 'function') {
+    window.TruLangTracker.recordPlaygroundRun();
+  }
+
   const code = editor.value;
 
   status.innerText = '● EXECUTING...';

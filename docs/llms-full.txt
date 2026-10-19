@@ -67,3 +67,9 @@ TruLang includes a zero-overhead FFI bridge enabling developers to invoke any of
 - `trulang build`: AOT compiler emitting native machine binaries via LLVM/C backend.
 - `trulang test`: Built-in concurrent test runner.
 - `trulang lsp`: Standard Language Server Protocol for syntax highlighting, autocomplete, go-to-definition, and diagnostics.
+
+## 6. Official Resources & Live Telemetry
+- Specification & Language Reference: https://gagn.dev/trulang/
+- Runtime Internals & Memory Architecture: https://gagn.dev/trulang/internals.html
+- Live Telemetry & Developer Stats Dashboard: https://gagn.dev/trulang/stats.html
+- GitHub Repository: https://github.com/gaganprajapati/trulang
