@@ -735,7 +735,8 @@ cargo test --test load_and_leak_test -- --nocapture
 
 We welcome contributions to TruLang! Whether you're fixing a bug, adding new standard library functions, or improving documentation, check out our contributor guide:
 
-👉 [**CONTRIBUTING.md**](CONTRIBUTING.md) — Setup your local toolchain, architecture deep-dive, clean code standards, and PR guidelines.
+👉 [**CONTRIBUTING.md**](CONTRIBUTING.md) — Setup your local toolchain, architecture deep-dive, clean code standards, and PR guidelines.  
+🎯 [**Good First Issues**](https://github.com/gaganprajapati/trulang/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) — Curated bite-sized tasks for first-time contributors (String/Array methods, shell completions, Vim syntax).
 
 ---
 
