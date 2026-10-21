@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "💬 Community & Questions"
+    url: "https://github.com/gaganprajapati/trulang/discussions"
+    about: "Ask questions, share projects, or discuss architectural ideas with the community."
+  - name: "📖 Official TruLang Documentation"
+    url: "https://gagn.dev/trulang/"
+    about: "Browse official docs, memory model whitepapers, and the interactive playground."

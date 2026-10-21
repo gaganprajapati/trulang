@@ -1,0 +1,52 @@
+name: "🚀 Feature Request / Proposal"
+description: "Suggest an idea, API improvement, standard library module, or runtime capability"
+title: "[Feature]: "
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome feature requests and design proposals! Please describe the use case and proposed API ergonomics.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Motivation
+      description: What problem are you trying to solve? Is your feature request related to a specific limitation?
+      placeholder: "Currently, handling JSON response streaming requires manual chunking..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution & API Design
+      description: Describe the syntax, API signatures, or runtime behavior you would like to see.
+      render: trulang
+      placeholder: |
+        // Example TruLang syntax
+        service Streamer {
+          endpoint /events -> Response {
+            return Response::sse(stream);
+          }
+        }
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions, syntax, or workarounds?
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary Area
+      options:
+        - "Standard Library (stdlib)"
+        - "Memory Management & Bump Allocator"
+        - "Async Networking & HTTP"
+        - "Compiler & Language Syntax"
+        - "Developer Tooling & CLI"
+        - "Editor Support (Vim, VS Code, Tree-sitter)"
+    validations:
+      required: true

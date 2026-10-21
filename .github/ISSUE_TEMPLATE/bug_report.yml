@@ -1,0 +1,84 @@
+name: "🐛 Bug Report"
+description: "File an issue about broken, unexpected, or crashing behavior in TruLang"
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! Before opening, please search existing issues to avoid duplicates.
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem Description
+      description: A clear and concise description of what the bug is.
+      placeholder: When running a service actor with a transient memory budget, ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction Code (.tr or bash)
+      description: Provide a minimal code snippet or command that reproduces the issue.
+      render: trulang
+      placeholder: |
+        service ExampleService {
+          memory_budget: 64KB,
+          // code reproducing the issue
+        }
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs Actual Behavior
+      description: What did you expect to happen, and what happened instead?
+      placeholder: "Expected: HTTP 200 OK\nActual: VM panicked with OOM error"
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Subsystem
+      description: Which part of TruLang does this affect?
+      options:
+        - "VM & Memory Runtime (crates/vm)"
+        - "Compiler & Bytecode (crates/compiler)"
+        - "Syntax & Parser (crates/syntax)"
+        - "Async Networking (crates/net)"
+        - "CLI & Tooling (crates/cli)"
+        - "Interactive Playground / Website"
+        - "Documentation"
+        - "Other"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: TruLang Version
+      description: What version of TruLang are you running? (Run `trulang --version`)
+      placeholder: "trulang 0.1.0 (commit abc1234)"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - "macOS (Apple Silicon - M1/M2/M3)"
+        - "macOS (Intel - x86_64)"
+        - "Linux (x86_64)"
+        - "Linux (aarch64 / ARM64)"
+        - "Windows (WSL2)"
+        - "Windows (Native)"
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched open and closed issues to ensure this is not a duplicate.
+          required: true
+        - label: I have included a minimal, reproducible example.
+          required: true
