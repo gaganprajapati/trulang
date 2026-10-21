@@ -1,7 +1,6 @@
 class Trulang < Formula
   desc "High-performance backend language with dual-region memory arenas"
   homepage "https://gagn.dev/trulang/"
-  version "1.0.0"
   license "MIT"
 
   on_macos do
@@ -16,6 +15,10 @@ class Trulang < Formula
   end
 
   on_linux do
+    on_arm do
+      url "https://github.com/gaganprajapati/trulang/releases/download/v1.0.0/trulang-linux-x86_64.tar.gz"
+      sha256 "6f3fc4aee58e0150385d58ca7f1de8fff8c3540caa6f7d7ea561c36b7ea7b380"
+    end
     on_intel do
       url "https://github.com/gaganprajapati/trulang/releases/download/v1.0.0/trulang-linux-x86_64.tar.gz"
       sha256 "6f3fc4aee58e0150385d58ca7f1de8fff8c3540caa6f7d7ea561c36b7ea7b380"
