@@ -31,4 +31,13 @@ pub enum DbError {
 
     #[error("Serialization/Deserialization error: {0}")]
     Serialization(String),
+
+    #[error("SQLite error: {0}")]
+    Sqlite(String),
+}
+
+impl From<rusqlite::Error> for DbError {
+    fn from(err: rusqlite::Error) -> Self {
+        DbError::Sqlite(err.to_string())
+    }
 }

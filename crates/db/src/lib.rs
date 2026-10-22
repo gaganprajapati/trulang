@@ -11,11 +11,13 @@ pub mod dual_region;
 pub mod error;
 pub mod postgres;
 pub mod redis;
+pub mod sqlite;
 
 pub use dual_region::DualRegionDbManager;
 pub use error::DbError;
 pub use postgres::{MockPostgresServer, PgConfig, PgConnection, PgPool};
 pub use redis::{MockRedisServer, RedisConfig, RedisConnection, RedisPipeline, RedisPool};
+pub use sqlite::SqliteConnection;
 
 #[cfg(test)]
 mod tests {
@@ -46,21 +48,30 @@ mod tests {
 
         let allocated = manager.track_query_result(&query_result);
         assert!(allocated > 0);
-        assert_eq!(
-            manager
-                .live_query_bytes
-                .load(std::sync::atomic::Ordering::Relaxed),
-            allocated
-        );
+        assert_eq!(manager.transient_bytes(), allocated);
+        assert_eq!(manager.persistent_bytes(), 0);
 
-        // End of request lifecycle: O(1) bulk reset
+        // Select user 0 to cache/persist in Region B
+        let user_to_persist = match &query_result {
+            trulang_compiler::bytecode::Value::Array(items) => items[0].clone(),
+            _ => panic!("Expected array"),
+        };
+        let promoted_bytes = manager.promote_to_persistent(&user_to_persist);
+        assert!(promoted_bytes > 0);
+        assert_eq!(manager.persistent_bytes(), promoted_bytes);
+        assert_eq!(manager.transient_bytes(), allocated - promoted_bytes);
+
+        // End of request lifecycle: O(1) bulk reset of Region A
         manager.reset_request_arena();
         assert_eq!(
-            manager
-                .live_query_bytes
-                .load(std::sync::atomic::Ordering::Relaxed),
+            manager.transient_bytes(),
             0,
             "Transient query bytes must be reset to 0"
+        );
+        assert_eq!(
+            manager.persistent_bytes(),
+            promoted_bytes,
+            "Persistent Region B bytes must be preserved after Region A arena reset"
         );
     }
 }

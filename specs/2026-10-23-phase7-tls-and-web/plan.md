@@ -36,10 +36,10 @@
 ---
 
 ## Task Group 4: Native Relational Database Drivers (`crates/db`)
-- [ ] 4.1 Expand PostgreSQL client (`crates/db/src/postgres/`) with parameterized `query_one(sql, params)` and `execute(sql, params)`.
-- [ ] 4.2 Implement embedded SQLite driver (`crates/db/src/sqlite/`) utilizing a dedicated worker thread pool and bounded channels to eliminate OS event loop blocking.
-- [ ] 4.3 Expose non-blocking `std::db::postgres` and `std::db::sqlite` methods via `crates/ffi`.
-- [ ] 4.4 Verify dual-region query decoding: transient rows allocated in Region A with promotion to Region B on explicit persistence.
+- [x] 4.1 Expand PostgreSQL client (`crates/db/src/postgres/`) with parameterized `query_one(sql, params)` and `execute(sql, params)`.
+- [x] 4.2 Implement embedded SQLite driver (`crates/db/src/sqlite/`) utilizing a dedicated worker thread pool and bounded channels to eliminate OS event loop blocking.
+- [x] 4.3 Expose non-blocking `std::db::postgres` and `std::db::sqlite` methods via `crates/ffi`.
+- [x] 4.4 Verify dual-region query decoding: transient rows allocated in Region A with promotion to Region B on explicit persistence.
 
 ---
 

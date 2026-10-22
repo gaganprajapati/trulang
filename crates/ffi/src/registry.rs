@@ -1,5 +1,5 @@
 use crate::error::FfiError;
-use crate::modules::{http, json, pg, redis, trace};
+use crate::modules::{http, json, pg, redis, sqlite, trace};
 use crate::worker_pool::WorkerPool;
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -25,8 +25,11 @@ impl FfiRegistry {
         registry.register_alias("http", "std::http");
         registry.register_alias("trulang/http", "std::http");
         registry.register_alias("sql", "std::sql");
+        registry.register_alias("db", "std::db");
         registry.register_alias("pg", "trulang/postgres");
         registry.register_alias("postgres", "trulang/postgres");
+        registry.register_alias("sqlite", "std::db::sqlite");
+        registry.register_alias("trulang/sqlite", "std::db::sqlite");
         registry.register_alias("redis", "trulang/redis");
         registry.register_alias("trace", "trulang/trace");
         registry.register_alias("otel", "trulang/trace");
@@ -54,8 +57,13 @@ impl FfiRegistry {
             "std::json"
             | "std::http"
             | "std::sql"
+            | "std::db"
+            | "std::db::postgres"
+            | "std::db::sqlite"
+            | "std::sqlite"
             | "rust:trulang_std_pg"
             | "trulang/postgres"
+            | "trulang/sqlite"
             | "trulang/redis"
             | "std::redis"
             | "trulang/trace"
@@ -135,8 +143,25 @@ impl FfiRegistry {
                     method: method.to_string(),
                 }),
             },
-            "rust:trulang_std_pg" | "std::sql" | "trulang/postgres" => match method {
-                "create_pool" | "connect" => pg::create_pool(args),
+            "std::db" => match method {
+                "postgres" | "create_pool" | "connect" => pg::create_pool(args),
+                "sqlite" | "open" => sqlite::open(args),
+                _ => Err(FfiError::MethodNotFound {
+                    module: resolved,
+                    method: method.to_string(),
+                }),
+            },
+            "rust:trulang_std_pg" | "std::sql" | "trulang/postgres" | "std::db::postgres" => {
+                match method {
+                    "create_pool" | "connect" | "postgres" => pg::create_pool(args),
+                    _ => Err(FfiError::MethodNotFound {
+                        module: resolved,
+                        method: method.to_string(),
+                    }),
+                }
+            }
+            "trulang/sqlite" | "std::db::sqlite" | "std::sqlite" => match method {
+                "open" | "connect" | "sqlite" | "create_pool" => sqlite::open(args),
                 _ => Err(FfiError::MethodNotFound {
                     module: resolved,
                     method: method.to_string(),

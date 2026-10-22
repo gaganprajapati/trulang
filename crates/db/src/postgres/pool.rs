@@ -172,15 +172,37 @@ impl PgPool {
 
     /// Executes a SQL query and decodes results into a TruLang Array of Objects.
     pub fn query(&self, sql: &str) -> Result<Value, DbError> {
+        self.query_params(sql, &[])
+    }
+
+    /// Executes a parameterized SQL query and decodes results into a TruLang Array of Objects.
+    pub fn query_params(&self, sql: &str, params: &[Value]) -> Result<Value, DbError> {
         let mut conn = self.acquire()?;
-        let res = conn.query(sql)?;
+        let res = conn.query_params(sql, params)?;
         Ok(decode_query_result_to_trulang(&res))
+    }
+
+    /// Executes a parameterized query and returns the first row as an Object, or None if no rows matched.
+    pub fn query_one(&self, sql: &str, params: &[Value]) -> Result<Option<Value>, DbError> {
+        let mut conn = self.acquire()?;
+        let res = conn.query_params(sql, params)?;
+        let val = decode_query_result_to_trulang(&res);
+        if let Value::Array(rows) = val {
+            Ok(rows.into_iter().next())
+        } else {
+            Ok(None)
+        }
     }
 
     /// Executes a SQL command (INSERT/UPDATE/DELETE/DDL) and returns metadata object.
     pub fn execute(&self, sql: &str) -> Result<Value, DbError> {
+        self.execute_params(sql, &[])
+    }
+
+    /// Executes a parameterized SQL command and returns metadata object.
+    pub fn execute_params(&self, sql: &str, params: &[Value]) -> Result<Value, DbError> {
         let mut conn = self.acquire()?;
-        let res = conn.execute(sql)?;
+        let res = conn.execute_params(sql, params)?;
 
         let obj = Value::new_object();
         if let Value::Object(ref o) = obj {

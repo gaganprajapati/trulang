@@ -7,7 +7,8 @@ pub mod worker_pool;
 
 pub use error::FfiError;
 pub use handle::{
-    create_pg_pool_handle, next_handle_id, PgPoolResource, GLOBAL_DROPPED_HANDLES_COUNT,
+    create_pg_pool_handle, create_sqlite_handle, next_handle_id, PgPoolResource, SqliteResource,
+    GLOBAL_DROPPED_HANDLES_COUNT,
 };
 pub use marshal::{estimate_value_size, json_to_trulang_value, trulang_value_to_json};
 pub use registry::FfiRegistry;
@@ -226,6 +227,119 @@ mod tests {
                 assert_eq!(finish, Ok(Value::Bool(true)));
             }
             _ => panic!("Expected TraceSpan handle"),
+        }
+    }
+
+    #[test]
+    fn test_ffi_postgres_and_sqlite_modules() {
+        let registry = FfiRegistry::new();
+        assert!(registry.has_module("std::db"));
+        assert!(registry.has_module("std::db::postgres"));
+        assert!(registry.has_module("std::db::sqlite"));
+        assert!(registry.has_module("sqlite"));
+
+        // 1. Test SQLite via std::db
+        let sqlite_val = registry
+            .invoke(
+                "std::db",
+                "sqlite",
+                &[Value::String(Arc::new(":memory:".into()))],
+                None,
+            )
+            .expect("sqlite create failed");
+
+        if let Value::Handle(h) = sqlite_val {
+            assert_eq!(h.type_name, "Sqlite");
+
+            // Execute DDL
+            let exec_ddl = h
+                .resource
+                .call_method(
+                    "execute",
+                    &[Value::String(Arc::new(
+                        "CREATE TABLE items (id INTEGER PRIMARY KEY, name TEXT)".into(),
+                    ))],
+                )
+                .expect("CREATE TABLE failed");
+            if let Value::Object(ref o) = exec_ddl {
+                assert_eq!(o.lock().unwrap().get("ok"), Some(&Value::Bool(true)));
+            }
+
+            // Insert parameterized
+            let exec_ins = h
+                .resource
+                .call_method(
+                    "execute",
+                    &[
+                        Value::String(Arc::new("INSERT INTO items VALUES (?, ?)".into())),
+                        Value::Array(vec![
+                            Value::Int(10),
+                            Value::String(Arc::new("Widget".into())),
+                        ]),
+                    ],
+                )
+                .expect("INSERT failed");
+            if let Value::Object(ref o) = exec_ins {
+                assert_eq!(o.lock().unwrap().get("rows_affected"), Some(&Value::Int(1)));
+            }
+
+            // query_one
+            let one = h
+                .resource
+                .call_method(
+                    "query_one",
+                    &[
+                        Value::String(Arc::new("SELECT * FROM items WHERE id = ?".into())),
+                        Value::Array(vec![Value::Int(10)]),
+                    ],
+                )
+                .expect("query_one failed");
+            if let Value::Object(ref o) = one {
+                let g = o.lock().unwrap();
+                assert_eq!(g.get("id"), Some(&Value::Int(10)));
+                assert_eq!(
+                    g.get("name"),
+                    Some(&Value::String(Arc::new("Widget".into())))
+                );
+            } else {
+                panic!("Expected Object from query_one");
+            }
+
+            // Checkpoint
+            let cp = h.resource.call_method("checkpoint", &[]);
+            assert_eq!(cp, Ok(Value::Bool(true)));
+
+            // Close
+            let close = h.resource.call_method("close", &[]);
+            assert_eq!(close, Ok(Value::Bool(true)));
+        } else {
+            panic!("Expected Sqlite handle");
+        }
+
+        // 2. Test Postgres via std::db::postgres
+        let pg_val = registry
+            .invoke(
+                "std::db::postgres",
+                "create_pool",
+                &[Value::String(Arc::new(
+                    "postgres://localhost:5432/test".into(),
+                ))],
+                None,
+            )
+            .expect("postgres create failed");
+
+        if let Value::Handle(h) = pg_val {
+            assert_eq!(h.type_name, "PgPool");
+            let q_one = h.resource.call_method(
+                "query_one",
+                &[
+                    Value::String(Arc::new("SELECT id, name FROM users WHERE id = $1".into())),
+                    Value::Array(vec![Value::Int(42)]),
+                ],
+            );
+            assert!(q_one.is_ok());
+        } else {
+            panic!("Expected PgPool handle");
         }
     }
 }

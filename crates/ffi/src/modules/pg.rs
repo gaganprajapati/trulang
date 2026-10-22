@@ -18,6 +18,20 @@ pub fn create_pool(args: &[Value]) -> Result<Value, FfiError> {
         .get(1)
         .and_then(|v| match v {
             Value::Int(n) if *n > 0 => Some(*n as usize),
+            Value::Object(o) => {
+                let g = o.lock().unwrap();
+                match g.get("max_connections") {
+                    Some(Value::Int(n)) if *n > 0 => Some(*n as usize),
+                    _ => None,
+                }
+            }
+            Value::Map(m) => {
+                let g = m.lock().unwrap();
+                match g.get("max_connections") {
+                    Some(Value::Int(n)) if *n > 0 => Some(*n as usize),
+                    _ => None,
+                }
+            }
             _ => None,
         })
         .unwrap_or(16);

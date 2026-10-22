@@ -3,7 +3,9 @@ pub mod mock_server;
 pub mod pool;
 pub mod protocol;
 
-pub use connection::{PgConnection, PgExecuteResult, PgQueryResult};
+pub use connection::{
+    escape_pg_value, format_parameterized_query, PgConnection, PgExecuteResult, PgQueryResult,
+};
 pub use mock_server::MockPostgresServer;
 pub use pool::{decode_query_result_to_trulang, PgConfig, PgPool, PooledPgConnection};
 pub use protocol::{BackendMessage, DataRow, FieldDescription};
@@ -62,5 +64,72 @@ mod tests {
                 Some(&trulang_compiler::bytecode::Value::Int(4))
             );
         }
+
+        // Test parameterized query_one
+        let user1 = pool
+            .query_one(
+                "SELECT id, name FROM users WHERE id = $1",
+                &[trulang_compiler::bytecode::Value::Int(1)],
+            )
+            .expect("query_one should succeed");
+        assert!(user1.is_some());
+        if let Some(trulang_compiler::bytecode::Value::Object(ref obj)) = user1 {
+            let g = obj.lock().unwrap();
+            assert_eq!(
+                g.get("id"),
+                Some(&trulang_compiler::bytecode::Value::Int(1))
+            );
+        } else {
+            panic!("Expected user object");
+        }
+
+        // Test parameterized execute
+        let exec_p = pool
+            .execute_params(
+                "INSERT INTO users (id, name) VALUES ($1, $2)",
+                &[
+                    trulang_compiler::bytecode::Value::Int(4),
+                    trulang_compiler::bytecode::Value::String(std::sync::Arc::new(
+                        "Dave".to_string(),
+                    )),
+                ],
+            )
+            .expect("execute_params should succeed");
+        if let trulang_compiler::bytecode::Value::Object(ref o) = exec_p {
+            let g = o.lock().unwrap();
+            assert_eq!(
+                g.get("rows_affected"),
+                Some(&trulang_compiler::bytecode::Value::Int(1))
+            );
+        }
+    }
+
+    #[test]
+    fn test_format_parameterized_query() {
+        use trulang_compiler::bytecode::Value;
+
+        let sql = "SELECT * FROM users WHERE id = $1 AND name = $2 AND active = $3 AND age > $4";
+        let params = vec![
+            Value::Int(42),
+            Value::String(std::sync::Arc::new("O'Connor".to_string())),
+            Value::Bool(true),
+            Value::Float(18.5),
+        ];
+
+        let formatted = format_parameterized_query(sql, &params).unwrap();
+        assert_eq!(
+            formatted,
+            "SELECT * FROM users WHERE id = 42 AND name = 'O''Connor' AND active = TRUE AND age > 18.5"
+        );
+
+        // String with quote containing dollar sign should be preserved
+        let sql2 = "SELECT '$1' FROM users WHERE id = $1";
+        let params2 = vec![Value::Int(99)];
+        let formatted2 = format_parameterized_query(sql2, &params2).unwrap();
+        assert_eq!(formatted2, "SELECT '$1' FROM users WHERE id = 99");
+
+        // Out of range parameter should error
+        let sql_err = "SELECT * FROM users WHERE id = $2";
+        assert!(format_parameterized_query(sql_err, &params2).is_err());
     }
 }

@@ -26,12 +26,7 @@ impl DapServer {
         reader: &mut R,
         writer: &mut W,
     ) -> anyhow::Result<()> {
-        loop {
-            let msg_text = match Transport::read_message(reader)? {
-                Some(text) => text,
-                None => break, // EOF reached
-            };
-
+        while let Some(msg_text) = Transport::read_message(reader)? {
             let req: DapRequest = match serde_json::from_str(&msg_text) {
                 Ok(r) => r,
                 Err(e) => {

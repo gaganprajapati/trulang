@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::io::{BufReader, BufWriter};
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::time::Duration;
+use trulang_compiler::bytecode::Value;
 
 #[derive(Debug, Clone)]
 pub struct PgQueryResult {
@@ -223,9 +224,25 @@ impl PgConnection {
         })
     }
 
+    /// Executes a parameterized query statement over TCP socket.
+    pub fn query_params(&mut self, sql: &str, params: &[Value]) -> Result<PgQueryResult, DbError> {
+        let formatted = format_parameterized_query(sql, params)?;
+        self.query(&formatted)
+    }
+
     /// Executes a command statement (e.g. INSERT, UPDATE, DELETE) returning rows affected.
     pub fn execute(&mut self, sql: &str) -> Result<PgExecuteResult, DbError> {
-        let res = self.query(sql)?;
+        self.execute_params(sql, &[])
+    }
+
+    /// Executes a parameterized command statement returning rows affected.
+    pub fn execute_params(
+        &mut self,
+        sql: &str,
+        params: &[Value],
+    ) -> Result<PgExecuteResult, DbError> {
+        let formatted = format_parameterized_query(sql, params)?;
+        let res = self.query(&formatted)?;
         let rows_affected = parse_rows_affected(&res.command_tag);
         Ok(PgExecuteResult {
             command_tag: res.command_tag,
@@ -340,4 +357,92 @@ fn to_hex(bytes: &[u8]) -> String {
         let _ = write!(s, "{:02x}", b);
     }
     s
+}
+
+/// Formats a parameterized SQL query by safely replacing `$1`, `$2`, etc.
+/// with strictly escaped literals.
+/// Preserves string literals and dollar signs within existing quotes.
+pub fn format_parameterized_query(sql: &str, params: &[Value]) -> Result<String, DbError> {
+    if params.is_empty() {
+        return Ok(sql.to_string());
+    }
+
+    let mut out = String::with_capacity(sql.len() + params.len() * 16);
+    let chars: Vec<char> = sql.chars().collect();
+    let len = chars.len();
+    let mut i = 0;
+
+    while i < len {
+        let c = chars[i];
+        if c == '\'' {
+            // SQL string literal: consume until matching unescaped single quote
+            out.push(c);
+            i += 1;
+            while i < len {
+                let sc = chars[i];
+                out.push(sc);
+                if sc == '\'' {
+                    // Check if next char is another quote (escaped quote '')
+                    if i + 1 < len && chars[i + 1] == '\'' {
+                        i += 1;
+                        out.push(chars[i]);
+                    } else {
+                        i += 1;
+                        break;
+                    }
+                }
+                i += 1;
+            }
+        } else if c == '$' && i + 1 < len && chars[i + 1].is_ascii_digit() && chars[i + 1] != '0' {
+            // Positional parameter $1, $2, etc.
+            i += 1;
+            let mut num_str = String::new();
+            while i < len && chars[i].is_ascii_digit() {
+                num_str.push(chars[i]);
+                i += 1;
+            }
+            let idx: usize = num_str.parse().map_err(|_| {
+                DbError::PgProtocol(format!("Invalid parameter index: ${}", num_str))
+            })?;
+            if idx == 0 || idx > params.len() {
+                return Err(DbError::PgProtocol(format!(
+                    "Parameter index ${} out of range (provided {} params)",
+                    idx,
+                    params.len()
+                )));
+            }
+            out.push_str(&escape_pg_value(&params[idx - 1]));
+        } else {
+            out.push(c);
+            i += 1;
+        }
+    }
+
+    Ok(out)
+}
+
+/// Safely escapes a TruLang `Value` for SQL literal interpolation.
+pub fn escape_pg_value(val: &Value) -> String {
+    match val {
+        Value::Null => "NULL".to_string(),
+        Value::Bool(b) => if *b { "TRUE" } else { "FALSE" }.to_string(),
+        Value::Int(n) => n.to_string(),
+        Value::Float(f) => {
+            if f.is_nan() || f.is_infinite() {
+                "NULL".to_string()
+            } else {
+                f.to_string()
+            }
+        }
+        Value::String(s) => {
+            let escaped = s.replace('\'', "''");
+            format!("'{}'", escaped)
+        }
+        Value::Array(_) | Value::Object(_) | Value::Map(_) => {
+            let json = val.to_string();
+            let escaped = json.replace('\'', "''");
+            format!("'{}'", escaped)
+        }
+        Value::Handle(h) => format!("{}", h.id),
+    }
 }

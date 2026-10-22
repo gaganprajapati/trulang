@@ -13,6 +13,7 @@ use trulang_compiler::bytecode::Value;
 pub struct DualRegionDbManager {
     pub persistent_budget_bytes: usize,
     pub live_query_bytes: AtomicUsize,
+    pub persistent_bytes_used: AtomicUsize,
     pub total_queries_tracked: AtomicUsize,
 }
 
@@ -21,11 +22,12 @@ impl DualRegionDbManager {
         Self {
             persistent_budget_bytes,
             live_query_bytes: AtomicUsize::new(0),
+            persistent_bytes_used: AtomicUsize::new(0),
             total_queries_tracked: AtomicUsize::new(0),
         }
     }
 
-    /// Computes transient bytes for query response objects.
+    /// Computes transient bytes for query response objects allocated in Region A.
     pub fn track_query_result(&self, result: &Value) -> usize {
         let bytes = estimate_query_value_size(result);
         self.live_query_bytes.fetch_add(bytes, Ordering::Relaxed);
@@ -33,9 +35,36 @@ impl DualRegionDbManager {
         bytes
     }
 
-    /// Resets transient memory accounting at the end of a request lifecycle.
+    /// Promotes a transient database row/model from Region A into persistent Region B.
+    pub fn promote_to_persistent(&self, val: &Value) -> usize {
+        let bytes = estimate_query_value_size(val);
+        self.persistent_bytes_used
+            .fetch_add(bytes, Ordering::Relaxed);
+        let mut cur = self.live_query_bytes.load(Ordering::Relaxed);
+        while let Err(actual) = self.live_query_bytes.compare_exchange_weak(
+            cur,
+            cur.saturating_sub(bytes),
+            Ordering::Relaxed,
+            Ordering::Relaxed,
+        ) {
+            cur = actual;
+        }
+        bytes
+    }
+
+    /// Resets transient memory accounting (Region A) at the end of a request lifecycle.
     pub fn reset_request_arena(&self) {
         self.live_query_bytes.store(0, Ordering::Relaxed);
+    }
+
+    /// Returns live transient bytes currently allocated in Region A.
+    pub fn transient_bytes(&self) -> usize {
+        self.live_query_bytes.load(Ordering::Relaxed)
+    }
+
+    /// Returns persistent bytes promoted into Region B.
+    pub fn persistent_bytes(&self) -> usize {
+        self.persistent_bytes_used.load(Ordering::Relaxed)
     }
 }
 
