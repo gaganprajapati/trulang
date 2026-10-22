@@ -83,7 +83,7 @@ impl TestRunner {
                     true
                 }
             })
-            .map(|t| Self::run_test(t))
+            .map(Self::run_test)
             .collect()
     }
 }

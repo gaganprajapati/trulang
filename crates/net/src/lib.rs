@@ -9,6 +9,7 @@ pub mod poller;
 pub mod router;
 pub mod server;
 pub mod tls;
+pub mod ws;
 
 pub use http::{HttpMethod, HttpParser, HttpRequest, HttpResponse, ParseResult};
 pub use otel::{SpanContext, SpanStatus, TraceSpan};
@@ -17,8 +18,14 @@ pub use router::{
     CorsMiddleware, HeaderValidationMiddleware, LoggerMiddleware, Middleware, RadixRouter,
     RouteHandler, RouteParam, RouteParams, WebApp, MAX_ROUTE_PARAMS,
 };
-pub use server::{HttpServer, ServerMetrics};
+pub use server::{HttpServer, ServerMetrics, SpawnedDrainServer};
 pub use tls::{TlsAcceptorConfig, TlsConnectionState, TransportStream, TLS_HANDSHAKE_TIMEOUT};
+pub use ws::{
+    close_code, compute_accept_key, create_upgrade_response, encode_server_frame,
+    is_websocket_upgrade, parse_client_frame, SseStream, WsError, WsFrame, WsHandler, WsListener,
+    WsOpcode, WsQueue, WsSession, WsSocket, WS_GUID, WS_HEARTBEAT_INTERVAL, WS_HEARTBEAT_TIMEOUT,
+    WS_WRITE_HIGH_WATERMARK, WS_WRITE_LOW_WATERMARK,
+};
 
 #[cfg(test)]
 mod tests {

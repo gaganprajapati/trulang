@@ -951,8 +951,10 @@ name = "trulang_net"
 version = "1.0.0"
 dependencies = [
  "anyhow",
+ "base64",
  "libc",
  "rcgen",
+ "ring",
  "rustls",
  "rustls-pemfile",
  "rustls-pki-types",

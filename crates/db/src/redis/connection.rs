@@ -43,7 +43,7 @@ impl RedisConnection {
 
         let stream = match timeout {
             Some(d) => TcpStream::connect_timeout(&addrs[0], d)?,
-            None => TcpStream::connect(&addrs[0])?,
+            None => TcpStream::connect(addrs[0])?,
         };
 
         stream.set_nodelay(true)?;

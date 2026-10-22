@@ -160,6 +160,7 @@ pub struct HttpResponse {
 impl HttpResponse {
     pub fn new(status_code: u16, body: impl Into<Vec<u8>>) -> Self {
         let status_text = match status_code {
+            101 => "Switching Protocols",
             200 => "OK",
             201 => "Created",
             204 => "No Content",
@@ -245,19 +246,26 @@ impl HttpResponse {
         out.extend_from_slice(status_line.as_bytes());
 
         // Standard headers
-        let content_length = format!("Content-Length: {}\r\n", self.body.len());
-        out.extend_from_slice(content_length.as_bytes());
+        let is_chunked = self.headers.contains_key("transfer-encoding");
+        let is_101 = self.status_code == 101;
 
-        let conn_hdr = if keep_alive {
-            "Connection: keep-alive\r\n"
-        } else {
-            "Connection: close\r\n"
-        };
-        out.extend_from_slice(conn_hdr.as_bytes());
+        if !is_chunked && !is_101 {
+            let content_length = format!("Content-Length: {}\r\n", self.body.len());
+            out.extend_from_slice(content_length.as_bytes());
+        }
+
+        if !self.headers.contains_key("connection") {
+            let conn_hdr = if keep_alive {
+                "Connection: keep-alive\r\n"
+            } else {
+                "Connection: close\r\n"
+            };
+            out.extend_from_slice(conn_hdr.as_bytes());
+        }
 
         out.extend_from_slice(b"Server: TruLang-HTTP/1.0\r\n");
 
-        if !self.headers.contains_key("content-type") {
+        if !self.headers.contains_key("content-type") && !is_101 {
             out.extend_from_slice(b"Content-Type: text/plain; charset=utf-8\r\n");
         }
 

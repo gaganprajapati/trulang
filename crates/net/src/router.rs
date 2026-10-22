@@ -7,6 +7,7 @@
 //! - **Built-in Middleware**: CORS, Logger, and Header Validation.
 
 use crate::http::{HttpMethod, HttpRequest, HttpResponse};
+use crate::ws::{WsHandler, WsListener};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -350,6 +351,7 @@ pub trait Middleware: Send + Sync {
 /// Composable Web Application Router with built-in Middleware Pipeline.
 pub struct WebApp {
     pub router: RadixRouter<RouteHandler>,
+    pub ws_router: RadixRouter<Arc<dyn WsHandler>>,
     pub middlewares: Vec<Arc<dyn Middleware>>,
 }
 
@@ -363,6 +365,7 @@ impl WebApp {
     pub fn new() -> Self {
         Self {
             router: RadixRouter::new(),
+            ws_router: RadixRouter::new(),
             middlewares: Vec::new(),
         }
     }
@@ -407,6 +410,33 @@ impl WebApp {
         self.router
             .add_route(&HttpMethod::Delete, path, Box::new(handler));
         self
+    }
+
+    /// Registers a WebSocket route with a functional callback builder.
+    pub fn ws<F>(&mut self, path: &str, configure: F) -> &mut Self
+    where
+        F: FnOnce(&mut WsListener) + 'static,
+    {
+        let mut listener = WsListener::new();
+        configure(&mut listener);
+        self.ws_router
+            .add_route(&HttpMethod::Get, path, Arc::new(listener));
+        self
+    }
+
+    /// Registers a custom struct implementing `WsHandler` for a path.
+    pub fn ws_handler<H: WsHandler + 'static>(&mut self, path: &str, handler: H) -> &mut Self {
+        self.ws_router
+            .add_route(&HttpMethod::Get, path, Arc::new(handler));
+        self
+    }
+
+    /// Matches an incoming request path against registered WebSocket routes.
+    pub fn match_ws_route<'a>(
+        &'a self,
+        path: &'a str,
+    ) -> (Option<&'a Arc<dyn WsHandler>>, RouteParams<'a>) {
+        self.ws_router.match_route(&HttpMethod::Get, path)
     }
 
     /// Handles an incoming HTTP request through the middleware interceptors and radix router.

@@ -94,12 +94,7 @@ fn handle_redis_client(
     let mut reader = BufReader::new(read_stream);
     let mut writer = BufWriter::new(stream);
 
-    loop {
-        let msg = match read_resp_value(&mut reader) {
-            Ok(m) => m,
-            Err(_) => break,
-        };
-
+    while let Ok(msg) = read_resp_value(&mut reader) {
         let cmd_parts = match msg {
             RespValue::Array(Some(elems)) => {
                 let mut parts = Vec::new();

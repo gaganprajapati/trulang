@@ -25,13 +25,13 @@
 ---
 
 ## Task Group 3: Real-Time Protocols: WebSockets & SSE (`crates/net/src/ws.rs`)
-- [ ] 3.1 Implement RFC 6455 WebSocket upgrade handshake over HTTP/1.1 (Sec-WebSocket-Key SHA-1 + GUID).
-- [ ] 3.2 Implement frame parsing (masked client frames, text/binary/ping/pong/close frames).
-- [ ] 3.3 Implement autonomous wire-level Ping/Pong handling and periodic 30s heartbeat timers.
-- [ ] 3.4 Implement write backpressure: 64 KB high-watermark, pausing `POLLIN`, and code 1008 policy violation termination on budget breach.
-- [ ] 3.5 Implement `app.ws(path, handler)` with `on_open`, `on_message`, `on_close` callbacks and per-frame Region A arena recycling.
-- [ ] 3.6 Implement Server-Sent Events (`HttpResponse::sse()`) with chunked transfer encoding and per-event Region A arena reset.
-- [ ] 3.7 Add integration tests for concurrent WebSocket echo, Ping/Pong keep-alives, and SSE broadcast.
+- [x] 3.1 Implement RFC 6455 WebSocket upgrade handshake over HTTP/1.1 (Sec-WebSocket-Key SHA-1 + GUID).
+- [x] 3.2 Implement frame parsing (masked client frames, text/binary/ping/pong/close frames).
+- [x] 3.3 Implement autonomous wire-level Ping/Pong handling and periodic 30s heartbeat timers.
+- [x] 3.4 Implement write backpressure: 64 KB high-watermark, pausing `POLLIN`, and code 1008 policy violation termination on budget breach.
+- [x] 3.5 Implement `app.ws(path, handler)` with `on_open`, `on_message`, `on_close` callbacks and per-frame Region A arena recycling.
+- [x] 3.6 Implement Server-Sent Events (`HttpResponse::sse()`) with chunked transfer encoding and per-event Region A arena reset.
+- [x] 3.7 Add integration tests for concurrent WebSocket echo, Ping/Pong keep-alives, and SSE broadcast.
 
 ---
 

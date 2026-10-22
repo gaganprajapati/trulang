@@ -5,7 +5,12 @@
 
 use crate::http::{HttpParser, HttpRequest, HttpResponse, ParseResult};
 use crate::poller::{get_socket_handle, set_reuseaddr, Event, Interest, Poller};
+use crate::router::WebApp;
 use crate::tls::{TlsAcceptorConfig, TransportStream, MAX_IN_FLIGHT_HANDSHAKES};
+use crate::ws::{
+    close_code, create_upgrade_response, encode_server_frame, is_websocket_upgrade,
+    parse_client_frame, WsError, WsFrame, WsHandler, WsOpcode, WsSession,
+};
 use std::collections::HashMap;
 use std::io;
 use std::net::{SocketAddr, TcpListener};
@@ -44,12 +49,21 @@ impl Default for ServerMetrics {
     }
 }
 
+enum ConnectionMode {
+    Http,
+    WebSocket {
+        session: WsSession,
+        handler: Arc<dyn WsHandler>,
+    },
+}
+
 struct Connection {
     transport: TransportStream,
     read_buf: Vec<u8>,
     write_buf: Vec<u8>,
     keep_alive: bool,
     current_interest: Interest,
+    mode: ConnectionMode,
 }
 
 impl Connection {
@@ -60,13 +74,42 @@ impl Connection {
             write_buf: Vec::with_capacity(4096),
             keep_alive: true,
             current_interest,
+            mode: ConnectionMode::Http,
         }
+    }
+}
+
+fn flush_session_outgoing(session: &WsSession, write_buf: &mut Vec<u8>) {
+    let mut q = session.outgoing_queue.lock().unwrap();
+    while let Some(frame_bytes) = q.pop_front() {
+        write_buf.extend_from_slice(&frame_bytes);
+    }
+    session.queued_bytes.store(0, Ordering::Relaxed);
+}
+
+fn flush_ws_outgoing(conn: &mut Connection) {
+    if let ConnectionMode::WebSocket { ref session, .. } = conn.mode {
+        flush_session_outgoing(session, &mut conn.write_buf);
+    }
+}
+
+fn compute_desired_interest(conn: &Connection) -> Interest {
+    let is_read_paused = matches!(conn.mode, ConnectionMode::WebSocket { ref session, .. } if session.is_read_paused);
+    let wants_read = !is_read_paused;
+    let wants_write = conn.transport.wants_write() || !conn.write_buf.is_empty();
+
+    match (wants_read, wants_write) {
+        (true, true) => Interest::Both,
+        (true, false) => Interest::Readable,
+        (false, true) => Interest::Writable,
+        (false, false) => Interest::Readable,
     }
 }
 
 pub struct HttpServer {
     bind_addr: SocketAddr,
     chunk: Chunk,
+    pub web_app: Option<Arc<WebApp>>,
     request_budget_bytes: usize,
     max_request_budget_bytes: Option<usize>,
     persistent_budget_bytes: usize,
@@ -88,6 +131,7 @@ impl HttpServer {
         Self {
             bind_addr,
             chunk,
+            web_app: None,
             request_budget_bytes: Self::DEFAULT_REQUEST_BUDGET,
             max_request_budget_bytes: Some(Self::DEFAULT_MAX_REQUEST_BUDGET),
             persistent_budget_bytes: Self::DEFAULT_PERSISTENT_BUDGET,
@@ -99,6 +143,17 @@ impl HttpServer {
             telemetry: None,
             tls_config: None,
         }
+    }
+
+    pub fn from_app(bind_addr: SocketAddr, app: WebApp) -> Self {
+        let mut server = Self::new(bind_addr, Chunk::default());
+        server.web_app = Some(Arc::new(app));
+        server
+    }
+
+    pub fn with_app(mut self, app: WebApp) -> Self {
+        self.web_app = Some(Arc::new(app));
+        self
     }
 
     pub fn with_tls(mut self, config: TlsAcceptorConfig) -> Self {
@@ -337,6 +392,22 @@ impl HttpServer {
                     let _ = poller.deregister(server_fd);
                     listener_registered = false;
                     drain_started_at = Some(std::time::Instant::now());
+
+                    // T = 0.1s - 5.0s: Streaming Drain (RFC 6455 1001 Close)
+                    for conn in connections.values_mut() {
+                        if let ConnectionMode::WebSocket {
+                            ref mut session, ..
+                        } = conn.mode
+                        {
+                            if !session.socket.is_closed.swap(true, Ordering::SeqCst) {
+                                let close_frame =
+                                    WsFrame::close(close_code::GOING_AWAY, "Server shutting down");
+                                conn.write_buf
+                                    .extend_from_slice(&encode_server_frame(&close_frame));
+                                conn.keep_alive = false;
+                            }
+                        }
+                    }
                 }
                 if connections.is_empty() {
                     break;
@@ -370,6 +441,29 @@ impl HttpServer {
                         self.metrics
                             .active_connections
                             .fetch_sub(1, Ordering::Relaxed);
+                    }
+                }
+            }
+
+            // Periodic sweep for WebSocket heartbeats, outgoing queue flushing, and dynamic interest updates
+            for (&token, conn) in connections.iter_mut() {
+                if let ConnectionMode::WebSocket {
+                    ref mut session, ..
+                } = conn.mode
+                {
+                    if let Some(heartbeat_frame) = session.check_heartbeat() {
+                        conn.write_buf
+                            .extend_from_slice(&encode_server_frame(&heartbeat_frame));
+                        if heartbeat_frame.opcode == WsOpcode::Close {
+                            conn.keep_alive = false;
+                        }
+                    }
+                    flush_ws_outgoing(conn);
+                    let desired = compute_desired_interest(conn);
+                    if conn.current_interest != desired {
+                        let sock_handle = get_socket_handle(conn.transport.tcp_stream());
+                        let _ = poller.modify(sock_handle, token, desired);
+                        conn.current_interest = desired;
                     }
                 }
             }
@@ -434,6 +528,17 @@ impl HttpServer {
                     }
                 } else if let Some(conn) = connections.get_mut(&ev.token) {
                     if ev.is_closed || ev.is_error {
+                        if let ConnectionMode::WebSocket {
+                            ref session,
+                            ref handler,
+                        } = conn.mode
+                        {
+                            handler.on_close(
+                                &session.socket,
+                                close_code::ABNORMAL_CLOSURE,
+                                "Connection reset",
+                            );
+                        }
                         close_connection(&poller, &conn.transport);
                         if conn.transport.is_handshaking() {
                             in_flight_handshakes = in_flight_handshakes.saturating_sub(1);
@@ -463,12 +568,7 @@ impl HttpServer {
                                 if established {
                                     in_flight_handshakes = in_flight_handshakes.saturating_sub(1);
                                 }
-                                let desired_interest =
-                                    if conn.transport.wants_write() || !conn.write_buf.is_empty() {
-                                        Interest::Both
-                                    } else {
-                                        Interest::Readable
-                                    };
+                                let desired_interest = compute_desired_interest(conn);
                                 if conn.current_interest != desired_interest {
                                     let sock_handle =
                                         get_socket_handle(conn.transport.tcp_stream());
@@ -516,6 +616,17 @@ impl HttpServer {
                         }
 
                         if closed {
+                            if let ConnectionMode::WebSocket {
+                                ref session,
+                                ref handler,
+                            } = conn.mode
+                            {
+                                handler.on_close(
+                                    &session.socket,
+                                    close_code::NORMAL_CLOSURE,
+                                    "Peer connection dropped",
+                                );
+                            }
                             close_connection(&poller, &conn.transport);
                             connections.remove(&ev.token);
                             self.metrics
@@ -524,112 +635,273 @@ impl HttpServer {
                             continue;
                         }
 
-                        // Process all complete HTTP requests from the buffer
                         loop {
-                            match HttpParser::parse(&conn.read_buf) {
-                                ParseResult::Complete(req, consumed) => {
-                                    conn.read_buf.drain(0..consumed);
-                                    conn.keep_alive =
-                                        req.keep_alive && !self.is_draining.load(Ordering::Relaxed);
+                            match conn.mode {
+                                ConnectionMode::Http => {
+                                    match HttpParser::parse(&conn.read_buf) {
+                                        ParseResult::Complete(req, consumed) => {
+                                            conn.read_buf.drain(0..consumed);
 
-                                    self.metrics.total_requests.fetch_add(1, Ordering::Relaxed);
-                                    let req_start = std::time::Instant::now();
+                                            if is_websocket_upgrade(&req) {
+                                                let ws_match =
+                                                    self.web_app.as_ref().and_then(|app| {
+                                                        let (handler, _params) =
+                                                            app.match_ws_route(&req.path);
+                                                        handler.cloned()
+                                                    });
 
-                                    // Extract or create W3C Trace Context
-                                    let span_ctx = req
-                                        .header("traceparent")
-                                        .and_then(crate::otel::SpanContext::from_traceparent)
-                                        .unwrap_or_else(crate::otel::SpanContext::new_root);
+                                                if let Some(handler) = ws_match {
+                                                    if let Some(upgrade_res) =
+                                                        create_upgrade_response(&req)
+                                                    {
+                                                        let wire = upgrade_res.to_wire_bytes(true);
+                                                        conn.write_buf.extend_from_slice(&wire);
+                                                        conn.keep_alive = true;
 
-                                    let trace_id = span_ctx.trace_id.clone();
-                                    let traceparent_val = span_ctx.to_traceparent();
+                                                        let session = WsSession::new(
+                                                            ev.token,
+                                                            self.request_budget_bytes,
+                                                        );
+                                                        handler.on_open(&session.socket, &req);
 
-                                    // Check actor mailbox backpressure
-                                    let active =
-                                        self.metrics.active_connections.load(Ordering::Relaxed);
-                                    let mut response = match req.path.as_str() {
-                                        "/metrics" => {
-                                            let text = self.render_prometheus_metrics();
-                                            HttpResponse::prometheus(text)
-                                        }
-                                        "/healthz" | "/livez" => {
-                                            let uptime = self
-                                                .metrics
-                                                .start_time
-                                                .elapsed()
-                                                .unwrap_or_default()
-                                                .as_secs();
-                                            HttpResponse::ok(format!(
-                                                r#"{{"status":"ok","uptime_seconds":{}}}"#,
-                                                uptime
-                                            ))
-                                            .with_header("content-type", "application/json")
-                                        }
-                                        "/ready" | "/readyz" => {
-                                            if self.is_draining.load(Ordering::Relaxed) {
-                                                HttpResponse::new(503, r#"{"status":"draining"}"#)
-                                                    .with_header("content-type", "application/json")
-                                            } else {
-                                                HttpResponse::ok(r#"{"status":"ready"}"#)
-                                                    .with_header("content-type", "application/json")
+                                                        conn.mode = ConnectionMode::WebSocket {
+                                                            session,
+                                                            handler,
+                                                        };
+                                                        flush_ws_outgoing(conn);
+                                                        continue;
+                                                    } else {
+                                                        let err_res = HttpResponse::error(
+                                                            400,
+                                                            "WebSocket upgrade error: invalid handshake headers",
+                                                        );
+                                                        conn.write_buf.extend_from_slice(
+                                                            &err_res.to_wire_bytes(false),
+                                                        );
+                                                        conn.keep_alive = false;
+                                                        break;
+                                                    }
+                                                } else {
+                                                    let not_found = HttpResponse::error(
+                                                        404,
+                                                        "WebSocket endpoint not found",
+                                                    );
+                                                    conn.write_buf.extend_from_slice(
+                                                        &not_found.to_wire_bytes(false),
+                                                    );
+                                                    conn.keep_alive = false;
+                                                    break;
+                                                }
                                             }
-                                        }
-                                        _ => {
-                                            if active > self.mailbox_capacity {
-                                                HttpResponse::new(
-                                                    503,
-                                                    r#"{"error":"Mailbox full: Service under high backpressure"}"#,
+
+                                            conn.keep_alive = req.keep_alive
+                                                && !self.is_draining.load(Ordering::Relaxed);
+                                            self.metrics
+                                                .total_requests
+                                                .fetch_add(1, Ordering::Relaxed);
+                                            let req_start = std::time::Instant::now();
+
+                                            // Extract or create W3C Trace Context
+                                            let span_ctx = req
+                                                .header("traceparent")
+                                                .and_then(
+                                                    crate::otel::SpanContext::from_traceparent,
                                                 )
-                                                .with_header("content-type", "application/json")
-                                                .with_header("retry-after", "5")
-                                            } else {
-                                                self.execute_request(&req, &shared_region_b)
+                                                .unwrap_or_else(crate::otel::SpanContext::new_root);
+
+                                            let trace_id = span_ctx.trace_id.clone();
+                                            let traceparent_val = span_ctx.to_traceparent();
+
+                                            // Check actor mailbox backpressure
+                                            let active = self
+                                                .metrics
+                                                .active_connections
+                                                .load(Ordering::Relaxed);
+                                            let mut response = match req.path.as_str() {
+                                                "/metrics" => {
+                                                    let text = self.render_prometheus_metrics();
+                                                    HttpResponse::prometheus(text)
+                                                }
+                                                "/healthz" | "/livez" => {
+                                                    let uptime = self
+                                                        .metrics
+                                                        .start_time
+                                                        .elapsed()
+                                                        .unwrap_or_default()
+                                                        .as_secs();
+                                                    HttpResponse::ok(format!(
+                                                        r#"{{"status":"ok","uptime_seconds":{}}}"#,
+                                                        uptime
+                                                    ))
+                                                    .with_header("content-type", "application/json")
+                                                }
+                                                "/ready" | "/readyz" => {
+                                                    if self.is_draining.load(Ordering::Relaxed) {
+                                                        HttpResponse::new(
+                                                            503,
+                                                            r#"{"status":"draining"}"#,
+                                                        )
+                                                        .with_header(
+                                                            "content-type",
+                                                            "application/json",
+                                                        )
+                                                    } else {
+                                                        HttpResponse::ok(r#"{"status":"ready"}"#)
+                                                            .with_header(
+                                                                "content-type",
+                                                                "application/json",
+                                                            )
+                                                    }
+                                                }
+                                                _ => {
+                                                    if active > self.mailbox_capacity {
+                                                        HttpResponse::new(
+                                                            503,
+                                                            r#"{"error":"Mailbox full: Service under high backpressure"}"#,
+                                                        )
+                                                        .with_header(
+                                                            "content-type",
+                                                            "application/json",
+                                                        )
+                                                        .with_header("retry-after", "5")
+                                                    } else if let Some(ref app) = self.web_app {
+                                                        app.handle(req)
+                                                    } else {
+                                                        self.execute_request(&req, &shared_region_b)
+                                                    }
+                                                }
+                                            };
+
+                                            // Attach W3C Trace Context headers
+                                            response = response
+                                                .with_header("traceparent", traceparent_val)
+                                                .with_header("x-trace-id", trace_id.clone())
+                                                .with_header("x-request-id", trace_id);
+
+                                            match response.status_code {
+                                                200..=299 => {
+                                                    self.metrics
+                                                        .status_2xx
+                                                        .fetch_add(1, Ordering::Relaxed);
+                                                }
+                                                400..=499 => {
+                                                    self.metrics
+                                                        .status_4xx
+                                                        .fetch_add(1, Ordering::Relaxed);
+                                                }
+                                                500..=599 => {
+                                                    self.metrics
+                                                        .status_5xx
+                                                        .fetch_add(1, Ordering::Relaxed);
+                                                }
+                                                _ => {}
+                                            };
+                                            let dur_us = req_start.elapsed().as_micros() as u64;
+                                            self.metrics
+                                                .total_duration_us
+                                                .fetch_add(dur_us, Ordering::Relaxed);
+
+                                            let wire = response.to_wire_bytes(conn.keep_alive);
+                                            conn.write_buf.extend_from_slice(&wire);
+                                        }
+                                        ParseResult::Incomplete => {
+                                            break;
+                                        }
+                                        ParseResult::Invalid(err) => {
+                                            let err_res = HttpResponse::error(
+                                                400,
+                                                format!("Bad Request: {}", err),
+                                            );
+                                            conn.write_buf
+                                                .extend_from_slice(&err_res.to_wire_bytes(false));
+                                            conn.keep_alive = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                                ConnectionMode::WebSocket {
+                                    ref mut session,
+                                    ref handler,
+                                } => {
+                                    if conn.read_buf.is_empty() {
+                                        break;
+                                    }
+                                    match parse_client_frame(&conn.read_buf) {
+                                        Ok((frame, consumed)) => {
+                                            conn.read_buf.drain(0..consumed);
+
+                                            if let Some(reply) =
+                                                session.process_incoming_frame(&frame)
+                                            {
+                                                conn.write_buf.extend_from_slice(
+                                                    &encode_server_frame(&reply),
+                                                );
+                                                if reply.opcode == WsOpcode::Close {
+                                                    conn.keep_alive = false;
+                                                }
+                                            }
+
+                                            if frame.opcode == WsOpcode::Close {
+                                                let (code, reason) = frame.parse_close_payload();
+                                                handler.on_close(&session.socket, code, &reason);
+                                                conn.keep_alive = false;
+                                                break;
+                                            } else if frame.opcode == WsOpcode::Text
+                                                || frame.opcode == WsOpcode::Binary
+                                            {
+                                                handler.on_message(&session.socket, &frame);
+                                            }
+
+                                            // Flush any frames queued by handler
+                                            flush_session_outgoing(session, &mut conn.write_buf);
+
+                                            // Check backpressure watermarks & memory budget
+                                            match session.check_backpressure() {
+                                                Ok(_is_paused) => {}
+                                                Err(code) => {
+                                                    let close_frame = WsFrame::close(
+                                                        code,
+                                                        "Memory budget exceeded",
+                                                    );
+                                                    conn.write_buf.extend_from_slice(
+                                                        &encode_server_frame(&close_frame),
+                                                    );
+                                                    conn.keep_alive = false;
+                                                    break;
+                                                }
                                             }
                                         }
-                                    };
-
-                                    // Attach W3C Trace Context headers
-                                    response = response
-                                        .with_header("traceparent", traceparent_val)
-                                        .with_header("x-trace-id", trace_id.clone())
-                                        .with_header("x-request-id", trace_id);
-
-                                    match response.status_code {
-                                        200..=299 => {
-                                            self.metrics.status_2xx.fetch_add(1, Ordering::Relaxed);
+                                        Err(WsError::Incomplete) => break,
+                                        Err(WsError::UnmaskedClientFrame) => {
+                                            let close_frame = WsFrame::close(
+                                                close_code::PROTOCOL_ERROR,
+                                                "Unmasked client frame",
+                                            );
+                                            conn.write_buf.extend_from_slice(&encode_server_frame(
+                                                &close_frame,
+                                            ));
+                                            conn.keep_alive = false;
+                                            break;
                                         }
-                                        400..=499 => {
-                                            self.metrics.status_4xx.fetch_add(1, Ordering::Relaxed);
+                                        Err(e) => {
+                                            let reason = format!("Protocol error: {}", e);
+                                            let close_frame =
+                                                WsFrame::close(close_code::PROTOCOL_ERROR, &reason);
+                                            conn.write_buf.extend_from_slice(&encode_server_frame(
+                                                &close_frame,
+                                            ));
+                                            conn.keep_alive = false;
+                                            break;
                                         }
-                                        500..=599 => {
-                                            self.metrics.status_5xx.fetch_add(1, Ordering::Relaxed);
-                                        }
-                                        _ => {}
-                                    };
-                                    let dur_us = req_start.elapsed().as_micros() as u64;
-                                    self.metrics
-                                        .total_duration_us
-                                        .fetch_add(dur_us, Ordering::Relaxed);
-
-                                    let wire = response.to_wire_bytes(conn.keep_alive);
-                                    conn.write_buf.extend_from_slice(&wire);
-                                }
-                                ParseResult::Incomplete => {
-                                    break;
-                                }
-                                ParseResult::Invalid(err) => {
-                                    let err_res =
-                                        HttpResponse::error(400, format!("Bad Request: {}", err));
-                                    conn.write_buf
-                                        .extend_from_slice(&err_res.to_wire_bytes(false));
-                                    conn.keep_alive = false;
-                                    break;
+                                    }
                                 }
                             }
                         }
                     }
 
                     // Handle Write readiness
+                    flush_ws_outgoing(conn);
+
                     if !conn.write_buf.is_empty() || conn.transport.wants_write() {
                         let mut write_err = false;
                         if !conn.write_buf.is_empty() {
@@ -647,6 +919,17 @@ impl HttpServer {
                         }
 
                         if write_err {
+                            if let ConnectionMode::WebSocket {
+                                ref session,
+                                ref handler,
+                            } = conn.mode
+                            {
+                                handler.on_close(
+                                    &session.socket,
+                                    close_code::ABNORMAL_CLOSURE,
+                                    "Write error",
+                                );
+                            }
                             close_connection(&poller, &conn.transport);
                             connections.remove(&ev.token);
                             self.metrics
@@ -654,31 +937,26 @@ impl HttpServer {
                                 .fetch_sub(1, Ordering::Relaxed);
                             continue;
                         }
+                    }
 
-                        // Poller interest state machine: downgrade to Readable once writes flush
-                        let desired_interest =
-                            if conn.transport.wants_write() || !conn.write_buf.is_empty() {
-                                Interest::Both
-                            } else {
-                                Interest::Readable
-                            };
-                        if conn.current_interest != desired_interest {
-                            let sock_handle = get_socket_handle(conn.transport.tcp_stream());
-                            let _ = poller.modify(sock_handle, ev.token, desired_interest);
-                            conn.current_interest = desired_interest;
-                        }
+                    // Update poller interest state machine dynamically
+                    let desired_interest = compute_desired_interest(conn);
+                    if conn.current_interest != desired_interest {
+                        let sock_handle = get_socket_handle(conn.transport.tcp_stream());
+                        let _ = poller.modify(sock_handle, ev.token, desired_interest);
+                        conn.current_interest = desired_interest;
+                    }
 
-                        // If all outgoing bytes written and not keep-alive, close connection
-                        if conn.write_buf.is_empty()
-                            && !conn.keep_alive
-                            && !conn.transport.wants_write()
-                        {
-                            close_connection(&poller, &conn.transport);
-                            connections.remove(&ev.token);
-                            self.metrics
-                                .active_connections
-                                .fetch_sub(1, Ordering::Relaxed);
-                        }
+                    // If all outgoing bytes written and not keep-alive, close connection
+                    if conn.write_buf.is_empty()
+                        && !conn.keep_alive
+                        && !conn.transport.wants_write()
+                    {
+                        close_connection(&poller, &conn.transport);
+                        connections.remove(&ev.token);
+                        self.metrics
+                            .active_connections
+                            .fetch_sub(1, Ordering::Relaxed);
                     }
                 }
             }
@@ -772,7 +1050,20 @@ impl HttpServer {
 
         Ok((bound_addr, is_running, handle))
     }
+
+    pub fn spawn_with_drain(self) -> io::Result<SpawnedDrainServer> {
+        let is_draining = Arc::clone(&self.is_draining);
+        let (addr, is_running, handle) = self.spawn()?;
+        Ok((addr, is_running, is_draining, handle))
+    }
 }
+
+pub type SpawnedDrainServer = (
+    SocketAddr,
+    Arc<AtomicBool>,
+    Arc<AtomicBool>,
+    std::thread::JoinHandle<io::Result<()>>,
+);
 
 fn close_connection(poller: &Poller, transport: &TransportStream) {
     let handle = get_socket_handle(transport.tcp_stream());

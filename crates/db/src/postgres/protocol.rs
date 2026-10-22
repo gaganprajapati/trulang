@@ -93,7 +93,7 @@ pub fn write_password_message<W: Write>(writer: &mut W, password: &str) -> Resul
     payload.push(0);
 
     let length = (payload.len() + 4) as i32;
-    writer.write_all(&[b'p'])?;
+    writer.write_all(b"p")?;
     writer.write_all(&length.to_be_bytes())?;
     writer.write_all(&payload)?;
     writer.flush()?;
@@ -107,7 +107,7 @@ pub fn write_query_message<W: Write>(writer: &mut W, query: &str) -> Result<(), 
     payload.push(0);
 
     let length = (payload.len() + 4) as i32;
-    writer.write_all(&[b'Q'])?;
+    writer.write_all(b"Q")?;
     writer.write_all(&length.to_be_bytes())?;
     writer.write_all(&payload)?;
     writer.flush()?;

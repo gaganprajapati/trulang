@@ -167,7 +167,7 @@ fn send_parameter_status(stream: &mut TcpStream, name: &str, value: &str) {
     payload.push(0);
 
     let len = (payload.len() + 4) as i32;
-    let _ = stream.write_all(&[b'S']);
+    let _ = stream.write_all(b"S");
     let _ = stream.write_all(&len.to_be_bytes());
     let _ = stream.write_all(&payload);
 }
@@ -177,7 +177,7 @@ fn send_command_complete(stream: &mut TcpStream, tag: &str) {
     payload.push(0);
 
     let len = (payload.len() + 4) as i32;
-    let _ = stream.write_all(&[b'C']);
+    let _ = stream.write_all(b"C");
     let _ = stream.write_all(&len.to_be_bytes());
     let _ = stream.write_all(&payload);
 }
@@ -206,7 +206,7 @@ fn send_mock_users_result(stream: &mut TcpStream) {
     }
 
     let t_len = (t_payload.len() + 4) as i32;
-    let _ = stream.write_all(&[b'T']);
+    let _ = stream.write_all(b"T");
     let _ = stream.write_all(&t_len.to_be_bytes());
     let _ = stream.write_all(&t_payload);
 
@@ -226,7 +226,7 @@ fn send_mock_users_result(stream: &mut TcpStream) {
         }
 
         let d_len = (d_payload.len() + 4) as i32;
-        let _ = stream.write_all(&[b'D']);
+        let _ = stream.write_all(b"D");
         let _ = stream.write_all(&d_len.to_be_bytes());
         let _ = stream.write_all(&d_payload);
     }

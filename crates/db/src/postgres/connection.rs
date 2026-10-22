@@ -67,7 +67,7 @@ impl PgConnection {
 
         let stream = match timeout {
             Some(d) => TcpStream::connect_timeout(&addrs[0], d)?,
-            None => TcpStream::connect(&addrs[0])?,
+            None => TcpStream::connect(addrs[0])?,
         };
 
         stream.set_nodelay(true)?;
@@ -235,10 +235,7 @@ impl PgConnection {
 
     /// Checks if connection socket is still alive and responsive with a lightweight query.
     pub fn is_healthy(&mut self) -> bool {
-        match self.query("/* ping */") {
-            Ok(_) => true,
-            Err(_) => false,
-        }
+        self.query("/* ping */").is_ok()
     }
 
     /// Sends a Terminate message and shuts down connection.
