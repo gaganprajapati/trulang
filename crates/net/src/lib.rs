@@ -7,11 +7,14 @@ pub mod http;
 pub mod otel;
 pub mod poller;
 pub mod server;
+pub mod tls;
 
 pub use http::{HttpMethod, HttpParser, HttpRequest, HttpResponse, ParseResult};
 pub use otel::{SpanContext, SpanStatus, TraceSpan};
 pub use poller::{Event, Interest, Poller};
 pub use server::{HttpServer, ServerMetrics};
+pub use tls::{TlsAcceptorConfig, TlsConnectionState, TransportStream, TLS_HANDSHAKE_TIMEOUT};
+
 
 #[cfg(test)]
 mod tests {

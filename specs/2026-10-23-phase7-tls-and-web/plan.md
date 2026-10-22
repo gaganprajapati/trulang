@@ -6,40 +6,48 @@
 ---
 
 ## Task Group 1: Native TLS/HTTPS Termination (`crates/net/src/tls.rs`)
-- [ ] 1.1 Add `rustls = "0.23"` and `webpki-roots` to `crates/net/Cargo.toml`.
-- [ ] 1.2 Implement `TlsAcceptorConfig` loading X.509 certificates and private keys.
-- [ ] 1.3 Integrate non-blocking TLS handshake state machine into `crates/net/src/poller.rs`.
-- [ ] 1.4 Write unit test verifying TLS 1.3 handshake and HTTPS echo server.
+- [x] 1.1 Add `rustls = "0.23"` and `webpki-roots` to `crates/net/Cargo.toml`.
+- [x] 1.2 Implement `TlsAcceptorConfig` loading X.509 certificates and private keys.
+- [x] 1.3 Implement `TransportStream` enum (`Plain` vs `Tls`) with `ConnectionState` (`TlsHandshaking` vs `TlsEstablished`).
+- [x] 1.4 Integrate dynamic interest state machine into `crates/net/src/poller.rs` and `server.rs` (`wants_write` switching between `Interest::Both` and `Interest::Readable`).
+- [x] 1.5 Implement 3-tier Anti-Slowloris defense: 3.0s handshake timeout, 1,024 max in-flight handshakes, and 16 KB record fragment cap.
+- [x] 1.6 Write unit and integration tests verifying TLS 1.3 handshake, ALPN `http/1.1` negotiation, Slowloris timeout, and HTTPS echo server.
 
 ---
 
 ## Task Group 2: Ergonomic Routing & Middleware (`crates/net/src/router.rs`)
-- [ ] 2.1 Implement radix-tree or segment-based path routing (`/users/:id`).
-- [ ] 2.2 Implement middleware pipeline chain: `Middleware::handle(req, next)`.
-- [ ] 2.3 Provide built-in `CorsMiddleware`, `LoggerMiddleware`, and `HeaderValidationMiddleware`.
-- [ ] 2.4 Verify zero-copy parameter extraction using Region A string slices.
+- [ ] 2.1 Implement Compressed Radix Trie with raw ASCII byte prefix matching ($O(k)$).
+- [ ] 2.2 Implement inline zero-copy parameter extraction (`[RouteParam<'a>; 8]`) directly referencing request buffers without `HashMap` allocations.
+- [ ] 2.3 Implement Linear Interceptor Pipeline with `before` and `after` stages and early short-circuit evaluation.
+- [ ] 2.4 Provide built-in `CorsMiddleware`, `LoggerMiddleware`, and `HeaderValidationMiddleware`.
+- [ ] 2.5 Benchmark route matching throughput to ensure > 75,000 req/sec per core.
 
 ---
 
 ## Task Group 3: Real-Time Protocols: WebSockets & SSE (`crates/net/src/ws.rs`)
-- [ ] 3.1 Implement RFC 6455 WebSocket upgrade handshake over HTTP/1.1.
-- [ ] 3.2 Implement frame parsing (masked client frames, text/binary/ping/pong frames).
-- [ ] 3.3 Implement Server-Sent Events (`HttpResponse::sse()`) with chunked transfer encoding.
-- [ ] 3.4 Add integration tests for concurrent WebSocket echo and SSE broadcast.
+- [ ] 3.1 Implement RFC 6455 WebSocket upgrade handshake over HTTP/1.1 (Sec-WebSocket-Key SHA-1 + GUID).
+- [ ] 3.2 Implement frame parsing (masked client frames, text/binary/ping/pong/close frames).
+- [ ] 3.3 Implement autonomous wire-level Ping/Pong handling and periodic 30s heartbeat timers.
+- [ ] 3.4 Implement write backpressure: 64 KB high-watermark, pausing `POLLIN`, and code 1008 policy violation termination on budget breach.
+- [ ] 3.5 Implement `app.ws(path, handler)` with `on_open`, `on_message`, `on_close` callbacks and per-frame Region A arena recycling.
+- [ ] 3.6 Implement Server-Sent Events (`HttpResponse::sse()`) with chunked transfer encoding and per-event Region A arena reset.
+- [ ] 3.7 Add integration tests for concurrent WebSocket echo, Ping/Pong keep-alives, and SSE broadcast.
 
 ---
 
-## Task Group 4: Native Relational Database Drivers (`crates/net/src/db/`)
-- [ ] 4.1 Implement PostgreSQL wire protocol client (v3.0 startup, query, row decoding).
-- [ ] 4.2 Implement embedded SQLite driver wrapper with actor connection pooling.
-- [ ] 4.3 Expose non-blocking `query` and `execute` methods to TruLang VM FFI.
+## Task Group 4: Native Relational Database Drivers (`crates/db`)
+- [ ] 4.1 Expand PostgreSQL client (`crates/db/src/postgres/`) with parameterized `query_one(sql, params)` and `execute(sql, params)`.
+- [ ] 4.2 Implement embedded SQLite driver (`crates/db/src/sqlite/`) utilizing a dedicated worker thread pool and bounded channels to eliminate OS event loop blocking.
+- [ ] 4.3 Expose non-blocking `std::db::postgres` and `std::db::sqlite` methods via `crates/ffi`.
+- [ ] 4.4 Verify dual-region query decoding: transient rows allocated in Region A with promotion to Region B on explicit persistence.
 
 ---
 
 ## Task Group 5: Official VS Code Extension Publishing (`editors/vscode`)
-- [ ] 5.1 Verify `editors/vscode/package.json` metadata, icons, and repository links.
-- [ ] 5.2 Validate `trulang-1.0.0.vsix` with `vsce package` and test manual local install.
-- [ ] 5.3 Prepare Marketplace publisher credentials and publish to Visual Studio Marketplace & Open VSX.
+- [ ] 5.1 Verify `editors/vscode/package.json` metadata, icons, categories, and repository links.
+- [ ] 5.2 Validate `.vsix` packaging with `npm run build && npx @vscode/vsce package` with zero bundle warnings.
+- [ ] 5.3 Implement executable local script `editors/vscode/publish.sh` with `VSCE_PAT` and `OVSX_PAT` environment validation.
+- [ ] 5.4 Create GitHub Actions CI workflow `.github/workflows/vscode-extension.yml` for automated release publishing to Visual Studio Marketplace and Open VSX.
 
 ---
 

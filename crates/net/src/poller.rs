@@ -193,7 +193,7 @@ impl Poller {
             changes.push(libc::kevent {
                 ident: fd as usize,
                 filter: libc::EVFILT_READ,
-                flags: flags as u16,
+                flags,
                 fflags: 0,
                 data: 0,
                 udata: token as *mut libc::c_void,
@@ -204,7 +204,7 @@ impl Poller {
             changes.push(libc::kevent {
                 ident: fd as usize,
                 filter: libc::EVFILT_WRITE,
-                flags: flags as u16,
+                flags,
                 fflags: 0,
                 data: 0,
                 udata: token as *mut libc::c_void,
@@ -229,12 +229,87 @@ impl Poller {
         }
     }
 
+    /// Modifies the registered interest for an existing file descriptor.
+    pub fn modify(&self, fd: RawSocket, token: usize, interest: Interest) -> io::Result<()> {
+        let mut changes: Vec<libc::kevent> = Vec::with_capacity(2);
+        let add_flags = libc::EV_ADD | libc::EV_ENABLE | libc::EV_CLEAR;
+
+        match interest {
+            Interest::Both => {
+                changes.push(libc::kevent {
+                    ident: fd as usize,
+                    filter: libc::EVFILT_READ,
+                    flags: add_flags,
+                    fflags: 0,
+                    data: 0,
+                    udata: token as *mut libc::c_void,
+                });
+                changes.push(libc::kevent {
+                    ident: fd as usize,
+                    filter: libc::EVFILT_WRITE,
+                    flags: add_flags,
+                    fflags: 0,
+                    data: 0,
+                    udata: token as *mut libc::c_void,
+                });
+            }
+            Interest::Readable => {
+                changes.push(libc::kevent {
+                    ident: fd as usize,
+                    filter: libc::EVFILT_READ,
+                    flags: add_flags,
+                    fflags: 0,
+                    data: 0,
+                    udata: token as *mut libc::c_void,
+                });
+                changes.push(libc::kevent {
+                    ident: fd as usize,
+                    filter: libc::EVFILT_WRITE,
+                    flags: libc::EV_DELETE,
+                    fflags: 0,
+                    data: 0,
+                    udata: std::ptr::null_mut(),
+                });
+            }
+            Interest::Writable => {
+                changes.push(libc::kevent {
+                    ident: fd as usize,
+                    filter: libc::EVFILT_WRITE,
+                    flags: add_flags,
+                    fflags: 0,
+                    data: 0,
+                    udata: token as *mut libc::c_void,
+                });
+                changes.push(libc::kevent {
+                    ident: fd as usize,
+                    filter: libc::EVFILT_READ,
+                    flags: libc::EV_DELETE,
+                    fflags: 0,
+                    data: 0,
+                    udata: std::ptr::null_mut(),
+                });
+            }
+        }
+
+        unsafe {
+            libc::kevent(
+                self.kq_fd,
+                changes.as_ptr(),
+                changes.len() as libc::c_int,
+                std::ptr::null_mut(),
+                0,
+                std::ptr::null(),
+            );
+        }
+        Ok(())
+    }
+
     pub fn deregister(&self, fd: RawSocket) -> io::Result<()> {
         let changes = [
             libc::kevent {
                 ident: fd as usize,
                 filter: libc::EVFILT_READ,
-                flags: libc::EV_DELETE as u16,
+                flags: libc::EV_DELETE,
                 fflags: 0,
                 data: 0,
                 udata: std::ptr::null_mut(),
@@ -242,7 +317,7 @@ impl Poller {
             libc::kevent {
                 ident: fd as usize,
                 filter: libc::EVFILT_WRITE,
-                flags: libc::EV_DELETE as u16,
+                flags: libc::EV_DELETE,
                 fflags: 0,
                 data: 0,
                 udata: std::ptr::null_mut(),
@@ -298,13 +373,12 @@ impl Poller {
             return Err(err);
         }
 
-        for i in 0..n as usize {
-            let kev = &raw_events[i];
+        for kev in raw_events.iter().take(n as usize) {
             let token = kev.udata as usize;
             let readable = kev.filter == libc::EVFILT_READ;
             let writable = kev.filter == libc::EVFILT_WRITE;
-            let is_closed = (kev.flags & libc::EV_EOF as u16) != 0;
-            let is_error = (kev.flags & libc::EV_ERROR as u16) != 0;
+            let is_closed = (kev.flags & libc::EV_EOF) != 0;
+            let is_error = (kev.flags & libc::EV_ERROR) != 0;
 
             events.push(Event {
                 token,
@@ -372,6 +446,38 @@ impl Poller {
             libc::epoll_ctl(
                 self.epoll_fd,
                 libc::EPOLL_CTL_ADD,
+                fd,
+                &mut ev as *mut libc::epoll_event,
+            )
+        };
+
+        if ret < 0 {
+            Err(io::Error::last_os_error())
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Modifies the registered interest for an existing file descriptor.
+    pub fn modify(&self, fd: RawSocket, token: usize, interest: Interest) -> io::Result<()> {
+        let mut events = libc::EPOLLET as u32;
+        if interest == Interest::Readable || interest == Interest::Both {
+            events |= libc::EPOLLIN as u32;
+        }
+        if interest == Interest::Writable || interest == Interest::Both {
+            events |= libc::EPOLLOUT as u32;
+        }
+        events |= (libc::EPOLLRDHUP | libc::EPOLLERR | libc::EPOLLHUP) as u32;
+
+        let mut ev = libc::epoll_event {
+            events,
+            u64: token as u64,
+        };
+
+        let ret = unsafe {
+            libc::epoll_ctl(
+                self.epoll_fd,
+                libc::EPOLL_CTL_MOD,
                 fd,
                 &mut ev as *mut libc::epoll_event,
             )
@@ -472,6 +578,13 @@ impl Poller {
     }
 
     pub fn register(&self, fd: RawSocket, token: usize, interest: Interest) -> io::Result<()> {
+        let mut map = self.sockets.lock().unwrap();
+        map.insert(fd, (token, interest));
+        Ok(())
+    }
+
+    /// Modifies the registered interest for an existing file descriptor.
+    pub fn modify(&self, fd: RawSocket, token: usize, interest: Interest) -> io::Result<()> {
         let mut map = self.sockets.lock().unwrap();
         map.insert(fd, (token, interest));
         Ok(())
