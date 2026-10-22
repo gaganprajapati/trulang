@@ -323,7 +323,10 @@ impl HttpServer {
                         };
 
                         let sock_handle = get_socket_handle(transport.tcp_stream());
-                        if poller.register(sock_handle, token, initial_interest).is_ok() {
+                        if poller
+                            .register(sock_handle, token, initial_interest)
+                            .is_ok()
+                        {
                             connections.insert(token, Connection::new(transport, initial_interest));
                             self.metrics
                                 .active_connections
@@ -372,7 +375,6 @@ impl HttpServer {
             }
 
             for &ev in events.iter().take(num_events) {
-
                 if ev.token == LISTENER_TOKEN {
                     if !listener_registered || self.is_draining.load(Ordering::Relaxed) {
                         continue;
@@ -390,25 +392,35 @@ impl HttpServer {
                                     next_token = 1;
                                 }
 
-                                let (transport, initial_interest) = if let Some(ref tls) = self.tls_config {
-                                    if in_flight_handshakes >= MAX_IN_FLIGHT_HANDSHAKES {
-                                        // Mitigate Slowloris DDoS: drop connection immediately
-                                        continue;
-                                    }
-                                    match TransportStream::tls(stream, Arc::clone(&tls.server_config)) {
-                                        Ok(t) => {
-                                            in_flight_handshakes += 1;
-                                            (t, Interest::Both)
+                                let (transport, initial_interest) =
+                                    if let Some(ref tls) = self.tls_config {
+                                        if in_flight_handshakes >= MAX_IN_FLIGHT_HANDSHAKES {
+                                            // Mitigate Slowloris DDoS: drop connection immediately
+                                            continue;
                                         }
-                                        Err(_) => continue,
-                                    }
-                                } else {
-                                    (TransportStream::plain(stream), Interest::Both)
-                                };
+                                        match TransportStream::tls(
+                                            stream,
+                                            Arc::clone(&tls.server_config),
+                                        ) {
+                                            Ok(t) => {
+                                                in_flight_handshakes += 1;
+                                                (t, Interest::Both)
+                                            }
+                                            Err(_) => continue,
+                                        }
+                                    } else {
+                                        (TransportStream::plain(stream), Interest::Both)
+                                    };
 
                                 let sock_handle = get_socket_handle(transport.tcp_stream());
-                                if poller.register(sock_handle, token, initial_interest).is_ok() {
-                                    connections.insert(token, Connection::new(transport, initial_interest));
+                                if poller
+                                    .register(sock_handle, token, initial_interest)
+                                    .is_ok()
+                                {
+                                    connections.insert(
+                                        token,
+                                        Connection::new(transport, initial_interest),
+                                    );
                                     self.metrics
                                         .active_connections
                                         .fetch_add(1, Ordering::Relaxed);
@@ -451,13 +463,15 @@ impl HttpServer {
                                 if established {
                                     in_flight_handshakes = in_flight_handshakes.saturating_sub(1);
                                 }
-                                let desired_interest = if conn.transport.wants_write() || !conn.write_buf.is_empty() {
-                                    Interest::Both
-                                } else {
-                                    Interest::Readable
-                                };
+                                let desired_interest =
+                                    if conn.transport.wants_write() || !conn.write_buf.is_empty() {
+                                        Interest::Both
+                                    } else {
+                                        Interest::Readable
+                                    };
                                 if conn.current_interest != desired_interest {
-                                    let sock_handle = get_socket_handle(conn.transport.tcp_stream());
+                                    let sock_handle =
+                                        get_socket_handle(conn.transport.tcp_stream());
                                     let _ = poller.modify(sock_handle, ev.token, desired_interest);
                                     conn.current_interest = desired_interest;
                                 }
@@ -642,11 +656,12 @@ impl HttpServer {
                         }
 
                         // Poller interest state machine: downgrade to Readable once writes flush
-                        let desired_interest = if conn.transport.wants_write() || !conn.write_buf.is_empty() {
-                            Interest::Both
-                        } else {
-                            Interest::Readable
-                        };
+                        let desired_interest =
+                            if conn.transport.wants_write() || !conn.write_buf.is_empty() {
+                                Interest::Both
+                            } else {
+                                Interest::Readable
+                            };
                         if conn.current_interest != desired_interest {
                             let sock_handle = get_socket_handle(conn.transport.tcp_stream());
                             let _ = poller.modify(sock_handle, ev.token, desired_interest);
@@ -654,7 +669,10 @@ impl HttpServer {
                         }
 
                         // If all outgoing bytes written and not keep-alive, close connection
-                        if conn.write_buf.is_empty() && !conn.keep_alive && !conn.transport.wants_write() {
+                        if conn.write_buf.is_empty()
+                            && !conn.keep_alive
+                            && !conn.transport.wants_write()
+                        {
                             close_connection(&poller, &conn.transport);
                             connections.remove(&ev.token);
                             self.metrics

@@ -19,9 +19,14 @@ use trulang_net::tls::{TlsAcceptorConfig, TLS_HANDSHAKE_TIMEOUT};
 use trulang_net::HttpServer;
 
 /// Helper: builds self-signed certificate and key pair along with rustls client/server configs.
-fn setup_test_tls_configs() -> (TlsAcceptorConfig, Arc<ClientConfig>, CertificateDer<'static>) {
+fn setup_test_tls_configs() -> (
+    TlsAcceptorConfig,
+    Arc<ClientConfig>,
+    CertificateDer<'static>,
+) {
     let subject_alt_names = vec!["localhost".to_string(), "127.0.0.1".to_string()];
-    let cert = generate_simple_self_signed(subject_alt_names).expect("Failed to generate test cert");
+    let cert =
+        generate_simple_self_signed(subject_alt_names).expect("Failed to generate test cert");
     let cert_pem = cert.cert.pem();
     let key_pem = cert.key_pair.serialize_pem();
     let cert_der = cert.cert.der().to_vec();
@@ -130,7 +135,8 @@ fn test_https_server_end_to_end_request_and_alpn() {
             Err(e) => panic!("Socket read error: {}", e),
         }
 
-        if plaintext_response.windows(4).any(|w| w == b"\r\n\r\n") && !plaintext_response.is_empty() {
+        if plaintext_response.windows(4).any(|w| w == b"\r\n\r\n") && !plaintext_response.is_empty()
+        {
             // Check if response body is received
             if let Some(pos) = plaintext_response.windows(4).position(|w| w == b"\r\n\r\n") {
                 let headers = String::from_utf8_lossy(&plaintext_response[..pos]);

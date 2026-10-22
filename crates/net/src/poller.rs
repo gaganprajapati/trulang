@@ -132,7 +132,13 @@ pub fn set_nodelay(fd: RawSocket) -> io::Result<()> {
     {
         #[link(name = "ws2_32")]
         extern "system" {
-            fn setsockopt(s: usize, level: i32, optname: i32, optval: *const i8, optlen: i32) -> i32;
+            fn setsockopt(
+                s: usize,
+                level: i32,
+                optname: i32,
+                optval: *const i8,
+                optlen: i32,
+            ) -> i32;
         }
         const IPPROTO_TCP: i32 = 6;
         const TCP_NODELAY: i32 = 0x0001;
@@ -651,9 +657,7 @@ impl Poller {
             None => -1,
         };
 
-        let ret = unsafe {
-            WSAPoll(poll_fds.as_mut_ptr(), poll_fds.len() as u32, timeout_ms)
-        };
+        let ret = unsafe { WSAPoll(poll_fds.as_mut_ptr(), poll_fds.len() as u32, timeout_ms) };
 
         if ret < 0 {
             return Err(io::Error::last_os_error());

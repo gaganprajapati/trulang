@@ -42,6 +42,7 @@ impl Lockfile {
         Self::from_str(&content)
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(content: &str) -> anyhow::Result<Self> {
         let lockfile: Self = toml::from_str(content)?;
         Ok(lockfile)

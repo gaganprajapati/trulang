@@ -34,11 +34,22 @@ impl TlsAcceptorConfig {
     }
 
     /// Constructs a `TlsAcceptorConfig` from PEM certificate and key file paths.
-    pub fn from_pem_files<P: AsRef<Path>, Q: AsRef<Path>>(cert_path: P, key_path: Q) -> io::Result<Self> {
-        let cert_file = File::open(cert_path.as_ref())
-            .map_err(|e| io::Error::new(io::ErrorKind::NotFound, format!("Failed to open cert file: {}", e)))?;
-        let key_file = File::open(key_path.as_ref())
-            .map_err(|e| io::Error::new(io::ErrorKind::NotFound, format!("Failed to open key file: {}", e)))?;
+    pub fn from_pem_files<P: AsRef<Path>, Q: AsRef<Path>>(
+        cert_path: P,
+        key_path: Q,
+    ) -> io::Result<Self> {
+        let cert_file = File::open(cert_path.as_ref()).map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Failed to open cert file: {}", e),
+            )
+        })?;
+        let key_file = File::open(key_path.as_ref()).map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::NotFound,
+                format!("Failed to open key file: {}", e),
+            )
+        })?;
 
         let certs = Self::load_certs_from_reader(&mut BufReader::new(cert_file))?;
         let key = Self::load_key_from_reader(&mut BufReader::new(key_file))?;
@@ -55,7 +66,12 @@ impl TlsAcceptorConfig {
         let mut config = ServerConfig::builder()
             .with_no_client_auth()
             .with_single_cert(certs, key)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, format!("Invalid TLS configuration: {}", e)))?;
+            .map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    format!("Invalid TLS configuration: {}", e),
+                )
+            })?;
 
         // ADR-7.1 / ALPN Resolution: strictly advertise http/1.1 in Phase 7
         config.alpn_protocols = vec![b"http/1.1".to_vec()];
@@ -66,10 +82,17 @@ impl TlsAcceptorConfig {
         })
     }
 
-    fn load_certs_from_reader<R: io::BufRead>(reader: &mut R) -> io::Result<Vec<CertificateDer<'static>>> {
+    fn load_certs_from_reader<R: io::BufRead>(
+        reader: &mut R,
+    ) -> io::Result<Vec<CertificateDer<'static>>> {
         let certs = rustls_pemfile::certs(reader)
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Malformed certificate PEM: {}", e)))?;
+            .map_err(|e| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("Malformed certificate PEM: {}", e),
+                )
+            })?;
 
         if certs.is_empty() {
             return Err(io::Error::new(
@@ -82,8 +105,12 @@ impl TlsAcceptorConfig {
     }
 
     fn load_key_from_reader<R: io::BufRead>(reader: &mut R) -> io::Result<PrivateKeyDer<'static>> {
-        let key = rustls_pemfile::private_key(reader)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("Malformed private key PEM: {}", e)))?;
+        let key = rustls_pemfile::private_key(reader).map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Malformed private key PEM: {}", e),
+            )
+        })?;
 
         match key {
             Some(k) => Ok(k),
@@ -216,9 +243,9 @@ impl TransportStream {
 
                 // 3. Process new TLS packets
                 if read_any {
-                    let io_state = session
-                        .process_new_packets()
-                        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, format!("TLS error: {}", e)))?;
+                    let io_state = session.process_new_packets().map_err(|e| {
+                        io::Error::new(io::ErrorKind::InvalidData, format!("TLS error: {}", e))
+                    })?;
                     let _ = io_state;
                 }
 
@@ -263,7 +290,10 @@ impl TransportStream {
                 }
 
                 let _ = session.process_new_packets().map_err(|e| {
-                    io::Error::new(io::ErrorKind::InvalidData, format!("TLS processing error: {}", e))
+                    io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("TLS processing error: {}", e),
+                    )
                 })?;
 
                 if !session.is_handshaking() {
@@ -273,9 +303,10 @@ impl TransportStream {
                 // Drain decrypted application plaintext
                 match session.reader().read(buf) {
                     Ok(n) => Ok(n),
-                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                        Err(io::Error::new(io::ErrorKind::WouldBlock, "TLS plaintext would block"))
-                    }
+                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => Err(io::Error::new(
+                        io::ErrorKind::WouldBlock,
+                        "TLS plaintext would block",
+                    )),
                     Err(e) => Err(e),
                 }
             }
@@ -286,7 +317,9 @@ impl TransportStream {
     pub fn write_plaintext(&mut self, buf: &[u8]) -> io::Result<usize> {
         match self {
             Self::Plain(stream) => stream.write(buf),
-            Self::Tls { stream, session, .. } => {
+            Self::Tls {
+                stream, session, ..
+            } => {
                 let written = session
                     .writer()
                     .write(buf)
@@ -311,7 +344,9 @@ impl TransportStream {
     pub fn flush_ciphertext(&mut self) -> io::Result<()> {
         match self {
             Self::Plain(stream) => stream.flush(),
-            Self::Tls { stream, session, .. } => {
+            Self::Tls {
+                stream, session, ..
+            } => {
                 while session.wants_write() {
                     match session.write_tls(stream) {
                         Ok(0) => break,
@@ -334,22 +369,33 @@ mod tests {
     #[test]
     fn test_tls_acceptor_config_generation() {
         let subject_alt_names = vec!["localhost".to_string(), "127.0.0.1".to_string()];
-        let cert = generate_simple_self_signed(subject_alt_names).expect("Failed to generate test cert");
+        let cert =
+            generate_simple_self_signed(subject_alt_names).expect("Failed to generate test cert");
         let cert_pem = cert.cert.pem();
         let key_pem = cert.key_pair.serialize_pem();
 
         let config = TlsAcceptorConfig::from_pem_bytes(cert_pem.as_bytes(), key_pem.as_bytes())
             .expect("Failed to create TlsAcceptorConfig");
 
-        assert_eq!(config.server_config.alpn_protocols, vec![b"http/1.1".to_vec()]);
-        assert_eq!(config.server_config.max_fragment_size, Some(MAX_RECORD_FRAGMENT_BYTES));
+        assert_eq!(
+            config.server_config.alpn_protocols,
+            vec![b"http/1.1".to_vec()]
+        );
+        assert_eq!(
+            config.server_config.max_fragment_size,
+            Some(MAX_RECORD_FRAGMENT_BYTES)
+        );
     }
 
     #[test]
     fn test_anti_slowloris_handshake_timeout() {
         let subject_alt_names = vec!["localhost".to_string()];
         let cert = generate_simple_self_signed(subject_alt_names).unwrap();
-        let config = TlsAcceptorConfig::from_pem_bytes(cert.cert.pem().as_bytes(), cert.key_pair.serialize_pem().as_bytes()).unwrap();
+        let config = TlsAcceptorConfig::from_pem_bytes(
+            cert.cert.pem().as_bytes(),
+            cert.key_pair.serialize_pem().as_bytes(),
+        )
+        .unwrap();
 
         // Simulate a connected plain stream that gets wrapped in TLS
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();

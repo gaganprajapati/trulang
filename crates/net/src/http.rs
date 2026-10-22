@@ -180,6 +180,10 @@ impl HttpResponse {
         }
     }
 
+    pub fn body_str(&self) -> &str {
+        std::str::from_utf8(&self.body).unwrap_or("")
+    }
+
     pub fn ok(body: impl Into<Vec<u8>>) -> Self {
         Self::new(200, body)
     }

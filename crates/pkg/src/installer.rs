@@ -223,7 +223,7 @@ impl PackageInstaller {
 
 fn initialize_placeholder_package(dir: &Path, name: &str, version: &str) -> anyhow::Result<()> {
     fs::create_dir_all(dir.join("src"))?;
-    let pkg_name = name.split('/').last().unwrap_or("package");
+    let pkg_name = name.split('/').next_back().unwrap_or("package");
     let lib_tr = format!(
         r#"// TruLang Package: {} v{}
 // Auto-generated package module entrypoint

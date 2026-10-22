@@ -70,6 +70,7 @@ impl Manifest {
         Self::from_str(&content)
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(content: &str) -> anyhow::Result<Self> {
         let manifest: Self = toml::from_str(content)?;
         Ok(manifest)
