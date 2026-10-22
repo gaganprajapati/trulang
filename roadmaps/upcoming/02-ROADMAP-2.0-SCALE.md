@@ -40,10 +40,10 @@ Having completed the core foundations in TruLang 1.0 GA (Dual-Region Memory, nat
 
 ## 2. Technical Specifications by Phase
 
-### Phase 7: Native TLS/HTTPS, WebSockets & Streaming Protocols (Next Milestone)
+### Phase 7: Native TLS/HTTPS, WebSockets, Web Framework & Relational DBs (Next Milestone)
 * **Status:** 🎯 **Next Up for Implementation**
 * **Target Version:** `v1.1.0`
-* **Target Crates:** `crates/net` (`trulang/tls`, `trulang/ws`, `trulang/grpc`)
+* **Target Crates & Tools:** `crates/net` (`trulang/tls`, `trulang/ws`, `trulang/web`, `trulang/db`), `editors/vscode`
 
 #### Architectural Deliverables:
 1. **Zero-Cost Native TLS/HTTPS (`trulang/tls`):**
@@ -59,11 +59,24 @@ Having completed the core foundations in TruLang 1.0 GA (Dual-Region Memory, nat
 4. **HTTP/2 Wire Engine & gRPC Foundation:**
    - Multiplexed stream handling over a single TCP/TLS connection.
    - Binary Protobuf frame decoding integrated with Region A arenas.
+5. **Ergonomic Microservice Web Engine (`trulang/web`):**
+   - Declarative path routing with parameter extraction (`GET /api/v1/users/:id`).
+   - Composable middleware pipeline: `app.use(cors())`, `app.use(jwt_auth())`, `app.use(request_logger())`.
+   - Zero-copy JSON request body deserialization and schema validation directly in Region A linear memory arenas.
+6. **Native Relational Database Drivers (`trulang/db`):**
+   - Pure-Rust, non-blocking PostgreSQL wire protocol client with connection pooling actors.
+   - Embedded SQLite driver for edge microservices and local persistence.
+   - Automatic reconnect, parameterized SQL query binding, and prepared statement caching.
+7. **Official VS Code Marketplace & Open VSX Release (`editors/vscode`):**
+   - Publish the existing `trulang-1.0.0.vsix` package to the Microsoft Visual Studio Code Marketplace and Open VSX Registry.
+   - Provides 1-click installation for syntax highlighting, snippets, and automatic Language Server (LSP) and Debug Adapter (DAP) communication.
 
 #### Acceptance Criteria:
 - [ ] Automated end-to-end HTTPS benchmark: < 1ms TLS 1.3 handshake overhead.
 - [ ] 100,000 concurrent idle WebSocket connections maintained with < 20 MB total RSS.
 - [ ] Full RFC 6455 compliance test suite passing (autobahn test suite subset).
+- [ ] Production-ready REST API with `/users/:id` routing, JWT auth middleware, and PostgreSQL queries executing at > 75,000 req/sec per core.
+- [ ] Official `trulang` extension live and discoverable on Visual Studio Code Marketplace and Open VSX Registry.
 
 ---
 

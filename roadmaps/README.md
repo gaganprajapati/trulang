@@ -33,11 +33,14 @@ To ensure complete clarity on what is already delivered versus what lies ahead, 
 ```
 roadmaps/
 ├── README.md                           <-- Master Status Dashboard (this file)
+├── GROWTH-AND-ADOPTION.md              <-- Go-To-Market, Hacker News Launch, & Community Strategy
 ├── completed/
 │   └── 01-ROADMAP-1.0-GA.md            <-- Full specifications & verification of Phases 1 to 6
 └── upcoming/
     └── 02-ROADMAP-2.0-SCALE.md         <-- Full technical specifications for Phases 7 to 12
 ```
+
+- **[GROWTH-AND-ADOPTION.md](GROWTH-AND-ADOPTION.md):** The comprehensive Go-To-Market strategy, detailing the Hacker News "Show HN" playbook, technical deep-dive articles, $12 Server Challenge distribution, and contributor flywheel.
 
 - **[01-ROADMAP-1.0-GA.md](roadmaps/completed/01-ROADMAP-1.0-GA.md):** The complete historical record of the 6 foundational phases that brought TruLang from prototype to 1.0 General Availability. Includes test verification logs (106/106 passing tests across 12 workspace crates) and architectural breakdown.
 - **[02-ROADMAP-2.0-SCALE.md](roadmaps/upcoming/02-ROADMAP-2.0-SCALE.md):** The forward-looking technical blueprint for TruLang 2.0 ("The Scale, Edge & Distributed Cloud Era"), detailing architectural requirements, crate targets, and acceptance criteria.
