@@ -158,7 +158,9 @@
     "vscode:prepublish": "npm run build",
     "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
     "watch": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --watch",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies",
+    "publish:marketplace": "vsce publish",
+    "publish:ovsx": "ovsx publish"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
@@ -166,8 +168,9 @@
   "devDependencies": {
     "@types/node": "^20.11.24",
     "@types/vscode": "^1.85.0",
-    "@vscode/vsce": "^2.24.0",
+    "@vscode/vsce": "^3.2.1",
     "esbuild": "^0.20.1",
+    "ovsx": "^0.9.3",
     "typescript": "^5.3.3"
   }
 }

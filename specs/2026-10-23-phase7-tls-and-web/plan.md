@@ -44,10 +44,10 @@
 ---
 
 ## Task Group 5: Official VS Code Extension Publishing (`editors/vscode`)
-- [ ] 5.1 Verify `editors/vscode/package.json` metadata, icons, categories, and repository links.
-- [ ] 5.2 Validate `.vsix` packaging with `npm run build && npx @vscode/vsce package` with zero bundle warnings.
-- [ ] 5.3 Implement executable local script `editors/vscode/publish.sh` with `VSCE_PAT` and `OVSX_PAT` environment validation.
-- [ ] 5.4 Create GitHub Actions CI workflow `.github/workflows/vscode-extension.yml` for automated release publishing to Visual Studio Marketplace and Open VSX.
+- [x] 5.1 Verify `editors/vscode/package.json` metadata, icons, categories, repository links, and upgrade `@vscode/vsce` for `--azure-credential` support.
+- [x] 5.2 Validate `.vsix` packaging with `npm run build && npx @vscode/vsce package` with zero bundle warnings.
+- [x] 5.3 Implement executable local script `editors/vscode/publish.sh` supporting Microsoft Entra ID (`--azure-credential`), transitional `VSCE_PAT`, and `OVSX_PAT`.
+- [x] 5.4 Create GitHub Actions CI workflow `.github/workflows/vscode-extension.yml` with OIDC Entra ID federated authentication (`azure/login@v2`), `vsce publish --azure-credential`, and Open VSX publishing.
 
 ---
 

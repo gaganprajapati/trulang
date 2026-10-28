@@ -5,3 +5,6 @@ tsconfig.json
 node_modules/**
 *.map
 .git/**
+*.vsix
+publish.sh
+
