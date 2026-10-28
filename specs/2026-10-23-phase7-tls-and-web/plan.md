@@ -52,6 +52,6 @@
 ---
 
 ## Task Group 6: Workspace Validation & Benchmarking
-- [ ] 6.1 Run full workspace tests: `cargo test --workspace`.
-- [ ] 6.2 Run workspace linter: `cargo clippy --workspace -- -D warnings`.
-- [ ] 6.3 Run HTTPS & WebSocket stress benchmark; record numbers in [validation.md](validation.md).
+- [x] 6.1 Run full workspace tests: `cargo test --workspace`.
+- [x] 6.2 Run workspace linter: `cargo clippy --workspace -- -D warnings`.
+- [x] 6.3 Run HTTPS & WebSocket stress benchmark; record numbers in [validation.md](validation.md).

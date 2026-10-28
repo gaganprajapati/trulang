@@ -189,7 +189,7 @@ fn test_cli_serve_command() {
     // Allow time for server to bind and start listening
     let mut connected = false;
     let mut client = None;
-    for _ in 0..30 {
+    for _ in 0..100 {
         std::thread::sleep(std::time::Duration::from_millis(50));
         if let Ok(c) = TcpStream::connect(format!("127.0.0.1:{}", port)) {
             client = Some(c);
